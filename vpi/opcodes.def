@@ -1,0 +1,321 @@
+/*-*-mode:c++-*-**********************************************************
+ *
+ *  Copyright (c) 1999 Cornell University
+ *  School of Electrical Engineering
+ *  Ithaca, NY 14853
+ *  All Rights Reserved
+ *
+ *  Permission to use, copy, modify, and distribute this software
+ *  and its documentation for any purpose and without fee is hereby
+ *  granted, provided that the above copyright notice appear in all
+ *  copies. Cornell University makes no representations
+ *  about the suitability of this software for any purpose. It is
+ *  provided "as is" without express or implied warranty. Export of this
+ *  software outside of the United States of America may require an
+ *  export license.
+ *
+ *  $Id: opcodes.def,v 1.2 2006/05/10 04:23:08 kca5 Exp $
+ *
+ *************************************************************************/
+
+/* pipe definitions */
+
+#ifndef __OPCODES_DEF__
+#define __OPCODES_DEF__
+
+/* pipe */
+#define P_NONE 0x0
+
+#define P_ALU1 0x1
+#define P_ALU2 0x2
+#define P_ALUX (P_ALU1|P_ALU2)
+
+#define P_FPU1 0x4
+#define P_FPU2 0x8
+
+#define P_LDST 0x10
+
+/* issue queue */
+#define Q_INT  P_ALUX
+#define Q_FP   (P_FPU1|P_FPU2)
+#define Q_LDST P_LDST
+
+/* register usage */
+#define F_USE_RS   (0x1 << 5) 
+#define F_USE_RT   (0x2 << 5) 
+#define F_USE_RTW  (0x4 << 5) 
+#define F_USE_RD   (0x8 << 5)
+#define F_USE_R31  (0x10 << 5)
+#define F_USE_RDR  (0x20 << 5)	/* read rd */
+#define F_USE_HI   (0x40 << 5)
+#define F_USE_LO   (0x80 << 5)
+#define F_WR_HI    (0x100 << 5)	/* for writes */
+#define F_WR_LO    (0x200 << 5)	/* for writes */
+#define F_FLIPST   (0x400 << 5) /* for flipping rs and rt, as in sllv */
+
+#define F_USE_FS   (0x1 << 5) 
+#define F_USE_FT   (0x2 << 5) 
+#define F_USE_FD   (0x4 << 5)
+#define F_USE_FMT  (0x8 << 5)
+
+/* assumption: when USE_RDR is set, rs and rt are also used; but
+   rt is used from the condition file, and rs and rd are read from
+   the register file */
+
+#define F_WR_HILO  (F_WR_HI|F_WR_LO)
+
+/* pipeline flush */
+#define P_FLUSH    	(0x400 << 5)
+#define P_SYSCALL  	(0x400 << 6)
+
+/* pc-changing instructions */
+#define P_JUMPREG	(0x400 << 7)
+#define P_JUMPIMM    	(0x400 << 8)
+#define P_BRANCH    	(0x400 << 9)
+
+/* store instruction. needed because this instruction can't execute
+   until it is ready to graduate */
+#define P_STORE		(0x400 << 10)
+
+/* printing */
+#define F_SIGNED_IMM	(0x400 << 11)
+
+/* decode */
+#define ISSUEQ(code,i)	 ((code) & (i))
+#define PIPE(code,p)	 ((code) & (p))
+
+/* reads */
+#define USE_RS(code)   ((code) & F_USE_RS)
+#define USE_RT(code)   ((code) & F_USE_RT)
+#define USE_LO(code)   ((code) & F_USE_LO)
+#define USE_HI(code)   ((code) & F_USE_HI)
+#define USE_RDR(code)  ((code) & F_USE_RDR)
+
+/* writes */
+#define USE_RTW(code)  ((code) & F_USE_RTW)
+#define USE_RD(code)   ((code) & F_USE_RD)
+#define USE_R31(code)  ((code) & F_USE_R31)
+#define USE_HIW(code) ((code) & F_WR_HI)
+#define USE_LOW(code) ((code) & F_WR_LO)
+
+/* pipe flush */
+#define PIPE_FLUSH(code) ((code) & P_FLUSH)
+#define SYSCALL(code)    ((code) & P_SYSCALL)
+
+/* branches and jumps */
+#define JUMPREG(code)     ((code) & P_JUMPREG)
+#define BRANCH(code)      ((code) & P_BRANCH)
+#define JUMPIMM(code)     ((code) & P_JUMPIMM)
+
+/* stores */
+#define STOREINS(code)    ((code) & P_STORE)
+
+#define THREE_REG  (F_USE_RD|F_USE_RS|F_USE_RT)
+#define TWO_REG    (F_USE_RD|F_USE_RT)
+#define IMM_REG    (F_USE_RS|F_USE_RTW)
+
+#define RSRT_REG   (F_USE_RS|F_USE_RT)
+
+#define THREE_FREG  (F_USE_FD|F_USE_FS|F_USE_FT)
+#define TWO_FREG    (F_USE_FD|F_USE_FT)
+#define FSFT_FREG   (F_USE_FS|F_USE_FT)
+#define USE_FMT(code)  ((code) & F_USE_FMT)
+
+#endif /* __OPCODES_DEF__ */
+
+
+#ifndef SPECIAL
+#define SPECIAL(a,b,c,d)
+#endif
+
+#ifndef REGIMM
+#define REGIMM(a,b,c,d)
+#endif
+
+#ifndef MAINOP
+#define MAINOP(a,b,c,d)
+#endif
+
+#ifndef COP1FCN
+#define COP1FCN(a,b,c,d)
+#endif
+
+#ifndef COP1CTL
+#define COP1CTL(a,b,c,d)
+#endif
+
+/* opcodes */
+
+SPECIAL(Isll,"sll",0x0, 	P_ALU1 | TWO_REG)
+SPECIAL(Isrl,"srl",0x2, 	P_ALU1 | TWO_REG)
+SPECIAL(Isra,"sra",0x3,		P_ALU1 | TWO_REG)
+SPECIAL(Isllv,"sllv",0x4,	P_ALU1 | THREE_REG | F_FLIPST)
+SPECIAL(Isrlv,"srlv",0x6,	P_ALU1 | THREE_REG | F_FLIPST)
+SPECIAL(Israv,"srav",0x7,	P_ALU1 | THREE_REG | F_FLIPST)
+SPECIAL(Iadd,"add",0x20,	P_ALUX | THREE_REG)
+SPECIAL(Iaddu,"addu",0x21,	P_ALUX | THREE_REG)
+SPECIAL(Isub,"sub",0x22,	P_ALUX | THREE_REG)
+SPECIAL(Isubu,"subu",0x23,	P_ALUX | THREE_REG)
+SPECIAL(Iand,"and",0x24,	P_ALUX | THREE_REG)
+SPECIAL(Ior,"or",0x25,		P_ALUX | THREE_REG)
+SPECIAL(Ixor,"xor",0x26,	P_ALUX | THREE_REG)
+SPECIAL(Inor,"nor",0x27,	P_ALUX | THREE_REG)
+SPECIAL(Islt,"slt",0x2a,	P_ALUX | THREE_REG)
+SPECIAL(Isltu,"sltu",0x2b,	P_ALUX | THREE_REG)
+SPECIAL(Idadd,"dadd",0x2c,	P_ALUX | THREE_REG)
+SPECIAL(Idaddu,"daddu",0x2d,	P_ALUX | THREE_REG)
+SPECIAL(Idsub,"dsub",0x2e,	P_ALUX | THREE_REG)
+SPECIAL(Idsubu,"dsubu",0x2f,	P_ALUX | THREE_REG)
+SPECIAL(Ijr,"jr",0x8,		P_LDST | F_USE_RS | P_JUMPREG)
+SPECIAL(Ijalr,"jalr",0x9,	P_LDST | F_USE_RS|F_USE_RD| P_JUMPREG)
+SPECIAL(Imovz,"movz",0xa,	P_ALU1 | THREE_REG|F_USE_RDR)
+SPECIAL(Imovn,"movn",0xb,	P_ALU1 | THREE_REG|F_USE_RDR)
+SPECIAL(Isyscall,"syscall",0xc, P_FLUSH|P_SYSCALL | P_LDST)
+SPECIAL(Ibreak,"break",0xd,	P_FLUSH | P_LDST)
+SPECIAL(Isync,"sync",0xf,	P_LDST)
+SPECIAL(Imfhi,"mfhi",0x10,	P_ALUX | F_USE_RD|F_USE_HI)
+SPECIAL(Imthi,"mthi",0x11,	P_ALUX | F_USE_RS|F_WR_HI)
+SPECIAL(Imflo,"mflo",0x12,	P_ALUX | F_USE_RD|F_USE_LO)
+SPECIAL(Imtlo,"mtlo",0x13,	P_ALUX | F_USE_RS|F_WR_LO)
+SPECIAL(Imult,"mult",0x18,	P_ALU2 | RSRT_REG|F_WR_HILO)
+SPECIAL(Imultu,"multu",0x19,	P_ALU2 | RSRT_REG|F_WR_HILO)
+SPECIAL(Idiv,"div",0x1a,	P_ALU2 | RSRT_REG|F_WR_HILO)
+SPECIAL(Idivu,"divu",0x1b,	P_ALU2 | RSRT_REG|F_WR_HILO)
+SPECIAL(Idmult,"dmult",0x1c,	P_ALU2 | RSRT_REG|F_WR_HILO)
+SPECIAL(Idmultu,"dmultu",0x1d,	P_ALU2 | RSRT_REG|F_WR_HILO)
+SPECIAL(Iddiv,"ddiv",0x1e,	P_ALU2 | RSRT_REG|F_WR_HILO)
+SPECIAL(Iddivu,"ddivu",0x1f,	P_ALU2 | RSRT_REG|F_WR_HILO)
+SPECIAL(Itge,"tge",0x30,	P_FLUSH| P_LDST | RSRT_REG)
+SPECIAL(Itgeu,"tgeu",0x31,	P_FLUSH| P_LDST | RSRT_REG)
+SPECIAL(Itlt,"tlt",0x32,	P_FLUSH| P_LDST | RSRT_REG)
+SPECIAL(Itltu,"tltu",0x33,	P_FLUSH| P_LDST | RSRT_REG)
+SPECIAL(Iteq,"teq",0x34,	P_FLUSH| P_LDST | RSRT_REG)
+SPECIAL(Itne,"tne",0x36,	P_FLUSH| P_LDST | RSRT_REG)
+SPECIAL(Idsllv,"dsllv",0x14,	P_ALU1 | THREE_REG)
+SPECIAL(Idsrlv,"dsrlv",0x16,	P_ALU1 | THREE_REG)
+SPECIAL(Idsrav,"dsrav",0x17,	P_ALU1 | THREE_REG)
+SPECIAL(Idsll,"dsll",0x38, 	P_ALU1 | TWO_REG)
+SPECIAL(Idsrl,"dsrl",0x3a, 	P_ALU1 | TWO_REG)
+SPECIAL(Idsra,"dsra",0x3b, 	P_ALU1 | TWO_REG)
+SPECIAL(Idsll32,"dsll32",0x3c, 	P_ALU1 | TWO_REG)
+SPECIAL(Idsrl32,"dsrl32",0x3e, 	P_ALU1 | TWO_REG)
+SPECIAL(Idsra32,"dsra32",0x3f, 	P_ALU1 | TWO_REG)
+
+// this is wrong - following two should have different format
+COP1CTL(Imfc1,"mfc1",0x0,	P_FPU1 | F_USE_FS | F_USE_RT)
+COP1CTL(Icfc1,"cfc1",0x2,	P_FPU1 | F_USE_FS | F_USE_RT)
+COP1CTL(Imtc1,"mtc1",0x4,	P_FPU1 | F_USE_FS | F_USE_RT)
+COP1CTL(Ictc1,"ctc1",0x6,	P_FPU1 | F_USE_FS | F_USE_RT)
+COP1CTL(Ibc1,"bc1",0x8,		P_FPU1 | P_BRANCH )
+
+COP1FCN(Iadd,"add",0x0,		P_FPU1 | F_USE_FMT | THREE_FREG)
+COP1FCN(Isub,"sub",0x1,		P_FPU1 | F_USE_FMT | THREE_FREG)
+COP1FCN(Imul,"mul",0x2,		P_FPU1 | F_USE_FMT | THREE_FREG)
+COP1FCN(Idiv,"div",0x3,		P_FPU1 | F_USE_FMT | THREE_FREG)
+COP1FCN(Isqrt,"sqrt",0x4,		P_FPU1 | F_USE_FMT | TWO_FREG)
+COP1FCN(Iabs,"abs",0x5,		P_FPU1 | F_USE_FMT | F_USE_FD | F_USE_FS)
+COP1FCN(Imov,"mov",0x6,		P_FPU1 | F_USE_FMT | F_USE_FD | F_USE_FS)
+COP1FCN(Ineg,"neg",0x7,		P_FPU1 | F_USE_FMT | F_USE_FD | F_USE_FS)
+COP1FCN(Iround,"round",0xc,	P_FPU1 | F_USE_FMT | TWO_FREG)
+COP1FCN(Itrunc,"trunc",0xd,	P_FPU1 | F_USE_FMT | TWO_FREG)
+COP1FCN(Iceil,"ceil",0xe,		P_FPU1 | F_USE_FMT | TWO_FREG)
+COP1FCN(Ifloor,"floor",0xf,	P_FPU1 | F_USE_FMT | TWO_FREG)
+COP1FCN(Icvt_s,"cvt.s",0x20,	P_FPU1 | F_USE_FMT | F_USE_FD | F_USE_FS)
+COP1FCN(Icvt_d,"cvt.d",0x21,	P_FPU1 | F_USE_FMT | F_USE_FD | F_USE_FS)
+COP1FCN(Icvt_w,"cvt.w",0x24,	P_FPU1 | F_USE_FMT | F_USE_FD | F_USE_FS)
+COP1FCN(Ic_f,"c.f",0x30,		P_FPU1 | FSFT_FREG)
+COP1FCN(Ic_un,"c.un",0x31,		P_FPU1 | FSFT_FREG)
+COP1FCN(Ic_eq,"c.eq",0x32,		P_FPU1 | FSFT_FREG)
+COP1FCN(Ic_ueq,"c.ueq",0x33,	P_FPU1 | FSFT_FREG)
+COP1FCN(Ic_olt,"c.olt",0x34,	P_FPU1 | FSFT_FREG)
+COP1FCN(Ic_ult,"c.ult",0x35,	P_FPU1 | FSFT_FREG)
+COP1FCN(Ic_ole,"c.ole",0x36,	P_FPU1 | FSFT_FREG)
+COP1FCN(Ic_ule,"c.ule",0x37,	P_FPU1 | FSFT_FREG)
+COP1FCN(Ic_sf,"c.sf",0x38,		P_FPU1 | FSFT_FREG)
+COP1FCN(Ic_ngle,"c.ngle",0x39,	P_FPU1 | FSFT_FREG)
+COP1FCN(Ic_seq,"c.seq",0x3a,	P_FPU1 | FSFT_FREG)
+COP1FCN(Ic_ngl,"c.ngl",0x3b,	P_FPU1 | FSFT_FREG)
+COP1FCN(Ic_lt,"c.lt",0x3c,		P_FPU1 | FSFT_FREG)
+COP1FCN(Ic_nge,"c.nge",0x3d,	P_FPU1 | FSFT_FREG)
+COP1FCN(Ic_le,"c.le",0x3e,		P_FPU1 | FSFT_FREG)
+COP1FCN(Ic_ngt,"c.ngt",0x3f,	P_FPU1 | FSFT_FREG)
+
+REGIMM(Ibltz,"bltz",0x0,	P_ALU1 | F_USE_RS | P_BRANCH)
+REGIMM(Ibgez,"bgez",0x1,	P_ALU1 | F_USE_RS | P_BRANCH)
+REGIMM(Ibltzl,"bltzl",0x2,	P_ALU1 | F_USE_RS | P_BRANCH)
+REGIMM(Ibgezl,"bgezl",0x3,	P_ALU1 | F_USE_RS | P_BRANCH)
+REGIMM(Ibltzal,"bltzal",0x10,	P_ALU1 | F_USE_RS|F_USE_R31 | P_BRANCH)
+REGIMM(Ibgezal,"bgezal",0x11,	P_ALU1 | F_USE_RS|F_USE_R31 | P_BRANCH)
+REGIMM(Ibltzall,"bltzall",0x12,	P_ALU1 | F_USE_RS|F_USE_R31 | P_BRANCH)
+REGIMM(Ibgezall,"bgezall",0x13,	P_ALU1 | F_USE_RS|F_USE_R31 | P_BRANCH)
+REGIMM(Itgei,"tgei",0x8,	P_FLUSH | P_LDST | F_USE_RS)
+REGIMM(Itgeiu,"tgeiu",0x9,	P_FLUSH | P_LDST | F_USE_RS)
+REGIMM(Itlti,"tlti",0xa,	P_FLUSH | P_LDST | F_USE_RS)
+REGIMM(Itltiu,"tltiu",0xb,	P_FLUSH | P_LDST | F_USE_RS)
+REGIMM(Iteqi,"teqi",0xc,	P_FLUSH | P_LDST | F_USE_RS)
+REGIMM(Itnei,"tnei",0xe,	P_FLUSH | P_LDST | F_USE_RS)
+
+MAINOP(Ij,"j",0x2,		P_NONE | P_JUMPIMM)
+MAINOP(Ijal,"jal",0x3,		P_LDST | F_USE_R31 | P_JUMPIMM)
+MAINOP(Ibeq,"beq",0x4,		P_ALU1 | RSRT_REG | P_BRANCH)
+MAINOP(Ibne,"bne",0x5,		P_ALU1 | RSRT_REG | P_BRANCH)
+MAINOP(Iblez,"blez",0x6,	P_ALU1 | F_USE_RS | P_BRANCH)
+MAINOP(Ibgtz,"bgtz",0x7,	P_ALU1 | F_USE_RS | P_BRANCH)
+MAINOP(Iaddi,"addi",0x8,	P_ALUX | IMM_REG | F_SIGNED_IMM)
+MAINOP(Iaddiu,"addiu",0x9,	P_ALUX | IMM_REG | F_SIGNED_IMM)
+MAINOP(Islti,"slti",0xa,	P_ALUX | IMM_REG | F_SIGNED_IMM)
+MAINOP(Isltiu,"sltiu",0xb,	P_ALUX | IMM_REG)
+MAINOP(Iandi,"andi",0xc,	P_ALUX | IMM_REG)
+MAINOP(Iori,"ori",0xd,		P_ALUX | IMM_REG)
+MAINOP(Ixori,"xori",0xe,	P_ALUX | IMM_REG)
+MAINOP(Ilui,"lui",0xf,		P_ALU1 | IMM_REG)
+MAINOP(Icp2,"cp2",0x12,		P_NONE)
+MAINOP(Icp3,"cp3",0x13,		P_NONE)
+MAINOP(Ibeql,"beql",0x14,	P_ALU1 | RSRT_REG | P_BRANCH)
+MAINOP(Ibnel,"bnel",0x15,	P_ALU1 | RSRT_REG | P_BRANCH)
+MAINOP(Iblezl,"blezl",0x16,	P_ALU1 | F_USE_RS | P_BRANCH)
+MAINOP(Ibgtzl,"bgtzl",0x17,	P_ALU1 | F_USE_RS | P_BRANCH)
+MAINOP(Idaddi,"daddi",0x18,	P_ALUX | IMM_REG | F_SIGNED_IMM)
+MAINOP(Idaddiu,"daddiu",0x19,	P_ALUX | IMM_REG | F_SIGNED_IMM)
+MAINOP(Ildl,"ldl",0x1a,		P_LDST | IMM_REG|F_USE_RT)
+MAINOP(Ildr,"ldr",0x1b,		P_LDST | IMM_REG|F_USE_RT)
+MAINOP(Ilb,"lb",0x20,		P_LDST | IMM_REG)
+MAINOP(Ilh,"lh",0x21,		P_LDST | IMM_REG)
+MAINOP(Ilwl,"lwl",0x22,		P_LDST | IMM_REG|F_USE_RT)
+MAINOP(Ilw,"lw",0x23,		P_LDST | IMM_REG)
+MAINOP(Ilbu,"lbu",0x24,		P_LDST | IMM_REG)
+MAINOP(Ilhu,"lhu",0x25,		P_LDST | IMM_REG)
+MAINOP(Ilwr,"lwr",0x26,		P_LDST | IMM_REG|F_USE_RT)
+MAINOP(Ilwu,"lwu",0x27,		P_LDST | IMM_REG)
+MAINOP(Isb,"sb",0x28,		P_LDST | P_STORE | RSRT_REG)
+MAINOP(Ish,"sh",0x29,		P_LDST | P_STORE | RSRT_REG)
+MAINOP(Iswl,"swl",0x2a,		P_LDST | P_STORE | RSRT_REG)
+MAINOP(Isw,"sw",0x2b,		P_LDST | P_STORE | RSRT_REG)
+MAINOP(Isdl,"sdl",0x2c,		P_LDST | P_STORE | RSRT_REG)
+MAINOP(Isdr,"sdr",0x2d,		P_LDST | P_STORE | RSRT_REG)
+MAINOP(Iswr,"swr",0x2e,		P_LDST | P_STORE | RSRT_REG)
+MAINOP(Ill,"ll",0x30,		P_LDST | IMM_REG) /* ll == lwc0 */
+MAINOP(Ilwc1,"lwc1",0x31,	P_LDST | IMM_REG)
+MAINOP(Ilwc2,"lwc2",0x32,	P_NONE)
+MAINOP(Ipref,"pref",0x33,	P_LDST | F_USE_RS) /* pref == lwc3 */
+MAINOP(Illd,"lld",0x34,		P_LDST | IMM_REG) /* lld == ldc0 */
+MAINOP(Ildc1,"ldc1",0x35,	P_NONE)
+MAINOP(Ildc2,"ldc2",0x36,	P_NONE)
+MAINOP(Ild,"ld",0x37,		P_LDST | IMM_REG)
+MAINOP(Isc,"sc",0x38,		P_LDST | P_STORE | RSRT_REG) /* sc == swc0 */
+MAINOP(Iswc1,"swc1",0x39,	P_NONE)
+MAINOP(Iswc2,"swc2",0x3a,	P_NONE)
+MAINOP(Iswc3,"swc3",0x3b,	P_NONE)
+MAINOP(Iscd,"scd",0x3c,		P_LDST | P_STORE | RSRT_REG) /* scd == sdc0 */
+MAINOP(Isdc1,"sdc1",0x3d,	P_NONE)
+MAINOP(Isdc2,"sdc2",0x3e,	P_NONE)
+MAINOP(Isd,"sd",0x3f,		P_LDST | P_STORE | RSRT_REG)
+
+MAINOP(Icp0,"cp0",0x10,		P_NONE)
+
+
+#undef MAINOP
+#undef REGIMM
+#undef SPECIAL
+#undef COP1FCN
+#undef COP1CTL

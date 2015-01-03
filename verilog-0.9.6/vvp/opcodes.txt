@@ -1,0 +1,870 @@
+/*
+ * Copyright (c) 2001-2009 Stephen Williams (steve@icarus.com)
+ *
+ */
+
+
+
+EXECUTABLE INSTRUCTION OPCODES
+
+Instruction opcodes all start with a % character and have 0 or more
+operands. In no case are there more than 3 operands. This chapter
+describes the specific behavior of each opcode, in enough detail
+(I hope) that its complete effect can be predicted.
+
+General principles of Arithmetic:
+
+The binary arithmetic instruction in general takes three parameters,
+the left operand, the right operand, and the base. The left operand is
+replaced with the result, which is the same width as the left and
+right operands.
+
+* %abs/wr <bit-o>, <bit-i>
+
+This instruction calculates the absolute value of a real value. It uses
+the fabs() function in the run-time to do the work.
+
+* %add <bit-l>, <bit-r>, <wid>
+
+This instruction adds the right vector into the left vector, the
+vectors having the width <wid>. If any of the bits of either vector
+are x or z, the result is x. Otherwise, the result is the arithmetic
+sum.
+
+See also the %sub instruction.
+
+
+* %add/wr <bit-l>, <bit-r>
+
+This is the real valued version of the %add instruction. The arguments
+are word indices of the operands. The right operand is added into the
+left operand.
+
+See also the %sub/wr instruction.
+
+
+* %addi <bit-l>, <imm>, <wid>
+
+This instruction adds the immediate value (no x or z bits) into the
+left vector. The imm value is limited to 16 significant bits, but it
+is zero extended to match any width.
+
+* %alloc <scope-label>
+
+This instruction allocates the storage for a new instance of an
+automatically allocated scope.
+
+* %and <bit-l>, <bit-r>, <wid>
+
+Perform the bitwise AND of the two vectors, and store the result in
+the left vector. Each bit is calculated independent of other bits. AND
+means the following:
+
+	0 and ? --> 0
+	? and 0 --> 0
+	1 and 1 --> 1
+	otherwise   x
+
+* %assign/av <array-label>, <delay>, <bit>
+* %assign/av/d <array-label>, <delayx>, <bit>
+* %assign/av/e <array-label>, <bit>
+
+The %assign/av instruction assigns a vector value to a word in the
+labeled array. The <delay> is the delay in simulation time to the
+assignment (0 for non-blocking assignment) and the <bit> is the base
+of the vector to write.
+
+The width of the vector is retrieved from index register 0.
+
+The base of a part select is retrieved from index register 1.
+
+The address of the word in the memory is from index register 3. The
+address is canonical form.
+
+The %assign/av/d variation reads the delay from an integer register that
+is given by the <delayx> value. This should not be 0, 1 or 3, of course,
+since these registers contain the vector width, base part select and
+word address.
+
+The %assign/av/e variation uses the information in the thread
+event control registers to determine when to perform the assign.
+%evctl is used to set the event control information.
+
+* %assign/v0 <var-label>, <delay>, <bit>
+* %assign/v0/d <var-label>, <delayx>, <bit>
+* %assign/v0/e <var-label>, <bit>
+
+The %assign/v0 instruction is a vector version of non-blocking
+assignment. The <delay> is the number of clock ticks in the future
+where the assignment should be schedule, and the <bit> is the base of
+the vector to be assigned to the destination. The vector width is in
+index register 0.
+
+The %assign/v0/d variation gets the delay instead from an integer
+register that is given by the <delayx> value. This should not be 0, of
+course, because integer 0 is taken with the vector width.
+
+The %assign/v0/e variation uses the information in the thread
+event control registers to determine when to perform the assign.
+%evctl is used to set the event control information.
+
+The <var-label> references a .var object that can receive non-blocking
+assignments. For blocking assignments, see %set/v.
+
+* %assign/v0/x1 <var-label>, <delay>, <bit>
+* %assign/v0/x1/d <var-label>, <delayx>, <bit>
+* %assign/v0/x1/e <var-label>, <bit>
+
+This is similar to the %assign/v0 instruction, but adds the index-1
+index register with the canonical index of the destination where the
+vector is to be written. This allows for part writes into the vector.
+
+* %assign/wr <vpi-label>, <delay>, <index>
+* %assign/wr/d <vpi-label>, <delayx>, <index>
+* %assign/wr/e <vpi-label>, <index>
+
+This instruction provides a non-blocking assign of the real value
+given in <index> to the real object addressed by the <vpi-label>
+label after the given <delay>.
+
+The %assign/wr/d variation gets the delay from integer register
+<delayx>.
+
+The %assign/wr/e variation uses the information in the thread
+event control registers to determine when to perform the assign.
+%evctl is used to set the event control information.
+
+* %assign/x0 <var-label>, <delay>, <bit> (OBSOLETE -- See %assign/v0x)
+
+This does a non-blocking assignment to a functor, similar to the
+%assign instruction. The <var-label> identifies the base functor of
+the affected variable, and the <delay> gives the delay when the
+assignment takes place. The delay may be 0. The actual functor used is
+calculated by using <var-label> as a base, and indexing with the
+index[0] index register. This supports indexed assignment.
+
+The <bit> is the address of the thread register that contains the bit
+value to assign.
+
+
+* %blend <bit-l>, <bit-r>, <wid>
+
+This instruction blends the bits of a vector into the destination in a
+manner like the expression (x ? <a> : <b>). The truth table is:
+
+	1  1 --> 1
+	0  0 --> 0
+	z  z --> z
+	x  x --> x
+	.... --> x
+
+In other words, if the bits are identical, then take that
+value. Otherwise, the value is x.
+
+* %blend/wr <bit-l>, <bit-r>
+
+This instruction blends real values for the ternary operator. If the
+values match return that otherwise return 0.0.
+
+* %breakpoint
+
+This instruction unconditionally breaks the simulator into the
+interactive debugger. The idea is to stop the simulator here and give
+the user a chance to display the state of the simulation using
+debugger commands.
+
+This may not work on all platforms. If run-time debugging is compiled
+out, then this function is a no-op.
+
+* %cassign/v <var-label>, <bit>, <wid>
+
+Perform a continuous assign of a constant value to the target
+variable. This is similar to %set, but it uses the cassign port
+(port-1) of the signal functor instead of the normal assign, so the
+signal responds differently. See "VARIABLE STATEMENTS" in the
+README.txt file.
+
+* %cassign/wr <var-label>, <bit>
+
+Perform a continuous assign of a constant real value to the target
+variable. See %cassign/v above.
+
+* %cassign/x0 <label>, <bit>, <wid>
+
+Perform continuous assign of a constant value to part of the target
+variable. This is similar to %set/x instruction, but it uses the
+cassign port (port-1) of the signal functor instead of the normal
+assign port (port-0), so the signal responds differently. See
+"VARIABLE STATEMENTS" and "NET STATEMENTS" in the README.txt file.
+
+* %cmp/u <bit-l>, <bit-r>, <wid>
+* %cmp/s <bit-l>, <bit-r>, <wid>
+
+These instructions perform a generic comparison of two vectors of equal
+size. The <bit-l> and <bit-r> numbers address the least-significant
+bit of each vector, and <wid> is the width. If either operand is 0,
+1, 2 or 3 then it is taken to be a constant replicated to the selected
+width.
+
+The results of the comparison go into bits 4, 5, 6 and 7:
+
+	4: eq  (equal)
+	5: lt  (less than)
+	6: eeq (case equal)
+
+The eeq bit is set to 1 if all the bits in the vectors are exactly the
+same, or 0 otherwise. The eq bit is true if the values are logically
+the same. That is, x and z are considered equal. In other words the eq
+bit is the same as ``=='' and the eeq bit ``===''.
+
+The lt bit is 1 if the left vector is less than the right vector, or 0
+if greater than or equal to the right vector. It is the equivalent of
+the Verilog < operator. Combinations of these three bits can be used
+to implement all the Verilog comparison operators.
+
+The %cmp/u and %cmp/s differ only in the handling of the lt bit. The
+%cmp/u does an unsigned compare, whereas the %cmp/s does a signed
+compare. In either case, if either operand contains x or z, then lt
+bit gets the x value.
+
+* %cmpi/s <bit-l>, <immr>, <wid>
+* %cmpi/u <bit-l>, <immr>, <wid>
+
+These instructions are similar to the %cmp instructions above, except
+that the right hand operand is an immediate value. This is a positive
+number that the vector is compared with.
+
+* %cmp/wr <bit-l>, <bit-r>
+
+[compare real values.]
+
+* %cmp/ws <bit-l>, <bit-r>
+* %cmp/wu <bit-l>, <bit-r>
+
+[compare signed/unsigned integer words.]
+
+* %cmp/z <bit-l>, <bit-r>, <wid>
+* %cmp/x <bit-l>, <bit-r>, <wid>
+
+These instructions are for implementing the casez and casex
+comparisons. These work similar to the %cmp/u instructions, except
+only an eq bit is calculated. These comparisons both treat z values in
+the left or right operand as don't care positions. The %cmp/x
+instruction will also treat x values in either operand as don't care.
+
+Only bit 4 is set by these instructions.
+
+
+* %cvt/ir <bit-l>, <bit-r>
+* %cvt/ri <bit-l>, <bit-r>
+* %cvt/vr <bit-l>, <bit-r>, <wid>
+
+Copy a word from r to l, converting it from real to integer (ir) or
+integer to real (ri) in the process. The source and destination may
+be the same word address, leading to a convert in place.
+
+The %cvt/vr opcode converts a real word <bit-r> to a thread vector
+starting at <bit-l> and with the width <wid>. Non-integer precision is
+lost in the conversion.
+
+* %deassign <var-label>, <base>, <width>
+
+Deactivate and disconnect a procedural continuous assignment to a
+variable. The <var-label> identifies the affected variable.
+
+The <base> and <width> are used to determine what part of the signal
+will be deactivated. For a full deactivation the <base> is 0 and
+<width> is the entire signal width.
+
+* %deassign/wr <var-label>
+
+The same as %deassign above except this is used for real variables.
+
+* %delay <low>, <high>
+
+This opcode pauses the thread, and causes it to be rescheduled for a
+time in the future. The amount is the number of the ticks in the
+future to reschedule, and is >= 0. If the %delay is zero, then the
+thread yields the processor for another thread, but will be resumed in
+the current time step.
+
+The delay amount is given as 2 32bit numbers, so that 64bit times may
+be represented.
+
+* %delayx <idx>
+
+This is similar to the %delay opcode, except that the parameter
+selects an index register, which contains the actual delay. This
+supports run-time calculated delays.
+
+* %disable <scope-label>
+
+This instruction terminates threads that are part of a specific
+scope. The label identifies the scope in question, and the threads are
+the threads that are currently within that scope.
+
+
+* %div <bit-l>, <bit-r>, <wid>
+* %div/s <bit-l>, <bit-r>, <wid>
+
+This instruction arithmetically divides the <bit-l> vector by the
+<bit-r> vector, and leaves the result in the <bit-l> vector. IF any of
+the bits in either vector are x or z, the entire result is x.
+
+The %div/s instruction is the same as %div, but does signed division.
+
+
+* %div/wr <bit-l>, <bit-r>
+
+This opcode divides the left operand by the right operand. If the
+right operand is 0, then the result is NaN.
+
+
+* %evctl <functor-label> <idx>
+* %evctl/c
+* %evctl/s <functor-label> <idx>
+* %evctl/i <functor-label> <value>
+
+These instructions are used to put event and repetition information
+into the thread event control registers. These values are then used
+by the %assign/e instructions to do not blocking event control. The
+<functor-label> is the event to trigger on and the <idx> is an index
+register to read the repetition count from (signed or unsigned).
+%evctl/i sets the repetition to an immediate unsigned value.
+
+%evctl/c clears the event control information. This is needed if a
+%assign/e may be skipped since the %assign/e statements clear the
+event control information and the other %evctl statements assert
+that this information has been cleared. You can get an assert if
+this information is not managed correctly.
+
+
+* %force/v <label>, <bit>, <wid>
+
+Force a constant value to the target variable. This is similar to %set
+and %cassign/v, but it uses the force port (port-2) of the signal
+functor instead of the normal assign port (port-0), so the signal
+responds differently. See "VARIABLE STATEMENTS" and "NET STATEMENTS"
+in the README.txt file.
+
+* %force/wr <var-label>, <bit>
+
+Force a constant real value to the target variable. See %force/v above.
+
+* %force/x0 <label>, <bit>, <wid>
+
+Force a constant value to part of the target variable. This is similar
+to %set/x instruction, but it uses the force port (port-2) of the signal
+functor instead of the normal assign port (port-0), so the signal
+responds differently. See "VARIABLE STATEMENTS" and "NET STATEMENTS"
+in the README.txt file.
+
+* %fork <code-label>, <scope-label>
+
+This instruction is similar to %jmp, except that it creates a new
+thread to start executing at the specified address. The new thread is
+created and pushed onto the child stack.  It is also marked runnable,
+but is not necessarily started until the current thread yields.
+
+The %fork instruction has no effect other than to push a child thread.
+
+See also %join.
+
+* %free <scope-label>
+
+This instruction de-allocates the storage for a previously allocated
+instance of as automatically allocated scope.
+
+
+* %inv <bit>, <wid>
+
+Perform a bitwise invert of the vector starting at <bit>. The result
+replaces the input. Invert means the following, independently for each
+bit:
+
+	0  --> 1
+	1  --> 0
+	x  --> x
+	z  --> x
+
+
+* %ix/get <idx>, <bit>, <wid>
+* %ix/get/s <idx>, <bit>, <wid>
+
+This instruction loads a thread vector starting at <bit>, size <wid>,
+into the index register <idx>. The <bit> is the LSB of the value in
+thread bit space, and <wid> is the width of the vector.
+
+The function converts the 4-value bits into a binary number, without
+sign extension. If any of the bits of the vector is x or z, then the
+index register gets the value 0. The %ix/get/s is the same, except
+that it assumes the source vector is sign extended to fit the index
+register.
+
+The function also writes into bit 4 a 1 if any of the bits of the
+input vector are x or z. This is a flag that the 0 value written into
+the index register is really the result of calculating from unknown
+bits.
+
+	4: unknown value
+	5: (reserved)
+	6: (reserved)
+
+* %ix/getv <idx>, <functor-label>
+* %ix/getv/s <idx>, <functor-label>
+
+These instructions are like the %ix/get instructions, except that they
+read directly from a functor label instead of from thread bits. They
+set bit 4 just like %ix/get.
+
+* %ix/load <idx>, <low>, <high>
+
+This instruction loads an immediate value into the addressed index
+register. The index register holds 64 bit numeric values, so <low>
+and <high> are used to separate the value in two 32 bit chunks.
+The idx value selects the index register. This is different from
+%ix/get, which loads the index register from a value in the thread bit
+vector. The values are unsigned decimal values and are combined as
+<high> << 32 | <low> to produce the final value.
+
+
+* %ix/add <idx>, <low>, <high>
+* %ix/sub <idx>, <low>, <high>
+* %ix/mul <idx>, <low>, <high>
+
+These instructions add, subtract, or multiply the selected index
+register by the immediate value. The 64 bit immediate value is built
+from the two 32 bit chunks <low> and <high> (see %ix/load above).
+The <idx> value selects the index register.
+
+
+* %jmp <code-label>
+
+The %jmp instruction performs an unconditional branch to a given
+location. The parameter is the label of the destination instruction.
+
+* %jmp/[01xz] <code-label>, <bit>
+
+This is a conditional version of the %jmp instruction. In this case,
+a single bit (addressed by <bit>) is tested. If it is one of the
+values in the part after the /, the jump is taken. For example:
+
+	%jmp/xz T_label, 8;
+
+will jump to T_label if bit 8 is x or z.
+
+* %join
+
+This is the partner to %fork. This instruction causes the thread to
+wait for the top thread in the child stack to terminate, then
+continues. It has no effect in the current thread other than to wait
+until the top child is cleared.
+
+It is an error to execute %join if there are no children in the child
+stack. Every %join in the thread must have a matching %fork that
+spawned off a child thread.
+
+If the matching child instruction is still running, a %join suspends
+the calling thread until the child ends. If the child is already
+ended, then the %join does not block or yield the thread.
+
+* %load/av <bit>, <array-label>, <wid>
+
+This instruction loads a word from the specified array. The word
+address is in index register 3. Like %load/v below the width does
+not have to match the width of the array word. See the %load/v
+description for more information.
+
+* %load/avp0 <bit>, <array-label>, <wid>
+* %load/avp0/s <bit>, <array-label>, <wid>
+
+This instruction is a mix of %load/av and %load/vp0. It loads an array
+value like %load/av and then adds a value from index register 0 to the
+result like %load/vp0. The loaded value is zero-extended to <wid>,
+then added arithmetically to the signed index register 0. The result
+is then stored in <bit>.
+
+The %load/avp0/s instruction is the same, except that the loaded
+vector is sign extended (instead of 0-extended) before the addition.
+
+* %load/avx.p <bit>, <array-label>, <index>
+
+This instruction is similar to %load/av, but it loads only a single
+bit, and the <index> is the selector for the bit to use. If <index> is
+out of range, then x is loaded. The index value is incremented by one
+if it is defined (bit 4 is not 1).
+
+* %load/v <bit>, <functor-label>, <wid>
+
+This instruction loads a vector value from the given functor node into
+the specified thread register bit. The functor-label can refer to a
+.net, a .var or a .functor with a vector output. The entire vector,
+from the least significant up to <wid> bits, is loaded starting at
+thread bit <bit>. It is an OK for the width to not match the vector
+width at the functor. If the <wid> is less than the width at the
+functor, then the most significant bits are dropped. If the <wid> is
+more than the width at the functor, the value is padded with X bits.
+
+* %load/vp0 <bit>, <functor-label>, <wid>
+* %load/vp0/s <bit>, <functor-label>, <wid>
+
+This instruction is the similar %load/v above, except that it also
+adds the signed integer value in index register 0 into the loaded
+value. The addition is a Verilog-style add, which means that if any of
+the input bits are X or Z, the entire result is turned into a vector
+of X bits.
+
+The <wid> is, line the %load/v, the result width. But unlike the
+%load/v, the vector is padded with 0s (%load/vp0) or sign extended
+(%load/vp0/s) to the desired width.
+
+* %load/wr <bit>, <vpi-label>
+* %load/ar <bit>, <array-label>, <index>
+
+The %load/wr instruction reads a real value from the vpi-like object
+to a word register <bit>.
+
+The %load/ar instruction reads a real value from an array. The <index>
+is the index register that contains the canonical word address into
+the array.
+
+* %load/x1p <bit>, <functor-label>, <wid>
+
+This is an indexed load. It uses the contents of index register 1 to
+select a part from a vector functor at <functor-label>. The
+part is pulled from the indexed bit of the addressed functor and loaded
+into the destination thread bit. The <wid> is the width of the
+part. If any bit of the desired value is outside the vector, then that
+bit is set to X.
+
+The index register 1 is interpreted as a signed value. Even though the
+address is canonical (from 0 to the width of the signal) the value in
+index register 1 may be <0 or >=wid. The load instruction handles
+filling in the out-of-bounds bits with x.
+
+When the operation is done, the <wid> is added to index register 1, to
+provide a basic auto-increment behavior.
+
+* %loadi/wr <bit>, <mant>, <exp>
+
+This opcode loads an immediate value, floating point, into the word
+register selected by <bit>. The mantissa is an unsigned integer value,
+up to 32 bits, that multiplied by 2**(<exp>-0x1000) to make a real
+value. The sign bit is OR-ed into the <exp> value at bit 0x4000, and
+is removed from the <exp> before calculating the real value.
+
+If <exp>==0x3fff and <mant> == 0, the value is +inf.
+If <exp>==0x7fff and <mant> == 0, the value is -inf.
+If <exp>==0x3fff and <mant> != 0, the value is NaN.
+
+* %mod   <bit-l>, <bit-r>, <wid>
+* %mod/s <bit-l>, <bit-r>, <wid>
+
+This instruction calculates the modulus %r of the left operand, and
+replaces the left operand with the result. The <wid> gives the width
+of the left and the right vectors, and the left vector is completely
+replaced with the result.
+
+The /s form does signed %.
+
+* %mod/wr <bit-l>, <bit-r>
+
+This opcode is the real-valued modulus of the two real values.
+
+* %mov <dst>, <src>, <wid>
+* %mov/wr <dst>, <src>
+* %movi <dst>, <value>, <wid>
+
+This instruction copies a vector from one place in register space to
+another. The destination and source vectors are assumed to be the same
+width and non-overlapping. The <dst> may not be 0-3, but if the <src>
+is one of the 4 constant bits, the effect is to replicate the value
+into the destination vector. This is useful for filling a vector.
+
+The %movi variant moves a binary value, LSB first, into the
+destination vector. The immediate value is up to 32bits, padded with
+zeros to fill out the width.
+
+* %mul <bit-l>, <bit-r>, <wid>
+
+This instruction multiplies the left vector by the right vector, the
+vectors having the width <wid>. If any of the bits of either vector
+are x or z, the result is x. Otherwise, the result is the arithmetic
+product.
+
+
+* %mul/wr <bit-l>, <bit-r>
+
+This opcode multiplies two real words together. The result replaces
+the left operand.
+
+
+* %muli <bit-l>, <imm>, <wid>
+
+This instruction is the same as %mul, but the second operand is an
+immediate value that is padded to the width of the result.
+
+
+* %nand <dst>, <src>, <wid>
+
+Perform the bitwise NAND of the two vectors, and store the result in
+the left vector. Each bit is calculated independent of other bits. NAND
+means the following:
+
+	0 and ? --> 1
+	? and 0 --> 1
+	1 and 1 --> 0
+	otherwise   x
+
+
+* %nor <dst>, <src>, <wid>
+
+Perform the bitwise nor of the vectors. Each bit in the <dst> is
+combined with the corresponding bit in the source, according to the
+truth table:
+
+	1 nor ? --> 0
+	? nor 1 --> 0
+	0 nor 0 --> 1
+	otherwise  x
+
+
+* %nor/r <dst>, <src>, <wid>
+
+The %nor/r instruction is a reduction nor. That is, the <src> is a
+vector with width, but the result is a single bit. The <src> vector is
+not affected by the operation unless the <dst> bit is within the
+vector. The result is calculated before the <dst> bit is written, so
+it is valid to place the <dst> within the <src>.
+
+The actual operation performed is the inverted or of all the bits in
+the vector.
+
+
+* %or <dst>, <src>, <wid>
+
+Perform the bitwise or of the vectors. Each bit in the <dst> is
+combined with the corresponding bit in the source, according to the
+truth table:
+
+	1 or ? --> 1
+	? or 1 --> 1
+	0 or 0 --> 0
+	otherwise  x
+
+
+* %or/r <dst>, <src>, <wid>
+
+This is a reduction version of the %or opcode. The <src> is a vector,
+and the <dst> is a writable scalar. The <dst> gets the value of the
+or of all the bits of the src vector.
+
+
+* %pow <bit-l>, <bit-r>, <wid>
+* %pow/s <bit-l>, <bit-r>, <wid>
+
+The %pow opcode raises <bit-l> (unsigned) to the power of <bit-r>
+(unsigned) giving an exact integer result. The %pow/s opcode does
+the same for signed values, except it uses the double pow() function
+to calculate the result so may not produce exact results. The result
+replaces the left operand.
+
+
+* %pow/wr <bit-l>, <bit-r>
+
+This opcode raises <bit-l> (real) to the power of <bit-r> (real). The
+result replaces the left operand.
+
+
+* %release/net <functor-label>, <base>, <width>
+* %release/reg <functor-label>, <base>, <width>
+
+Release the force on the signal that is represented by the functor
+<functor-label>.  The force was previously activated with a %force/v
+statement.  If no force was active on this functor the statement does
+nothing. The %release/net sends to the labeled functor the release
+command with net semantics: the unforced value is propagated to the
+output of the signal after the release is complete. The %release/reg
+sends the release command with reg semantics: the signal holds its
+forced value until another value propagates through.
+
+The <base> and <width> are used to determine what part of the signal
+will be released. For a full release the <base> is 0 and <width> is
+the entire signal width.
+
+* %release/wr <functor-label>, <type>
+
+Release the force on the real signal that is represented by the functor
+<functor-label>.  The force was previously activated with a %force/wr
+statement. The <type> is 0 for nets and 1 for registers. See the other
+%release commands above.
+
+* %set/v <var-label>, <bit>, <wid>
+
+This sets a vector to a variable, and is used to implement blocking
+assignments. The <var-label> identifies the variable to receive the
+new value. Once the set completes, the value is immediately available
+to be read out of the variable. The <bit> is the address of the thread
+register that contains the LSB of the vector, and the <wid> is the
+size of the vector. The width must exactly match the width of the
+signal.
+
+* %set/av <array-label>, <bit>, <wid>
+
+This sets a thread vector to an array word. The <array-label>
+addresses an array device, and the <bit>,<wid> describe a vector to be
+written. Index register 3 contains the address of the word within the
+array.
+
+The base of a part select is retrieved from index register 1. The
+width is implied from the <wid> that is the argument. This is the part
+*within* the word.
+
+The address (in canonical form) is precalculated and loaded into index
+register 3. This is the address of the word within the array.
+
+* %set/wr <vpi-label>, <bit>
+* %set/ar <array-label>, <index>, <bit>
+
+The %set/wr instruction writes a real word to the specified VPI-like
+object.
+
+The %set/ar instruction writes a real work to the specified array
+word. The <array-label> addresses the array, and the <index> is the
+name of the index register to address into the word. The index
+register must contain an integer value that is the canonical address
+of the array word. The <bit> is the index register that contains the
+real value word to write.
+
+* %set/x0 <var-label>, <bit>, <wid>
+
+This sets the part of a signal vector, the address calculated by
+using the index register 0 to index the base within the vector of
+<var-label>. The destination must be a signal of some sort. Otherwise,
+the instruction will fail.
+
+The addressing is canonical (0-based) so the compiler must figure out
+non-zero offsets, if any. The width is the width of the part being
+written. The other bits of the vector are not touched.
+
+The index may be signed, and if less than 0, the beginning bits are
+not assigned. Also, if the bits go beyond the end of the signal, those
+bits are not written anywhere.
+
+
+* %shiftl/i0 <bit>, <wid>
+
+This instruction shifts the vector left (towards more significant
+bits) by the amount in index register 0. The <bit> is the address of
+the LSB of the vector, and <wid> the width of the vector. The shift is
+done in place. Zero values are shifted in.
+
+For a negative shift the value is padded with 'bx.
+
+* %shiftr/i0 <bit>, <wid>
+* %shiftr/s/i0 <bit>, <wid>
+
+This instruction shifts the vector right (towards the less significant
+bits) by the amount in the index register 0. The <bit> is the address
+of the LSB of the vector, and <wid> is the width of the vector. The
+shift is done in place.
+
+%shiftr/i0 is an unsigned down shift, so zeros are shifted into the
+top bits. %shiftr/s/i0 is a signed shift, so the value is sign-extended.
+
+For a negative shift %shiftr/i0 will pad the value with 'bx.
+
+* %sub <bit-l>, <bit-r>, <wid>
+
+This instruction arithmetically subtracts the right vector out of the
+left vector. It accomplishes this by adding to the left vector 1 plus
+the 1s complement of the right vector. The carry value is dropped, and
+the result, placed in <bit-l>, is the subtraction of <bit-r> from the
+input <bit-l>. Both vectors have the same width. If any bits in either
+operand are x, then the entire result is x.
+
+See also the %add instruction.
+
+* %subi <bit-l>, <imm>, <wid>
+
+This instruction arithmetically subtracts the immediate value from the
+left vector. The <imm> value is a 16bit unsigned value zero-extended to
+the <wid> of the left vector. The result replaces the left vector.
+
+See also the %addi instruction.
+
+
+* %sub/wr <bit-l>, <bit-r>
+
+This instruction operates on real values in word registers. The right
+indexed value is subtracted from the left indexed value, and the
+result placed in the left index.
+
+
+* %vpi_call <name> [, ...]
+
+This instruction makes a call to a system task that was declared using
+VPI. The operands are compiled down to a vpiHandle for the call. The
+instruction contains only the vpiHandle for the call. See the vpi.txt
+file for more on system task/function calls.
+
+
+* %vpi_func <name>, <dst>, <wid> [, ...]
+
+This instruction is similar to %vpi_call, except that it is for
+calling system functions. The difference here is the <dst> and <wid>
+parameters that specify where the return value is to go. The normal
+means that the VPI code uses to write the return value causes those
+bits to go here.
+
+
+* %wait <functor-label>
+
+When a thread executes this instruction, it places itself in the
+sensitive list for the addressed functor. The functor holds all the
+threads that await the functor. When the defined sort of event occurs
+on the functor, a thread schedule event is created for all the threads
+in its list and the list is cleared.
+
+* %xnor <dst>, <src>, <wid>
+
+This does a bitwise exclusive nor (~^) of the <src> and <dst> vector,
+and leaves the result in the <dst> vector. xnor is this:
+
+	0 xnor 0 --> 1
+	0 xnor 1 --> 0
+	1 xnor 0 --> 0
+	1 xnor 1 --> 1
+	otherwise    x
+
+
+* %xor <dst>, <src>, <wid>
+
+This does a bitwise exclusive or (^) of the <src> and <dst> vector,
+and leaves the result in the <dst> vector. xor is this:
+
+	0 xor 0 --> 0
+	0 xor 1 --> 1
+	1 xor 0 --> 1
+	1 xor 1 --> 0
+	otherwise    x
+
+
+/*
+ * Copyright (c) 2001-2008 Stephen Williams (steve@icarus.com)
+ *
+ *    This source code is free software; you can redistribute it
+ *    and/or modify it in source code form under the terms of the GNU
+ *    General Public License as published by the Free Software
+ *    Foundation; either version 2 of the License, or (at your option)
+ *    any later version.
+ *
+ *    This program is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *
+ *    You should have received a copy of the GNU General Public License
+ *    along with this program; if not, write to the Free Software
+ *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
+ */

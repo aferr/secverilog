@@ -1,0 +1,8 @@
+ncverilog(64): 08.20-s022: (c) Copyright 1995-2010 Cadence Design Systems, Inc.
+TOOL:	ncverilog	08.20-s022: Started on Jan 19, 2014 at 12:12:55 EST
+ncverilog
+	*.v
+	+access+r
+	+nc64bit
+ncverilog: *E,FILEMIS: Cannot find the provided file *.v.
+TOOL:	ncverilog	08.20-s022: Exiting on Jan 19, 2014 at 12:12:55 EST  (total: 00:00:00)

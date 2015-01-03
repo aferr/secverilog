@@ -1,0 +1,7 @@
+Folders:
+
+no_protection: insecure cache design
+no_label: secure design with dynamic checks (remove label to run with Verilog tools)
+no_check: secure design without dynamic checks, also no label
+
+current directory: secure design with dynamic checks and labels

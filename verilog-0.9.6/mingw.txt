@@ -1,0 +1,281 @@
+MINGW PORT OF ICARUS VERILOG
+
+    Copyright 2006 Stephen Williams  <steve@icarus.com>
+    Copyright 2010 Martin Whitaker
+
+
+Icarus Verilog source can be compiled with the MinGW C/C++ compilers
+to get a Windows binary that does not require the POSIX compatibility
+cruft of the Cygwin.dll library. The resulting program can be run with
+or without Cygwin, so this is the preferred Windows distribution form.
+The configure scripts automatically detect that the compilers in use
+are the MinGW compilers and will configure the Makefiles appropriately.
+
+The base MinGW package doesn't contain tools beyond the compiler, but
+there is the MSYS package that the makers of MinGW publish that has
+enough extra tools to get most everything else working. There are a
+few extra packages needed beyond MinGW and MSYS, and the following
+instructions explain how to get them and install them.
+
+* Some Preliminary Comments  -- PLEASE READ ME --
+
+The Windows port of Icarus Verilog is the most difficult of all the
+ports. The Windows system off the shelf is completely stripped, devoid
+of any support for software development. Everything needed to compile
+Icarus Verilog must be collected from various sources and stitched
+together by hand. Normal human beings with a basic understanding of
+software development can do this, but some patience (and access to the
+Internet) is required. You may choose to print these instructions. FOR
+BEST RESULTS, FOLLOW THESE INSTRUCTIONS CAREFULLY.
+
+NOTE that if you have Cygwin installed, it is best to not use a Cygwin
+window to do the build, as the Cygwin tools will intermix with the
+MinGW tools such that it is hard to be sure you are using the right
+compiler. Thus, it is recommended that these steps *not* be done in a
+Cygwin window. Use a MinGW window instead, and be careful that your
+MSYS/MinGW tools are not masked by paths that point to Cygwin binaries.
+
+We have no plans to intentionally support MSVC++ compilation. Don't ask.
+
+Incidentally, besides MinGW, none of the packages installed in the
+following steps are needed after installation of Icarus Verilog is
+complete. They are only needed to build the compiler. The MinGW
+package can be used to compile VPI modules if you choose.
+
+* Install MinGW and MSYS Base Packages
+
+From the MinGW project (http://www.mingw.org), download and run the
+MinGW graphical installer (mingw-get-inst). Select the following
+components to be installed:
+
+  C Compiler
+  C++ Compiler
+  MSYS Basic System
+  MinGW Developer Toolkit
+
+NOTE: If the download site is responding slowly, the installer tends
+      to time out. If this happens it will skip the package it is
+      currently trying to download and continue. If this happens,
+      you can install the skipped packages later using the mingw-get
+      command in a MinGW shell.
+
+The default installation path is C:\MinGW, but you can change this to
+anything you like (but make sure there are no spaces in the path names).
+This path is referred to as <mingw> in subsequent instructions.
+
+The installation will leave a "MinGW Shell" icon in the MinGW sub-menu
+of your Start menu. This icon brings up a shell window (a command line)
+that has paths all set up for executing MSYS and MinGW commands.
+
+NOTE: If you intend to compile VPI modules for Icarus Verilog, you
+      need MinGW, even if you are using a precompiled binary. VPI
+      modules only require MinGW, and none of the other libraries.
+
+* Install Additional MinGW Packages
+
+Start a MinGW shell. In the shell window, execute the following
+commands:
+
+  mingw-get install libz
+  mingw-get install bzip2
+  mingw-get install pthreads-w32
+  mingw-get install msys-man
+
+If you also want to build Git (optional):
+
+  mingw-get install libiconv
+  mingw-get install msys-perl
+
+NOTE: Building Git allows you to execute Git commands in a MinGW shell,
+      and allows the Icarus Verilog tools to report more detailed version
+      information when called with the -V option.
+
+* Install GnuWin32 Packages
+
+The GnuWin32 project is a collection of open source programs and libraries
+ported to Windows. These also work well with the MinGW compiler, and in
+fact Icarus Verilog uses a few pieces from this collection.
+
+From the GnuWin project (http://gnuwin32.sourceforge.net), download the
+following packages:
+
+  gperf-3.0.1-bin
+  readline-5.0.1-bin
+
+NOTE: You need the binaries and the developer files, but you do not
+      need the source to these packages.
+
+From the downloaded gperf-3.0.1-bin zip archive:
+
+  extract bin\gperf.exe to <mingw>\bin
+
+From the downloaded readline-5.0.1-bin zip archive:
+
+  extract bin\*     to <mingw>\bin
+  extract lib\*     to <mingw>\lib
+  extract include\* to <mingw>\include
+
+where <mingw> is the location you chose to install MinGW.
+
+NOTE: readline is only required to enable command line editing when
+      in the vvp interactive mode.
+
+* Install Git for Windows (optional)
+
+NOTE: You can skip this step if you are building from a snapshot or
+      stable release.
+
+From the msysgit project (http://code.google.com/p/msysgit), download
+and install the Git for Windows binary package.
+
+NOTE: When installing, you must select the option of preserving Unix
+      style line endings.
+
+The installation will leave a "Git Shell" icon on the desktop and in the
+Git sub-menu of your Start menu. This icon brings up a shell window (a
+command line) that has paths all set up for executing Git commands.
+
+* Get the Git Source (optional)
+
+NOTE: You can skip this step if you don't want to build Git.
+
+Start a Git shell. In the Git shell window, change directory to the
+location where you wish to store the source code and execute the
+following command:
+
+  git clone git://repo.or.cz/git/mingw.git git
+
+This will create a directory "git" that contains all the source code
+for Icarus Verilog.
+
+The path to the directory containing the source code is referred to as
+<git-source> in subsequent instructions.
+
+NOTE: Make sure there are no spaces in the <git-source> path names.
+      Use forward slashes in place of back slashes when using
+      <git-source> in a MinGW shell.
+
+* Build Git (optional)
+
+NOTE: You can skip this step if you don't want to build Git.
+
+In the MinGW shell window, execute the following commands:
+
+  cd <git-source>
+  make NO_OPENSSL=YesPlease NO_TCLTK=YesPlease INSTALL=/bin/install \
+       prefix=/usr/local install
+
+You can now uninstall the Git for Windows binary package if you wish,
+as Git commands can now be executed in the MinGW shell.
+
+* Get the Icarus Verilog Source
+
+In the MinGW shell window, change directory to the location where you
+wish to store the source code.
+
+If you are building from a snapshot, execute the following command:
+
+  gunzip -d verilog-xxxxxxxx.tar.gz | tar xvf -
+
+This will create a directory "verilog-xxxxxxxx" that contains all the
+source code for Icarus Verilog.
+
+NOTE: The exact name of the file will vary according to the snapshot.
+      The 'xxxxxxxx' name is only an example.
+
+If you are obtaining source from Git, execute the following command:
+
+  git clone git://icarus.com/~steve-icarus/verilog verilog
+
+This will create a directory "verilog" that contains all the source code
+for Icarus Verilog.
+
+NOTE: If you haven't built Git, you will need to execute the above
+      command in a Git shell.
+
+The path to the directory containing the source code is referred to as
+<ivl-source> in subsequent instructions.
+
+NOTE: Make sure there are no spaces in the <ivl-source> path names.
+      Use forward slashes in place of back slashes when using
+      <ivl-source> in a MinGW shell.
+
+* Preconfigure Icarus Verilog (not normally needed)
+
+Under certain cases, you may need to "preconfigure" the Icarus Verilog
+source tree. You should only need to do this if you are obtaining source
+from Git, or you are using an existing source tree that you've patched to
+cause configure.in files to change.
+
+NOTE: If you are building from a fresh, bundled source tree that you
+      downloaded from an FTP site, then SKIP THIS STEP. Go on to the
+      "Configure Icarus Verilog" step below.
+
+First, remove any autom4te.cache directories that may exist in your
+source tree. These can make a mess of autoconf runs. Then, in the
+MinGW shell window, execute the following commands:
+
+  cd <ivl-source>
+  sh autoconf.sh
+
+This script will run the "autoconf" command to generate all the necessary
+"configure" scripts.
+
+* Configure and Build Icarus Verilog
+
+Now we are all set to configure and compile Icarus Verilog. Choose a
+destination path where you will want to install the binaries. This
+choice is not permanent, so don't get too much angst over it. Just
+choose a name without white space. The destination path is referred
+to as <ivl-install> in subsequent instructions.
+
+NOTE: Make sure there are no spaces in the <ivl-install> path names.
+      Use forward slashes in place of back slashes when using
+      <ivl-install> in a MinGW shell.
+
+In the MinGW shell window, execute the following commands:
+
+  cd <ivl-source>
+  ./configure --prefix=<ivl-install>
+  make
+
+NOTE: If you execute configure without the --prefix option, the
+      default installation path is <mingw>\msys\1.0\local, which
+      in a MinGW shell is aliased to /usr/local/bin.
+
+* Install Icarus Verilog
+
+If the compile ran OK, then next you install Icarus Verilog in the
+directory you have chosen.
+
+In the MinGW shell window, execute the following commands:
+
+  cd <ivl-source>
+  make install
+
+This is part of what the configure program did for you. The Makefiles
+know to put the files in the <ivl-install> directory.
+
+You now need to add <ivl-install>\bin and <mingw>\bin to your Windows
+"PATH" environment variable. Alternatively, you can copy the DLLs
+needed by Icarus Verilog from <mingw>\bin to <ivl-install>bin, and
+just add <ivl-install>\bin to your Windows "PATH" environment variable.
+
+* Running Icarus Verilog
+
+You can run Icarus Verilog either from a Windows command shell window
+or from a MinGW shell window.
+
+NOTE: You will need to start a new shell to pick up any changes you
+      have made to the "PATH" environment variable.
+
+Currently, iverilog.exe uses the path to itself to locate the libraries
+and modules associated with itself. In other words, if you execute the
+<ivl-install>\bin\iverilog.exe program, it will locate its subparts in
+the <ivl-install> directory and subdirectories below that. This means
+you can move the Icarus Verilog installation by simply moving the root
+directory and all its contents.
+
+The vvp.pdf and iverilog.pdf files document the main commands. View
+these with Acrobat reader, or any other viewer capable of displaying
+PDF format files.

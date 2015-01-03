@@ -1,0 +1,9 @@
+Use the following commands to verify a Verilog program, say prog.v, with security labels:
+
+iverilog -z prog.v
+
+The previous command generates a constraint file (module_name.z3), which can be checked by z3:
+
+z3 -smt2 z3file
+
+If all constraints are unsat, the original Verilog program is verified.

@@ -1,0 +1,51 @@
+
+boot.o:     file format elf32-tradbigmips
+
+Disassembly of section .text:
+
+00000000 <.text>:
+   0:	3c1cdead 	lui	gp,0xdead
+   4:	379cbeef 	ori	gp,gp,0xbeef
+   8:	3c01dead 	lui	at,0xdead
+   c:	3421beef 	ori	at,at,0xbeef
+  10:	24020000 	li	v0,0
+  14:	24030000 	li	v1,0
+  18:	24040000 	li	a0,0
+  1c:	24050000 	li	a1,0
+  20:	24060000 	li	a2,0
+  24:	24070000 	li	a3,0
+  28:	24080000 	li	t0,0
+  2c:	24090000 	li	t1,0
+  30:	240a0000 	li	t2,0
+  34:	240b0000 	li	t3,0
+  38:	240c0000 	li	t4,0
+  3c:	240d0000 	li	t5,0
+  40:	240e0000 	li	t6,0
+  44:	240f0000 	li	t7,0
+  48:	24100000 	li	s0,0
+  4c:	24110000 	li	s1,0
+  50:	24120000 	li	s2,0
+  54:	24130000 	li	s3,0
+  58:	24140000 	li	s4,0
+  5c:	24150000 	li	s5,0
+  60:	24160000 	li	s6,0
+  64:	24170000 	li	s7,0
+  68:	24180000 	li	t8,0
+  6c:	24190000 	li	t9,0
+  70:	241a0000 	li	k0,0
+  74:	241b0000 	li	k1,0
+  78:	3c1d7fff 	lui	sp,0x7fff
+  7c:	37bdf000 	ori	sp,sp,0xf000
+  80:	241e0000 	li	s8,0
+  84:	241f0000 	li	ra,0
+  88:	afa00000 	sw	zero,0(sp)
+  8c:	afa00004 	sw	zero,4(sp)
+  90:	afa00008 	sw	zero,8(sp)
+  94:	00200008 	jr	at
+  98:	24000000 	li	zero,0
+  9c:	00000000 	nop
+Disassembly of section .reginfo:
+
+00000000 <.reginfo>:
+   0:	fffffffe 	0xfffffffe
+	...
