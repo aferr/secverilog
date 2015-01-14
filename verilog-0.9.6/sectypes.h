@@ -79,10 +79,10 @@ class ConstType : public SecType {
     	  o << "LOW";
     	else if (type_ == HIGH)
     	  o << "HIGH";
-	else if (type_ == D1)
-	  o << "D1";
-	else if (type_ == D2)
-	  o << "D2";
+	    else if (type_ == D1)
+	      o << "D1";
+	    else if (type_ == D2)
+	      o << "D2";
       }
       bool hasBottom() {return type_ == LOW;}
       bool hasTop() {return type_ == HIGH;}
@@ -103,6 +103,38 @@ class ConstType : public SecType {
     private:
       TYPES type_;
 };
+
+//-----------------------------------------------------------------------------
+// ArrType
+//-----------------------------------------------------------------------------
+// This type is applied to arrays and acts as a mapping from array elements to 
+// types. Syntactically, it specifies an index variable and an expression 
+// (possibly) containing that index variable and that evaluates to a type.
+class ArrType : public SecType {
+  public:
+    ArrType(perm_string index, PExpr e);
+    ~ArrType();
+    // Set upper/lower_bound from the associated array. This is meant to be
+    // called by the parent during type checking. This makes it easier to avoid 
+    // re-writing the ranges of the array. This will likely require a virtual 
+    // set_range in SecType that does nothing and is only overwritten in this 
+    // class.
+    void set_range(int upper, int lower);
+
+  public:
+    // Evaluate the expression to find the type of element i;
+    int type_of(int i);
+
+    bool equals(SecType* st);
+    
+  private:
+    // The upper and lower bounds of the array.
+    int lower_bound;
+    int upper_bound;
+    bool bounds_set;
+    PExpr expr;
+
+}
 
 /* type variables */
 class VarType : public SecType {

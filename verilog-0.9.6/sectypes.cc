@@ -28,6 +28,9 @@
 # include  "PExpr.h"
 # include  "sectypes.h"
 
+//----------------------------------------------------------------------------a
+// ConstType
+//----------------------------------------------------------------------------a
 ConstType* ConstType::TOP = new ConstType(HIGH);
 ConstType* ConstType::BOT = new ConstType(LOW);
 
@@ -93,7 +96,9 @@ SecType* ConstType::freshVars(unsigned int lineno, map<perm_string, perm_string>
 	return this;
 }
 
-/* type variables */
+//----------------------------------------------------------------------------a
+// VarType
+//-----------------------------------------------------------------------------
 
 VarType::VarType(perm_string varname)
 {
@@ -143,6 +148,22 @@ bool VarType::hasExpr(perm_string str)
 {
 	return varname_ == str;
 }
+
+//-----------------------------------------------------------------------------
+// ArrType
+//-----------------------------------------------------------------------------
+bool ArrType::equals(SecType *st){
+  ArrType* at = dynamic_cast<ArrType*>(st);
+  if(at != NULL){
+    // Deep equality check the expression assuming the index is the same.
+    // return expr.equals(at->expr);
+  }
+  return false;
+}
+
+//-----------------------------------------------------------------------------
+// IndexType
+//-----------------------------------------------------------------------------
 
 IndexType* IndexType::RL = new IndexType(perm_string::literal("Par"), perm_string::literal("ReadLabel"));
 IndexType* IndexType::WL = new IndexType(perm_string::literal("Par"), perm_string::literal("WriteLabel"));
@@ -252,6 +273,9 @@ CNF& CNF::operator= (const CNF& cnf)
 	return *ret;
 }
 
+//-----------------------------------------------------------------------------
+// JoinType
+//-----------------------------------------------------------------------------
 JoinType::JoinType(SecType* ty1, SecType* ty2)
 {
 	comp1_ = ty1;
@@ -349,6 +373,9 @@ bool JoinType::hasExpr(perm_string str)
 	return comp1_->hasExpr(str) || comp2_->hasExpr(str);
 }
 
+//-----------------------------------------------------------------------------
+// MeetType
+//-----------------------------------------------------------------------------
 MeetType::MeetType(SecType* ty1, SecType* ty2)
 {
 	comp1_ = ty1;
