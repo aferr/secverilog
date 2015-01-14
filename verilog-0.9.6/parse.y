@@ -513,6 +513,11 @@ sec_label_comp
     {
       $$ = new MeetType ($1, $3);
     }
+  | '|' IDENTIFIER '|' expression
+    {
+      SecType* type = ConstType::BOT;
+      $$ = type;
+    }
   | // use default label Low
     { 
       SecType* type = ConstType::BOT;
