@@ -1,6 +1,8 @@
 module arrtype();
 
-reg[1:0] { |i| a | b} foo;
+wire { |i| a | b} foo [0:7];
+wire [0:7] {L} bar;
 
+assign bar[7] = foo[7];
 
 endmodule

@@ -25,6 +25,7 @@
  */
 # include  <string>
 # include  <sstream>
+# include  <stdio.h>
 # include  "PExpr.h"
 # include  "sectypes.h"
 
@@ -152,6 +153,11 @@ bool VarType::hasExpr(perm_string str)
 //-----------------------------------------------------------------------------
 // ArrType
 //-----------------------------------------------------------------------------
+ArrType::ArrType(perm_string _index_var, PExpr *_expr) 
+: index_var(_index_var), expr(_expr)
+{
+}
+
 bool ArrType::equals(SecType *st){
   ArrType* at = dynamic_cast<ArrType*>(st);
   if(at != NULL){
@@ -160,6 +166,23 @@ bool ArrType::equals(SecType *st){
   }
   return false;
 }
+
+SecType * ArrType::apply_index(PExpr* e){
+   // For now only handle integers, otherwise return the bottom type.
+   PENumber *n = dynamic_cast<PENumber*>(e);
+   if(n != NULL){
+       return apply_index_penumber(n);
+   } else {
+       return new ConstType(ConstType::LOW);
+   }
+}
+
+SecType * ArrType::apply_index_penumber(PENumber *n){
+    unsigned long num = n->value().as_long();
+    // Apply num to the type's function.
+    return new ConstType(ConstType::LOW);
+}
+
 
 //-----------------------------------------------------------------------------
 // IndexType

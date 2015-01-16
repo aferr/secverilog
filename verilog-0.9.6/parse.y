@@ -515,7 +515,8 @@ sec_label_comp
     }
   | '|' IDENTIFIER '|' expression
     {
-      SecType* type = ConstType::BOT;
+      perm_string index = lex_strings.make($2);
+      SecType* type = new ArrType(index, $4);
       $$ = type;
     }
   | // use default label Low

@@ -35,6 +35,7 @@
 # include  <set>
 # include  <string>
 # include  "StringHeap.h"
+# include "PExpr.h"
 
 class SecType;
 class ConstType;
@@ -60,6 +61,7 @@ class SecType {
       virtual void collect_dep_expr(set<perm_string>& m) {};
       virtual bool hasExpr(perm_string str) {return false;};
       virtual SecType* freshVars(unsigned int lineno, map<perm_string, perm_string>& m) {return this;};
+      virtual SecType* apply_index(PExpr *e) { return this; }
     //  BasicType& operator= (const BasicType&);
 };
 
@@ -112,7 +114,7 @@ class ConstType : public SecType {
 // (possibly) containing that index variable and that evaluates to a type.
 class ArrType : public SecType {
   public:
-    ArrType(perm_string index, PExpr e);
+    ArrType(perm_string index_var, PExpr *e);
     ~ArrType();
     // Set upper/lower_bound from the associated array. This is meant to be
     // called by the parent during type checking. This makes it easier to avoid 
@@ -122,9 +124,9 @@ class ArrType : public SecType {
     void set_range(int upper, int lower);
 
   public:
-    // Evaluate the expression to find the type of element i;
-    int type_of(int i);
-
+    // Apply the index of the expression with this type to get the type of the 
+    // element at that index
+    SecType* apply_index(PExpr* e);
     bool equals(SecType* st);
     
   private:
@@ -132,9 +134,16 @@ class ArrType : public SecType {
     int lower_bound;
     int upper_bound;
     bool bounds_set;
-    PExpr expr;
+    perm_string index_var;
+    PExpr *expr;
 
-}
+  //These methods are for development only
+  private:
+    SecType* apply_index_penumber(PENumber* e);
+
+    
+
+};
 
 /* type variables */
 class VarType : public SecType {
