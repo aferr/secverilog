@@ -227,6 +227,7 @@ static PECallFunction*make_call_function(perm_string tn, PExpr*arg1, PExpr*arg2)
       list<index_component_t> *dimensions;
       
       SecType*sectype;
+      LabelFunc*labelfunc;
 };
 
 %token <text>   IDENTIFIER SYSTEM_IDENTIFIER STRING
@@ -371,6 +372,7 @@ static PECallFunction*make_call_function(perm_string tn, PExpr*arg1, PExpr*arg2)
 
 %type <sectype> sec_label
 %type <sectype> sec_label_comp
+%type <labelfunc> label_func
 
 %token K_TAND
 %right '?' ':'
@@ -513,10 +515,10 @@ sec_label_comp
     {
       $$ = new MeetType ($1, $3);
     }
-  | '|' IDENTIFIER '|' expression
+  | '|' IDENTIFIER '|' label_func
     {
       perm_string index = lex_strings.make($2);
-      SecType* type = new ArrType(index, $4);
+      SecType* type = new QuantType(index, $4);
       $$ = type;
     }
   | // use default label Low
@@ -524,6 +526,15 @@ sec_label_comp
       SecType* type = ConstType::BOT;
       $$ = type;
     } 
+  ;
+
+label_func
+  : IDENTIFIER
+    {
+        perm_string ident = lex_strings.make($1);
+        LabelFunc* lf = new LabelFunc(ident);
+        $$ = lf;
+    }
   ;
   
   /* The block_item_decl is used in function definitions, task
@@ -2150,6 +2161,7 @@ module_item
 		{ ivl_variable_type_t dtype = $3;
 		  if (dtype == IVL_VT_NO_TYPE)
 			dtype = IVL_VT_LOGIC;
+          $7->set_range(0,7);
 		  pform_makewire(@2, $5, $4, $8, $2,
 				 NetNet::NOT_A_PORT, dtype, $7, $1);
 		  if ($6 != 0) {

@@ -36,6 +36,8 @@
 # include  <string>
 # include  "StringHeap.h"
 # include "PExpr.h"
+# include <sstream>
+# include <stdio.h>
 
 class SecType;
 class ConstType;
@@ -62,6 +64,19 @@ class SecType {
       virtual bool hasExpr(perm_string str) {return false;};
       virtual SecType* freshVars(unsigned int lineno, map<perm_string, perm_string>& m) {return this;};
       virtual SecType* apply_index(PExpr *e) { return this; }
+      // Upper and lower bounds for quantification. NULL unless has_bounds()
+      int upper;
+      int lower;
+      virtual bool has_bounds() { return false; }
+      virtual void set_range(int u, int l) {}
+      perm_string index_var;
+
+     
+      //Apply a copy of this type with n as the name for the functiond def. 
+      virtual SecType* give_name(std::string n){return this;}
+      virtual bool has_defs() { return false; }
+      virtual const char * func_def_string() { return ""; }
+    
     //  BasicType& operator= (const BasicType&);
 };
 
@@ -107,44 +122,87 @@ class ConstType : public SecType {
 };
 
 //-----------------------------------------------------------------------------
-// ArrType
+// QuantType
 //-----------------------------------------------------------------------------
 // This type is applied to arrays and acts as a mapping from array elements to 
 // types. Syntactically, it specifies an index variable and an expression 
 // (possibly) containing that index variable and that evaluates to a type.
-class ArrType : public SecType {
+
+class LabelFunc {
+    public:
+        perm_string label;
+        LabelFunc(perm_string l) :
+            label(l){};
+};
+
+class QuantType : public SecType {
   public:
-    ArrType(perm_string index_var, PExpr *e);
-    ~ArrType();
+    QuantType(perm_string index_var, LabelFunc *e);
+    ~QuantType();
     // Set upper/lower_bound from the associated array. This is meant to be
     // called by the parent during type checking. This makes it easier to avoid 
     // re-writing the ranges of the array. This will likely require a virtual 
     // set_range in SecType that does nothing and is only overwritten in this 
     // class.
-    void set_range(int upper, int lower);
+    void set_range(int u, int l){
+        upper = u;
+        lower = l;
+    }
+
+    virtual bool has_bounds(){return true;}
+    virtual bool has_defs(){return true;}
+
+    void dump(ostream&o){
+        o << "(" << name.c_str() << " " << index_var.str() << ")";
+    }
+
 
   public:
-    // Apply the index of the expression with this type to get the type of the 
-    // element at that index
+    // Connect the indexing expression to the general quantified label to get 
+    // the label at the indexing expression.
     SecType* apply_index(PExpr* e);
     bool equals(SecType* st);
-    
+ 
+    SecType * give_name(std::string n){
+      QuantType *t = deep_copy();
+      t->name = n;
+      return t;
+    }
+  
+    const char * func_def_string(){ 
+        std::stringstream ss;
+        ss.str("");
+        //TODO body should be derived from e (third line)
+        ss <<   "(declare-fun " << name.c_str() << " (Int) Label)" <<
+        endl << "(assert (forall ((x Int))" <<
+        endl << "    (= (" << name.c_str() << " x)(Par x))" <<
+        endl << "))";
+        return ss.str().c_str(); 
+    }
+ 
   private:
-    // The upper and lower bounds of the array.
-    int lower_bound;
-    int upper_bound;
-    bool bounds_set;
-    perm_string index_var;
-    PExpr *expr;
+    // Index var to be replaced with indexing expression
+    // perm_string index_var;
+    LabelFunc *expr;
+    // Name for declared function.
+    std::string name;
+
+    QuantType * deep_copy(){
+        QuantType *t = new QuantType(index_var, expr);
+        t->lower = lower;
+        t->upper = upper;
+        t->index_var = index_var;
+        t->expr = expr;
+        return t;
+    }
+
+
 
   //These methods are for development only
   private:
     SecType* apply_index_penumber(PENumber* e);
 
-    
-
 };
-
 /* type variables */
 class VarType : public SecType {
 
@@ -343,13 +401,37 @@ struct TypeEnv {
 
     TypeEnv& operator= (const TypeEnv&);
 };
+//-----------------------------------------------------------------------------
+// Quantified  Type Constraints
+//-----------------------------------------------------------------------------
+struct QBound{
+    int lower;
+    int upper;
+    perm_string qvar;
+    QBound(int u, int l, perm_string v) :
+        lower(l), upper(u), qvar(v) {}
+};
 
+struct QBounds{
+    set<QBound*> bounds;
+};
+
+struct QFuncDefs{
+    set<SecType*> defs;
+};
+
+inline ostream& operator << (ostream &o, QBound& b){
+    o << "(>= "<<b.qvar<<" "<<b.lower<<")(<= "<<b.qvar<<" "<<b.upper<<")";
+    return o;
+}
 
 struct Constraint {
 	SecType* left;
 	SecType* right;
 	Predicate* pred;
 	Invariant* invariant;
+    QFuncDefs* def;
+    QBounds* bound;
 
 	Constraint(SecType* l, SecType* r, Invariant* inv, Predicate* p) {
 		left = l;
@@ -398,23 +480,82 @@ inline ostream& operator << (ostream&o, Invariant& invs)
 	return o;
 }
 
+inline const char* constraint_inner(Constraint&c)
+{
+  std::stringstream o;
+  o.str("");
+    
+  bool hashypo = c.pred != NULL && c.pred->hypotheses.size() != 0;
+    bool hasinv = c.invariant != NULL && c.invariant->invariants.size() != 0;
+ 
+    if (hashypo || hasinv)
+        o << "(and ";
+    if (hashypo)
+        o << (*c.pred) << " ";
+    if (hasinv)
+        o << (*c.invariant);
+    o << " (leq " << *(c.right->simplify()) << "  "
+                    << *(c.left->simplify()) << ")";
+ 
+  return o.str().c_str();
+}
+ 
 inline ostream& operator << (ostream&o, Constraint&c)
 {
-	o << "(assert ";
-	bool hashypo = c.pred != NULL && c.pred->hypotheses.size() != 0;
-	bool hasinv = c.invariant != NULL && c.invariant->invariants.size() != 0;;
-
-	if (hashypo || hasinv)
-		o << "(and ";
-	if (hashypo)
-		o << (*c.pred) << " ";
-	if (hasinv)
-		o << (*c.invariant);
-	o << " (not(leq " << *(c.right->simplify()) << "  "
-					<< *(c.left->simplify()) << ")))";
-	if (hashypo || hasinv)
-		o << ")";
-    return o;
+ 
+  bool hashypo = c.pred != NULL && c.pred->hypotheses.size() != 0;
+  bool hasinv = c.invariant != NULL && c.invariant->invariants.size() != 0;
+  bool hasbounds = c.bound != NULL && c.bound->bounds.size() != 0;
+  bool hasdefs = c.def != NULL && c.def->defs.size() != 0;
+ 
+  //char* inner = constraint_inner(c);
+  const char * inner = constraint_inner(c);
+ 
+  if(hasdefs){
+    // Define any functions needed
+    set<SecType*> defs = c.def->defs;
+    set<SecType*>::iterator i = defs.begin();
+    for(; i!=defs.end(); i++){
+      o << (*i)->func_def_string() << endl;
+    }
+  }
+ 
+  // Should simplify before this is reached to try to prevent quantification
+  if(hasbounds){
+    // Quantify over the range of the left and right
+    set<QBound*> bounds = c.bound->bounds;
+    set<QBound*>::iterator i = bounds.begin();
+    // Give quantified variable names
+    o << "(assert (not (forall (";
+    for(; i != bounds.end(); i++){
+      o << "(" << (*i)->qvar<< " Int)";
+    }
+    o << ")" << endl;
+ 
+    // Give range implications
+    i = bounds.begin();
+    o << "    (implies (and ";
+    for(; i!=bounds.end(); i++) o << (*(*i));
+    o << ")"<< endl <<
+         "        " << inner << endl << 
+         "    )" << endl <<
+         ")))";
+ 
+  } else {
+    o << "(assert ";
+    if (hashypo || hasinv)
+      o << "(and ";
+    if (hashypo)
+      o << (*c.pred) << " ";
+    if (hasinv)
+      o << (*c.invariant);
+    o << " (not(leq " << *(c.right->simplify()) << "  "
+            << *(c.left->simplify()) << ")))";
+    if (hashypo || hasinv)
+      o << ")";
+  }
+  
+  return o;
 }
 
 #endif

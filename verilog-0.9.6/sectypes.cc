@@ -151,15 +151,17 @@ bool VarType::hasExpr(perm_string str)
 }
 
 //-----------------------------------------------------------------------------
-// ArrType
+// QuantType
 //-----------------------------------------------------------------------------
-ArrType::ArrType(perm_string _index_var, PExpr *_expr) 
-: index_var(_index_var), expr(_expr)
+// Universally quantified types.
+QuantType::QuantType(perm_string _index_var, LabelFunc *_expr) 
+: expr(_expr)
 {
+    index_var = _index_var;
 }
 
-bool ArrType::equals(SecType *st){
-  ArrType* at = dynamic_cast<ArrType*>(st);
+bool QuantType::equals(SecType *st){
+  QuantType* at = dynamic_cast<QuantType*>(st);
   if(at != NULL){
     // Deep equality check the expression assuming the index is the same.
     // return expr.equals(at->expr);
@@ -167,17 +169,19 @@ bool ArrType::equals(SecType *st){
   return false;
 }
 
-SecType * ArrType::apply_index(PExpr* e){
+SecType * QuantType::apply_index(PExpr* e){
    // For now only handle integers, otherwise return the bottom type.
-   PENumber *n = dynamic_cast<PENumber*>(e);
-   if(n != NULL){
-       return apply_index_penumber(n);
-   } else {
-       return new ConstType(ConstType::LOW);
-   }
+   // PENumber *n = dynamic_cast<PENumber*>(e);
+   // if(n != NULL){
+   //     return apply_index_penumber(n);
+   // } else {
+   //     fprintf(stderr, "applied non-constant\n");
+   //     return new ConstType(ConstType::LOW);
+   // }
+   return this;
 }
 
-SecType * ArrType::apply_index_penumber(PENumber *n){
+SecType * QuantType::apply_index_penumber(PENumber *n){
     unsigned long num = n->value().as_long();
     // Apply num to the type's function.
     return new ConstType(ConstType::LOW);

@@ -381,7 +381,32 @@ SecType* typecheck_subst(perm_string lname, SecType* ltype, PWire* rhs, TypeEnv*
 void typecheck_assignment_constraint (ostream& out, SecType* lhs, SecType* rhs, Predicate pred, string note, string vardecl, TypeEnv* env) {
 	out << endl << "(push)" << endl;
 	out << vardecl;
+    // For now, just add lhs and rhs declared bounds
+    //
+    lhs = lhs->give_name("lhs");
+    lhs->index_var = perm_string::literal("i");
+    rhs = rhs->give_name("rhs");
+    rhs->index_var = perm_string::literal("j");
+
+    QBounds* b = new QBounds();
+    if(lhs->has_bounds()){
+        b->bounds.insert(new QBound(lhs->upper, lhs->lower, lhs->index_var));
+    }
+    if(rhs->has_bounds()){
+        b->bounds.insert(new QBound(rhs->upper, rhs->lower, rhs->index_var));
+    }
+
+    QFuncDefs* d = new QFuncDefs();
+    if(lhs->has_defs()){
+        d->defs.insert(lhs);
+    }
+    if(rhs->has_defs()){
+        d->defs.insert(rhs);
+    }
+
 	Constraint* c = new Constraint(lhs, rhs, env->invariants, &pred);
+    c->def = d;
+    c->bound = b;
 	out << *c;
 	out << "    ; " << note << endl;
 	out << "(check-sat)" << endl;
