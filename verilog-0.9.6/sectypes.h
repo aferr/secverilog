@@ -38,6 +38,7 @@
 # include "PExpr.h"
 # include <sstream>
 # include <stdio.h>
+# include "QuantExpr.h"
 
 class SecType;
 class ConstType;
@@ -128,16 +129,9 @@ class ConstType : public SecType {
 // types. Syntactically, it specifies an index variable and an expression 
 // (possibly) containing that index variable and that evaluates to a type.
 
-class LabelFunc {
-    public:
-        perm_string label;
-        LabelFunc(perm_string l) :
-            label(l){};
-};
-
 class QuantType : public SecType {
   public:
-    QuantType(perm_string index_var, LabelFunc *e);
+    QuantType(perm_string index_var, QuantExpr *e);
     ~QuantType();
     // Set upper/lower_bound from the associated array. This is meant to be
     // called by the parent during type checking. This makes it easier to avoid 
@@ -180,20 +174,26 @@ class QuantType : public SecType {
     }
   
     const char * func_def_string(){ 
+        std::stringstream b;
+        b << "    (= (" << name.c_str() << " x)("
+          << expr << "))";
+        const char * body = b.str().c_str();
+
         std::stringstream ss;
         ss.str("");
         //TODO body should be derived from e (third line)
         ss <<   "(declare-fun " << name.c_str() << " (Int) Label)" <<
         endl << "(assert (forall ((x Int))" <<
-        endl << "    (= (" << name.c_str() << " x)(Par x))" <<
+        endl << body <<
         endl << "))";
+        //endl << "    (= (" << name.c_str() << " x)(Par x))" <<
         return ss.str().c_str(); 
     }
  
   private:
     // Index var to be replaced with indexing expression
     // perm_string index_var;
-    LabelFunc *expr;
+    QuantExpr *expr;
     // Name for declared function.
     std::string name;
 

@@ -6,8 +6,13 @@
 //-----------------------------------------------------------------------------
 class QuantExpr {
   public:
-  virtual const char * to_z3() = 0;
+    virtual void dump(ostream&o) = 0;
 };
+
+inline ostream& operator << (ostream &o, QuantExpr *e){
+  e->dump(o);
+  return o;
+}
 
 //-----------------------------------------------------------------------------
 // Verinum Quantifier Expressions
@@ -19,7 +24,7 @@ class VQuantExpr : public QuantExpr {
 class VQENum : public VQuantExpr {
   public: 
     VQENum(verinum* n);
-    virtual const char * to_z3();
+    virtual void dump(ostream&o);
 
   private:
     unsigned long value;
@@ -35,7 +40,7 @@ class LQuantExpr : public QuantExpr {
 class LQEDep : public LQuantExpr {
   public:
     LQEDep(perm_string _name, VQuantExpr* _vqe);
-    virtual const char * to_z3();
+    virtual void dump(ostream&o);
 
   private:
     VQuantExpr* vqe;

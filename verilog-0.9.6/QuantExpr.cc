@@ -1,4 +1,6 @@
 # include "QuantExpr.h"
+# include <stdio.h>
+# include <sstream>
 
 //-----------------------------------------------------------------------------
 // Verinum Quantifier Expressions
@@ -7,8 +9,8 @@
 VQENum::VQENum(verinum* n) :
   value(n->as_ulong()) {};
 
-const char* VQENum::to_z3(){
-  return (const char*)&value;
+void VQENum::dump(ostream& o){
+  o << value;
 }
 
 
@@ -18,6 +20,6 @@ const char* VQENum::to_z3(){
 LQEDep::LQEDep(perm_string _name, VQuantExpr* _vqe) :
   vqe(_vqe), name(_name) {};
 
-const char* LQEDep::to_z3(){
-  return "";
+void LQEDep::dump(ostream& o){
+  o << name.str() << " " << vqe;
 }
