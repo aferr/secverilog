@@ -543,6 +543,7 @@ label_func
      integers. This rule matches those declarations. The containing
      rule has presumably set up the scope. */
 
+//TODO range set
 block_item_decl
 	: attribute_list_opt K_reg
           primitive_type_opt signed_opt range
@@ -1939,6 +1940,7 @@ list_of_port_declarations
 		}
         ;
 
+//TODO range set
 port_declaration
   : attribute_list_opt
     K_input net_type_opt signed_opt range_opt sec_label IDENTIFIER
@@ -1958,6 +1960,7 @@ port_declaration
 	delete[]$7;
 	$$ = ptmp;
       }
+    //TODO range set
   | attribute_list_opt
     K_inout  net_type_opt signed_opt range_opt sec_label IDENTIFIER
       { Module::port_t*ptmp;
@@ -1976,6 +1979,7 @@ port_declaration
 	delete[]$7;
 	$$ = ptmp;
       }
+    //TODO range set
   | attribute_list_opt
     K_output net_type_opt signed_opt range_opt sec_label IDENTIFIER
       { Module::port_t*ptmp;
@@ -1994,6 +1998,7 @@ port_declaration
 	delete[]$7;
 	$$ = ptmp;
       }
+    //TODO range set
   | attribute_list_opt
     K_output var_type signed_opt range_opt sec_label IDENTIFIER
       { Module::port_t*ptmp;
@@ -2012,6 +2017,7 @@ port_declaration
 	delete[]$7;
 	$$ = ptmp;
       }
+    //TODO range set
   | attribute_list_opt
     K_output var_type signed_opt range_opt sec_label IDENTIFIER '=' expression
       { Module::port_t*ptmp;
@@ -2160,13 +2166,15 @@ module_item
 
 		{ ivl_variable_type_t dtype = $3;
 		  if (dtype == IVL_VT_NO_TYPE)
-			dtype = IVL_VT_LOGIC;
-          $7->set_range(0,7);
+		      dtype = IVL_VT_LOGIC;
+          if ($5!=0) {
+             $7->set_range((*$5)[1],(*$5)[0]);
+          }
 		  pform_makewire(@2, $5, $4, $8, $2,
-				 NetNet::NOT_A_PORT, dtype, $7, $1);
+            NetNet::NOT_A_PORT, dtype, $7, $1);
 		  if ($6 != 0) {
-			yyerror(@6, "sorry: net delays not supported.");
-			delete $6;
+			    yyerror(@6, "sorry: net delays not supported.");
+			    delete $6;
 		  }
 		  if ($1) delete $1;
 		}
@@ -2175,6 +2183,7 @@ module_item
      net_decl_assigns, which are <name> = <expr> assignment
      declarations. */
 
+    //TODO range set
 	| attribute_list_opt net_type
           primitive_type_opt signed_opt range_opt
           delay3_opt sec_label net_decl_assigns ';'
@@ -2209,12 +2218,14 @@ module_item
 		  }
 		}
 
+    //TODO range set
 	| K_trireg charge_strength_opt range_opt delay3_opt sec_label list_of_identifiers ';'
 		{ yyerror(@1, "sorry: trireg nets not supported.");
 		  delete $3;
 		  delete $4;
 		}
 
+    //TODO range set
 	| port_type signed_opt range_opt delay3_opt sec_label list_of_identifiers ';'
 		{ pform_set_port_type(@1, $6, $3, $2, $1, $5);
 		}
@@ -2223,11 +2234,13 @@ module_item
        input wire signed [h:l] <list>;
      This creates the wire and sets the port type all at once. */
 
+    //TODO range set
 	| port_type net_type signed_opt range_opt sec_label list_of_identifiers ';'
 		{ pform_makewire(@1, $4, $3, $6, $2, $1, IVL_VT_NO_TYPE, $5, 0,
 		                 SR_BOTH);
 		}
 
+    //TODO range set
 	| K_output var_type signed_opt range_opt sec_label list_of_port_identifiers ';'
 		{ list<pair<perm_string,PExpr*> >::const_iterator pp;
 		  list<perm_string>*tmp = new list<perm_string>;
@@ -2248,12 +2261,14 @@ module_item
      because the port declaration implies an external driver, which
      cannot be attached to a reg. These rules catch that error early. */
 
+    //TODO range set
 	| K_input var_type signed_opt range_opt sec_label list_of_identifiers ';'
 		{ pform_makewire(@1, $4, $3, $6, $2, NetNet::PINPUT,
 				 IVL_VT_NO_TYPE, $5, 0);
 		  yyerror(@2, "error: reg variables cannot be inputs.");
 		}
 
+    //TODO range set
 	| K_inout var_type signed_opt range_opt sec_label list_of_identifiers ';'
 		{ pform_makewire(@1, $4, $3, $6, $2, NetNet::PINOUT,
 				 IVL_VT_NO_TYPE, $5, 0);

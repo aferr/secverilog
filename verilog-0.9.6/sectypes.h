@@ -65,10 +65,10 @@ class SecType {
       virtual SecType* freshVars(unsigned int lineno, map<perm_string, perm_string>& m) {return this;};
       virtual SecType* apply_index(PExpr *e) { return this; }
       // Upper and lower bounds for quantification. NULL unless has_bounds()
-      int upper;
-      int lower;
+      unsigned long upper;
+      unsigned long lower;
       virtual bool has_bounds() { return false; }
-      virtual void set_range(int u, int l) {}
+      virtual void set_range(PExpr* u, PExpr* l) {}
       perm_string index_var;
 
      
@@ -144,9 +144,19 @@ class QuantType : public SecType {
     // re-writing the ranges of the array. This will likely require a virtual 
     // set_range in SecType that does nothing and is only overwritten in this 
     // class.
-    void set_range(int u, int l){
-        upper = u;
-        lower = l;
+    void set_range(PExpr* u, PExpr* l){
+        PENumber* pu = dynamic_cast<PENumber*>(u);
+        PENumber* pl = dynamic_cast<PENumber*>(l);
+        if( pu == NULL || pl == NULL){
+            fprintf(stderr, "error, only constant array bound declarations"
+                    " are currently allowed\n");
+            exit(1);
+        } else {
+            unsigned long vu = pu->value().as_ulong();
+            unsigned long vl = pl->value().as_ulong();
+            if(vu >= vl){ upper = vu; lower = vl; }
+            else {upper = vl; lower = vu; }
+        }
     }
 
     virtual bool has_bounds(){return true;}
@@ -405,10 +415,10 @@ struct TypeEnv {
 // Quantified  Type Constraints
 //-----------------------------------------------------------------------------
 struct QBound{
-    int lower;
-    int upper;
+    unsigned long lower;
+    unsigned long upper;
     perm_string qvar;
-    QBound(int u, int l, perm_string v) :
+    QBound(unsigned long u, unsigned long l, perm_string v) :
         lower(l), upper(u), qvar(v) {}
 };
 
