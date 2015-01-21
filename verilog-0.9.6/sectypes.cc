@@ -154,7 +154,7 @@ bool VarType::hasExpr(perm_string str)
 // QuantType
 //-----------------------------------------------------------------------------
 // Universally quantified types.
-QuantType::QuantType(perm_string _index_var, LabelFunc *_expr) 
+QuantType::QuantType(perm_string _index_var, QuantExpr *_expr) 
 : expr(_expr)
 {
     index_var = _index_var;

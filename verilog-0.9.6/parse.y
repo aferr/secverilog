@@ -227,7 +227,8 @@ static PECallFunction*make_call_function(perm_string tn, PExpr*arg1, PExpr*arg2)
       list<index_component_t> *dimensions;
       
       SecType*sectype;
-      LabelFunc*labelfunc;
+      VQuantExpr*vqetype;
+      LQuantExpr*lqetype;
 };
 
 %token <text>   IDENTIFIER SYSTEM_IDENTIFIER STRING
@@ -372,7 +373,8 @@ static PECallFunction*make_call_function(perm_string tn, PExpr*arg1, PExpr*arg2)
 
 %type <sectype> sec_label
 %type <sectype> sec_label_comp
-%type <labelfunc> label_func
+%type <vqetype> vqe
+%type <lqetype> lqe
 
 %token K_TAND
 %right '?' ':'
@@ -515,7 +517,7 @@ sec_label_comp
     {
       $$ = new MeetType ($1, $3);
     }
-  | '|' IDENTIFIER '|' label_func
+  | '|' IDENTIFIER '|' lqe
     {
       perm_string index = lex_strings.make($2);
       SecType* type = new QuantType(index, $4);
@@ -528,15 +530,23 @@ sec_label_comp
     } 
   ;
 
-label_func
-  : IDENTIFIER
+lqe
+  : IDENTIFIER vqe
     {
-        perm_string ident = lex_strings.make($1);
-        LabelFunc* lf = new LabelFunc(ident);
-        $$ = lf;
+      perm_string ident = lex_strings.make($1);
+      LQuantExpr* l = new LQEDep(ident, $2);
+      $$ = l; 
     }
   ;
-  
+
+vqe
+  : number
+    {
+      VQuantExpr* v = new VQENum($1);
+      $$ = v;
+    }
+  ;
+
   /* The block_item_decl is used in function definitions, task
      definitions, module definitions and named blocks. Wherever a new
      scope is entered, the source may declare new registers and
