@@ -72,7 +72,7 @@ class SecType {
 
      
       //Apply a copy of this type with n as the name for the functiond def. 
-      virtual SecType* give_name(std::string n){return this;}
+      virtual void give_name(std::string n){}
       virtual bool has_defs() { return false; }
       virtual const char * func_def_string() { return ""; }
     
@@ -165,12 +165,10 @@ class QuantType : public SecType {
     SecType* apply_index(PExpr* e);
     bool equals(SecType* st);
  
-    SecType * give_name(std::string n){
-      QuantType *t = deep_copy();
-      t->name = n;
-      return t;
+    void give_name(std::string n){
+      name = n;
     }
-  
+
     const char * func_def_string(){ 
         std::stringstream b;
         b << "    (= (" << name.c_str() << " x)("
@@ -179,14 +177,13 @@ class QuantType : public SecType {
 
         std::stringstream ss;
         ss.str("");
-        //TODO body should be derived from e (third line)
         ss <<   "(declare-fun " << name.c_str() << " (Int) Label)" <<
         endl << "(assert (forall ((x Int))" <<
         endl << body <<
         endl << "))";
-        //endl << "    (= (" << name.c_str() << " x)(Par x))" <<
         return ss.str().c_str(); 
     }
+
  
   private:
     // Index var to be replaced with indexing expression
@@ -300,6 +297,22 @@ class JoinType : public SecType {
       SecType* freshVars(unsigned int lineno, map<perm_string, perm_string>& m);
       bool hasExpr(perm_string str);
 
+      bool has_defs(){ return comp1_->has_defs() || comp2_->has_defs(); }
+
+      void give_name(std::string m){
+          comp1_->give_name((string("1_")+string(m)).c_str());
+          comp2_->give_name((string("2_")+string(m)).c_str());
+      }
+
+      virtual const char * func_def_string(){ 
+          std::stringstream ss;
+          ss.str("");
+          ss << comp1_->func_def_string();
+          ss << comp2_->func_def_string();
+          return ss.str().c_str(); 
+      }
+
+  
     private:
 	  SecType* comp1_;
 	  SecType* comp2_;
@@ -332,6 +345,27 @@ class MeetType : public SecType {
       void collect_dep_expr(set<perm_string>& m);
       SecType* freshVars(unsigned int lineno, map<perm_string, perm_string>& m);
       bool hasExpr(perm_string str);
+
+      bool has_defs(){ return comp1_->has_defs() || comp2_->has_defs(); }
+
+      void give_name(std::string m){
+          comp1_->give_name((string("1_")+string(m)).c_str());
+          comp2_->give_name((string("2_")+string(m)).c_str());
+      }
+
+      virtual const char * func_def_string(){ 
+          std::stringstream ss;
+          ss.str("");
+          ss << comp1_->func_def_string();
+          ss << comp2_->func_def_string();
+          return ss.str().c_str(); 
+      }
+
+  
+    private:
+	  SecType* comp1_;
+	  SecType* comp2_;
+};
 
     private:
 	  SecType* comp1_;

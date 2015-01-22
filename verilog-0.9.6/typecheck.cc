@@ -383,8 +383,8 @@ void typecheck_assignment_constraint (ostream& out, SecType* lhs, SecType* rhs, 
 	out << vardecl;
     // For now, just add lhs and rhs declared bounds
     //
-    lhs = lhs->give_name("lhs");
-    rhs = rhs->give_name("rhs");
+    lhs->give_name("lhs");
+    rhs->give_name("rhs");
 
     QFuncDefs* d = new QFuncDefs();
     if(lhs->has_defs()){
