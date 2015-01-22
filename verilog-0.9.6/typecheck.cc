@@ -384,17 +384,7 @@ void typecheck_assignment_constraint (ostream& out, SecType* lhs, SecType* rhs, 
     // For now, just add lhs and rhs declared bounds
     //
     lhs = lhs->give_name("lhs");
-    lhs->index_var = perm_string::literal("i");
     rhs = rhs->give_name("rhs");
-    rhs->index_var = perm_string::literal("j");
-
-    QBounds* b = new QBounds();
-    if(lhs->has_bounds()){
-        b->bounds.insert(new QBound(lhs->upper, lhs->lower, lhs->index_var));
-    }
-    if(rhs->has_bounds()){
-        b->bounds.insert(new QBound(rhs->upper, rhs->lower, rhs->index_var));
-    }
 
     QFuncDefs* d = new QFuncDefs();
     if(lhs->has_defs()){
@@ -406,7 +396,6 @@ void typecheck_assignment_constraint (ostream& out, SecType* lhs, SecType* rhs, 
 
 	Constraint* c = new Constraint(lhs, rhs, env->invariants, &pred);
     c->def = d;
-    c->bound = b;
 	out << *c;
 	out << "    ; " << note << endl;
 	out << "(check-sat)" << endl;

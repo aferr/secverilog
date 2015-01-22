@@ -66,8 +66,6 @@ class SecType {
       virtual SecType* freshVars(unsigned int lineno, map<perm_string, perm_string>& m) {return this;};
       virtual SecType* apply_index(PExpr *e) { return this; }
       // Upper and lower bounds for quantification. NULL unless has_bounds()
-      unsigned long upper;
-      unsigned long lower;
       virtual bool has_bounds() { return false; }
       virtual void set_range(PExpr* u, PExpr* l) {}
       perm_string index_var;
@@ -205,6 +203,7 @@ class QuantType : public SecType {
         t->expr = expr;
         return t;
     }
+    int upper, lower;
 
 
 
@@ -518,9 +517,6 @@ inline ostream& operator << (ostream&o, Constraint&c)
   bool hasbounds = c.bound != NULL && c.bound->bounds.size() != 0;
   bool hasdefs = c.def != NULL && c.def->defs.size() != 0;
  
-  //char* inner = constraint_inner(c);
-  const char * inner = constraint_inner(c);
- 
   if(hasdefs){
     // Define any functions needed
     set<SecType*> defs = c.def->defs;
@@ -547,7 +543,7 @@ inline ostream& operator << (ostream&o, Constraint&c)
     o << "    (implies (and ";
     for(; i!=bounds.end(); i++) o << (*(*i));
     o << ")"<< endl <<
-         "        " << inner << endl << 
+         "        " << constraint_inner(c) << endl <<
          "    )" << endl <<
          ")))";
  
