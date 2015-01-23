@@ -155,9 +155,9 @@ bool VarType::hasExpr(perm_string str)
 //-----------------------------------------------------------------------------
 // Universally quantified types.
 QuantType::QuantType(perm_string _index_var, QuantExpr *_expr) 
-: expr(_expr)
 {
     index_var = _index_var;
+    expr = _expr->accept(new IndexSwapInVisitor(_index_var));
 }
 
 bool QuantType::equals(SecType *st){
@@ -171,20 +171,33 @@ bool QuantType::equals(SecType *st){
 
 SecType * QuantType::apply_index(PExpr* e){
    // For now only handle integers, otherwise return the bottom type.
-   // PENumber *n = dynamic_cast<PENumber*>(e);
-   // if(n != NULL){
-   //     return apply_index_penumber(n);
-   // } else {
-   //     fprintf(stderr, "applied non-constant\n");
-   //     return new ConstType(ConstType::LOW);
-   // }
+   PENumber *n = dynamic_cast<PENumber*>(e);
+   if(n != NULL){
+       return apply_index(n);
+   } 
+
+   PEIdent *i = dynamic_cast<PEIdent*>(e);
+   if(n != NULL){
+       return apply_index(i);
+   }
+
+   fprintf(stderr, "currently unsupported indexing expression\n");
+   index_expr = new VQEIndex();
    return this;
 }
 
-SecType * QuantType::apply_index_penumber(PENumber *n){
-    unsigned long num = n->value().as_long();
-    // Apply num to the type's function.
-    return new ConstType(ConstType::LOW);
+SecType * QuantType::apply_index(PENumber *n){
+    VQENum *v = new VQENum(n->value().as_ulong());
+    index_expr = v;
+    return this;
+    // return new QuantType(index_var,
+    //         expr->accept(new IndexSwapOutVisitor(v)));
+}
+
+SecType * QuantType::apply_index(PEIdent *n){
+   perm_string varname = n->path().front().name;
+   index_expr = new VQEVar(varname);
+   return this; 
 }
 
 

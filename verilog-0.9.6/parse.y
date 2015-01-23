@@ -545,6 +545,11 @@ vqe
       VQuantExpr* v = new VQENum($1);
       $$ = v;
     }
+  | IDENTIFIER
+    {
+        VQuantExpr* v = new VQEVar(lex_strings.make($1));
+        $$ = v;
+    }
   ;
 
   /* The block_item_decl is used in function definitions, task

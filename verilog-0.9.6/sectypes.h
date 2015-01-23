@@ -155,7 +155,7 @@ class QuantType : public SecType {
     virtual bool has_defs(){return true;}
 
     void dump(ostream&o){
-        o << "(" << name.c_str() << " " << index_var.str() << ")";
+        o << "(" << name.c_str() << " " << index_expr << ")";
     }
 
 
@@ -163,6 +163,9 @@ class QuantType : public SecType {
     // Connect the indexing expression to the general quantified label to get 
     // the label at the indexing expression.
     SecType* apply_index(PExpr* e);
+    SecType* apply_index(PENumber* e);
+    SecType* apply_index(PEIdent* e);
+
     bool equals(SecType* st);
  
     void give_name(std::string n){
@@ -189,6 +192,7 @@ class QuantType : public SecType {
     // Index var to be replaced with indexing expression
     // perm_string index_var;
     QuantExpr *expr;
+    QuantExpr *index_expr;
     // Name for declared function.
     std::string name;
 
@@ -202,11 +206,28 @@ class QuantType : public SecType {
     }
     int upper, lower;
 
+    class IndexSwapInVisitor : public QESubVisitor {
+        public: 
+        IndexSwapInVisitor(perm_string i) : index_var(i) {};
+        virtual QuantExpr* visit(VQEVar* e){
+            return (e->name == index_var) ? (QuantExpr*) (new VQEIndex()) : 
+                (QuantExpr*) e;
+        }
+        perm_string index_var;
+    };
+    
+    class IndexSwapOutVisitor : public QESubVisitor {
+        public: 
+        IndexSwapOutVisitor(QuantExpr* e) : expr(e) {};
+        virtual QuantExpr* visit(VQEIndex* e){
+            return expr;
+        }
+        QuantExpr* expr;
+    };
 
 
   //These methods are for development only
   private:
-    SecType* apply_index_penumber(PENumber* e);
 
 };
 /* type variables */
@@ -362,11 +383,6 @@ class MeetType : public SecType {
       }
 
   
-    private:
-	  SecType* comp1_;
-	  SecType* comp2_;
-};
-
     private:
 	  SecType* comp1_;
 	  SecType* comp2_;
