@@ -157,6 +157,7 @@ bool VarType::hasExpr(perm_string str)
 QuantType::QuantType(perm_string _index_var, QuantExpr *_expr) 
 {
     index_var = _index_var;
+    bound = new QBounds();
     expr = _expr->accept(new IndexSwapInVisitor(_index_var));
 }
 
@@ -170,14 +171,14 @@ bool QuantType::equals(SecType *st){
 }
 
 SecType * QuantType::apply_index(PExpr* e){
-   // For now only handle integers, otherwise return the bottom type.
+   // For now only handle integers and identifiers.
    PENumber *n = dynamic_cast<PENumber*>(e);
    if(n != NULL){
        return apply_index(n);
    } 
 
    PEIdent *i = dynamic_cast<PEIdent*>(e);
-   if(n != NULL){
+   if(i != NULL){
        return apply_index(i);
    }
 
@@ -197,6 +198,7 @@ SecType * QuantType::apply_index(PENumber *n){
 SecType * QuantType::apply_index(PEIdent *n){
    perm_string varname = n->path().front().name;
    index_expr = new VQEVar(varname);
+   bound->bounds.insert(new QBound(4,0,varname));
    return this; 
 }
 

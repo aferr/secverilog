@@ -48,6 +48,20 @@ class IndexType;
 struct TypeEnv;
 struct CNF;
 
+struct QBound{
+    unsigned long lower;
+    unsigned long upper;
+    perm_string qvar;
+    QBound(unsigned long u, unsigned long l, perm_string v) :
+        lower(l), upper(u), qvar(v) {}
+};
+
+struct QBounds{
+    set<QBound*> bounds;
+};
+
+
+
 class SecType {
 
 	// Manipulate the types.
@@ -66,9 +80,12 @@ class SecType {
       virtual SecType* freshVars(unsigned int lineno, map<perm_string, perm_string>& m) {return this;};
       virtual SecType* apply_index(PExpr *e) { return this; }
       // Upper and lower bounds for quantification. NULL unless has_bounds()
-      virtual bool has_bounds() { return false; }
+      
       virtual void set_range(PExpr* u, PExpr* l) {}
       perm_string index_var;
+
+      virtual bool has_bounds() { return false; }
+      virtual void add_bounds(QBounds* b){}
 
      
       //Apply a copy of this type with n as the name for the functiond def. 
@@ -151,7 +168,18 @@ class QuantType : public SecType {
         }
     }
 
-    virtual bool has_bounds(){return true;}
+    virtual bool has_bounds() {
+      return (bound!=NULL && bound->bounds.size()>0);
+    }
+
+    virtual void add_bounds(QBounds *b){
+      if(!has_bounds()) return;
+      set<QBound*>::iterator i = bound->bounds.begin();
+      for(; i!=(bound->bounds.end()); i++){
+        b->bounds.insert(*i);
+      }
+    }
+
     virtual bool has_defs(){return true;}
 
     void dump(ostream&o){
@@ -195,6 +223,7 @@ class QuantType : public SecType {
     QuantExpr *index_expr;
     // Name for declared function.
     std::string name;
+    QBounds* bound;
 
     QuantType * deep_copy(){
         QuantType *t = new QuantType(index_var, expr);
@@ -333,6 +362,11 @@ class JoinType : public SecType {
           return ss.str().c_str(); 
       }
 
+      virtual void add_bounds(QBounds *b){
+        comp1_->add_bounds(b);
+        comp2_->add_bounds(b);
+      }
+
   
     private:
 	  SecType* comp1_;
@@ -463,18 +497,6 @@ struct TypeEnv {
 //-----------------------------------------------------------------------------
 // Quantified  Type Constraints
 //-----------------------------------------------------------------------------
-struct QBound{
-    unsigned long lower;
-    unsigned long upper;
-    perm_string qvar;
-    QBound(unsigned long u, unsigned long l, perm_string v) :
-        lower(l), upper(u), qvar(v) {}
-};
-
-struct QBounds{
-    set<QBound*> bounds;
-};
-
 struct QFuncDefs{
     set<SecType*> defs;
 };
@@ -489,8 +511,8 @@ struct Constraint {
 	SecType* right;
 	Predicate* pred;
 	Invariant* invariant;
-    QFuncDefs* def;
-    QBounds* bound;
+  QFuncDefs* def;
+  QBounds* bound;
 
 	Constraint(SecType* l, SecType* r, Invariant* inv, Predicate* p) {
 		left = l;
