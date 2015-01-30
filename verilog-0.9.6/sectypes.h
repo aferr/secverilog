@@ -49,10 +49,10 @@ struct TypeEnv;
 struct CNF;
 
 struct QBound{
-    unsigned long lower;
-    unsigned long upper;
+    long lower;
+    long upper;
     perm_string qvar;
-    QBound(unsigned long u, unsigned long l, perm_string v) :
+    QBound(long u, long l, perm_string v) :
         lower(l), upper(u), qvar(v) {}
 };
 
@@ -76,6 +76,7 @@ class SecType {
       virtual SecType* subst(perm_string e1, perm_string e2) {return this;};
       virtual SecType* subst(map<perm_string, perm_string> m) {return this;};
       virtual void collect_dep_expr(set<perm_string>& m) {};
+      virtual void collect_bound_exprs(set<perm_string>* m) {};
       virtual bool hasExpr(perm_string str) {return false;};
       virtual SecType* freshVars(unsigned int lineno, map<perm_string, perm_string>& m) {return this;};
       virtual SecType* apply_index(PExpr *e) { return this; }
@@ -85,7 +86,8 @@ class SecType {
       perm_string index_var;
 
       virtual bool has_bounds() { return false; }
-      virtual void add_bounds(QBounds* b){}
+      virtual void get_bounds(QBounds* b){}
+      virtual void insert_bound(QBound* b){}
 
      
       //Apply a copy of this type with n as the name for the functiond def. 
@@ -172,7 +174,7 @@ class QuantType : public SecType {
       return (bound!=NULL && bound->bounds.size()>0);
     }
 
-    virtual void add_bounds(QBounds *b){
+    virtual void get_bounds(QBounds *b){
       if(!has_bounds()) return;
       set<QBound*>::iterator i = bound->bounds.begin();
       for(; i!=(bound->bounds.end()); i++){
@@ -180,16 +182,25 @@ class QuantType : public SecType {
       }
     }
 
+    virtual void insert_bound(QBound *b){
+        bound->bounds.insert(b);
+    }
+
     virtual bool has_defs(){return true;}
 
     void dump(ostream&o){
-        o << "(" << name.c_str() << " " << index_expr << ")";
+        o << "(" << name.c_str() << " " << index_expr_trans << ")";
     }
 
 
   public:
-    // Connect the indexing expression to the general quantified label to get 
-    // the label at the indexing expression.
+    // Apply the expression that's used to index the quantified type. This 
+    // translates the PExpr into QuantExprs that can be translated 
+    // into Z3. Then, it creates a deep-copy of this type where the 
+    // index_expr_trans 
+    // is replaced with that type. This stores the indexing PExpr so that its 
+    // bounds can be set in the context of the module where they can be 
+    // computed from the range of any PWires in the subtree of that PExpr.
     SecType* apply_index(PExpr* e);
     SecType* apply_index(PENumber* e);
     SecType* apply_index(PEIdent* e);
@@ -203,7 +214,7 @@ class QuantType : public SecType {
     const char * func_def_string(){ 
         std::stringstream b;
         b << "    (= (" << name.c_str() << " x)("
-          << expr << "))";
+          << def_expr << "))";
         const char * body = b.str().c_str();
 
         std::stringstream ss;
@@ -215,22 +226,27 @@ class QuantType : public SecType {
         return ss.str().c_str(); 
     }
 
+    void collect_bound_exprs(set<perm_string>* m);
+
  
   private:
     // Index var to be replaced with indexing expression
     // perm_string index_var;
-    QuantExpr *expr;
-    QuantExpr *index_expr;
+    QuantExpr *def_expr;
+    QuantExpr *index_expr_trans;
+    PExpr *index_expr;
+    QBounds* bound;
     // Name for declared function.
     std::string name;
-    QBounds* bound;
 
     QuantType * deep_copy(){
-        QuantType *t = new QuantType(index_var, expr);
+        QuantType *t = new QuantType(index_var, def_expr);
         t->lower = lower;
         t->upper = upper;
         t->index_var = index_var;
-        t->expr = expr;
+        t->def_expr = def_expr;
+        t->index_expr = index_expr;
+        t->index_expr_trans = index_expr_trans;
         return t;
     }
     int upper, lower;
@@ -254,6 +270,25 @@ class QuantType : public SecType {
         QuantExpr* expr;
     };
 
+    class ExprCollector : public QEVisitor {
+        public:
+        void* visit(VQEVar* e){
+            set<perm_string> *s = new set<perm_string>();
+            s->insert(e->name);
+            return s;
+        }
+        void* default_val(){
+            return new set<perm_string>();
+        }
+        void* reduce(void* a, void* b){
+            set<perm_string> *sa = static_cast<set<perm_string>*>(a);
+            set<perm_string> *sb = static_cast<set<perm_string>*>(b);
+            for(set<perm_string>::iterator it=sa->begin(); it!=sa->end(); it++){
+                sb->insert(*it);
+            }
+            return b;
+        }
+    };
 
   //These methods are for development only
   private:
@@ -362,9 +397,17 @@ class JoinType : public SecType {
           return ss.str().c_str(); 
       }
 
-      virtual void add_bounds(QBounds *b){
-        comp1_->add_bounds(b);
-        comp2_->add_bounds(b);
+      virtual void get_bounds(QBounds *b){
+        comp1_->get_bounds(b);
+        comp2_->get_bounds(b);
+      }
+      void collect_bound_exprs(set<perm_string>* m){
+          comp1_->collect_bound_exprs(m);
+          comp1_->collect_bound_exprs(m);
+      }
+      virtual void insert_bound(QBound *b){
+          comp1_->insert_bound(b);
+          comp2_->insert_bound(b);
       }
 
   
@@ -407,6 +450,23 @@ class MeetType : public SecType {
           comp1_->give_name((string("1_")+string(m)).c_str());
           comp2_->give_name((string("2_")+string(m)).c_str());
       }
+
+
+      virtual void get_bounds(QBounds *b){
+        comp1_->get_bounds(b);
+        comp2_->get_bounds(b);
+      }
+      
+      virtual void insert_bound(QBound *b){
+          comp1_->insert_bound(b);
+          comp2_->insert_bound(b);
+      }
+      void collect_bound_exprs(set<perm_string>* m){
+          comp1_->collect_bound_exprs(m);
+          comp1_->collect_bound_exprs(m);
+      }
+
+
 
       virtual const char * func_def_string(){ 
           std::stringstream ss;

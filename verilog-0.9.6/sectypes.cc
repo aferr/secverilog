@@ -158,7 +158,7 @@ QuantType::QuantType(perm_string _index_var, QuantExpr *_expr)
 {
     index_var = _index_var;
     bound = new QBounds();
-    expr = _expr->accept(new IndexSwapInVisitor(_index_var));
+    def_expr = _expr->accept(new IndexSwapInVisitor(_index_var));
 }
 
 bool QuantType::equals(SecType *st){
@@ -170,8 +170,27 @@ bool QuantType::equals(SecType *st){
   return false;
 }
 
+void QuantType::collect_bound_exprs(set<perm_string>* m)
+{
+    void* s_ = index_expr_trans ->accept(new ExprCollector());
+    set<perm_string> s = *(static_cast<set<perm_string>*>(s_));
+    for(set<perm_string>::iterator it=s.begin(); it!=s.end(); it++){
+        m->insert(*it);
+    }
+}
+
+
 SecType * QuantType::apply_index(PExpr* e){
+   // Dunamic typecasting is poor OO-Design. Instead, call a function of PExpr 
+   // that returns a QuantExpr.
    // For now only handle integers and identifiers.
+
+   // QuantType* ret = deep_copy();
+   // ret->index_expr = PExpr;
+   // ret->index_expr_trans = PExpr->quantTranslation();   
+   // return ret;
+
+
    PENumber *n = dynamic_cast<PENumber*>(e);
    if(n != NULL){
        return apply_index(n);
@@ -183,13 +202,13 @@ SecType * QuantType::apply_index(PExpr* e){
    }
 
    fprintf(stderr, "currently unsupported indexing expression\n");
-   index_expr = new VQEIndex();
+   index_expr_trans = new VQEIndex();
    return this;
 }
 
 SecType * QuantType::apply_index(PENumber *n){
     VQENum *v = new VQENum(n->value().as_ulong());
-    index_expr = v;
+    index_expr_trans = v;
     return this;
     // return new QuantType(index_var,
     //         expr->accept(new IndexSwapOutVisitor(v)));
@@ -197,8 +216,7 @@ SecType * QuantType::apply_index(PENumber *n){
 
 SecType * QuantType::apply_index(PEIdent *n){
    perm_string varname = n->path().front().name;
-   index_expr = new VQEVar(varname);
-   bound->bounds.insert(new QBound(4,0,varname));
+   index_expr_trans = new VQEVar(varname);
    return this; 
 }
 

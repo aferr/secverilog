@@ -196,6 +196,22 @@ void Module::CollectDepExprs(ostream&out, TypeEnv & env) const
     }
 }
 
+void CalculateQuantBounds(SecType *st, TypeEnv *env)
+{
+    set<perm_string> *exprs = new set<perm_string>;
+    st->collect_bound_exprs(exprs);
+    for( std::set<perm_string>::iterator ite = exprs->begin();
+            ite != exprs->end(); ite++) {
+        perm_string e = *ite;
+        map<perm_string,PWire*>::const_iterator cur = env->module->wires.find(e);
+        if(cur != env->module->wires.end()) {
+            PWire *wire = (*cur).second;
+            QBound *b = new QBound(pow(2,wire->getRange()+1)-1,0,e);
+            st->insert_bound(b);
+        }
+    }
+}
+
 void Module::typecheck(ostream&out, TypeEnv& env, map<perm_string,Module*> modules) const
 {
 	if (debug_typecheck) {
@@ -396,8 +412,10 @@ void typecheck_assignment_constraint (ostream& out, SecType* lhs, SecType* rhs, 
   }
 
   QBounds *b = new QBounds();
-  lhs->add_bounds(b);
-  rhs->add_bounds(b);
+  CalculateQuantBounds(lhs, env);
+  CalculateQuantBounds(rhs, env);
+  lhs->get_bounds(b);
+  rhs->get_bounds(b);
 
 	Constraint* c = new Constraint(lhs, rhs, env->invariants, &pred);
   c->def = d;

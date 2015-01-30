@@ -23,6 +23,10 @@ QuantExpr* VQENum::accept(QESubVisitor *v){
     return v->visit(this);
 }
 
+void* VQENum::accept(QEVisitor *v){
+    return v->visit(this);
+}
+
 //-----------------------------------------------------------------------------
 // VQEVar
 //-----------------------------------------------------------------------------
@@ -33,6 +37,10 @@ void VQEVar::dump(ostream& o){
 }
 
 QuantExpr* VQEVar::accept(QESubVisitor *v){
+    return v->visit(this);
+}
+
+void* VQEVar::accept(QEVisitor *v){
     return v->visit(this);
 }
 
@@ -47,6 +55,9 @@ QuantExpr* VQEIndex::accept(QESubVisitor *v){
 
 void VQEIndex::dump(ostream& o){
     o << "x";
+}
+void* VQEIndex::accept(QEVisitor *v){
+    return v->visit(this);
 }
 
 
@@ -65,6 +76,9 @@ void LQEDep::dump(ostream& o){
 }
 
 QuantExpr* LQEDep::accept(QESubVisitor *v){
+    return v->visit(this);
+}
+void* LQEDep::accept(QEVisitor *v){
     return v->visit(this);
 }
 
