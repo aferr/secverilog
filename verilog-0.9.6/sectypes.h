@@ -385,8 +385,8 @@ class JoinType : public SecType {
       bool has_defs(){ return comp1_->has_defs() || comp2_->has_defs(); }
 
       void give_name(std::string m){
-          comp1_->give_name((string("1_")+string(m)).c_str());
-          comp2_->give_name((string("2_")+string(m)).c_str());
+          comp1_->give_name((string(m)+string("_1")).c_str());
+          comp2_->give_name((string(m)+string("_2")).c_str());
       }
 
       virtual const char * func_def_string(){ 
@@ -447,10 +447,9 @@ class MeetType : public SecType {
       bool has_defs(){ return comp1_->has_defs() || comp2_->has_defs(); }
 
       void give_name(std::string m){
-          comp1_->give_name((string("1_")+string(m)).c_str());
-          comp2_->give_name((string("2_")+string(m)).c_str());
+          comp1_->give_name((string(m)+string("_1")).c_str());
+          comp2_->give_name((string(m)+string("_2")).c_str());
       }
-
 
       virtual void get_bounds(QBounds *b){
         comp1_->get_bounds(b);
