@@ -158,8 +158,9 @@ void PWire::typecheck(ostream&out, map<perm_string, SecType*>& varsToType) const
 
       cout << ";" << endl;
 	}
-
+    
 	varsToType[basename()] = sectype_;
+    sectype_->give_name(basename());
 }
 
 void Module::CollectDepExprs(ostream&out, TypeEnv & env) const
@@ -397,42 +398,37 @@ SecType* typecheck_subst(perm_string lname, SecType* ltype, PWire* rhs, TypeEnv*
 void typecheck_assignment_constraint (ostream& out, SecType* lhs, SecType* rhs, Predicate pred, string note, string vardecl, TypeEnv* env) {
 	out << endl << "(push)" << endl;
 	out << vardecl;
+    
+    QFuncDefs* d = new QFuncDefs();
+    if(lhs->has_defs()){
+        d->defs.insert(lhs);
+    }
+    if(rhs->has_defs()){
+        d->defs.insert(rhs);
+    }
+    
+    QBounds *b = new QBounds();
+    CalculateQuantBounds(lhs, env);
+    CalculateQuantBounds(rhs, env);
+    lhs->get_bounds(b);
+    rhs->get_bounds(b);
 
-  // For now, just add lhs and rhs declared bounds
-  //
-  lhs->give_name("lhs");
-  rhs->give_name("rhs");
-
-  QFuncDefs* d = new QFuncDefs();
-  if(lhs->has_defs()){
-      d->defs.insert(lhs);
-  }
-  if(rhs->has_defs()){
-      d->defs.insert(rhs);
-  }
-
-  QBounds *b = new QBounds();
-  CalculateQuantBounds(lhs, env);
-  CalculateQuantBounds(rhs, env);
-  lhs->get_bounds(b);
-  rhs->get_bounds(b);
-
-	Constraint* c = new Constraint(lhs, rhs, env->invariants, &pred);
-  c->def = d;
-  c->bound = b;
-	out << *c;
-	out << "    ; " << note << endl;
-	out << "(check-sat)" << endl;
-	out << "(pop)" << endl << endl;
-	if (check_write) {
-		out << endl << "(push)" << endl;
-		out << vardecl;
-		c = new Constraint(lhs, IndexType::WL, env->invariants, &pred);
-		out << *c;
-		out << "    ; check write label " << note << endl;
-		out << "(check-sat)" << endl;
-		out << "(pop)" << endl << endl;
-	}
+    Constraint* c = new Constraint(lhs, rhs, env->invariants, &pred);
+    c->def = d;
+    c->bound = b;
+    out << *c;
+    out << "    ; " << note << endl;
+    out << "(check-sat)" << endl;
+    out << "(pop)" << endl << endl;
+    if (check_write) {
+    	out << endl << "(push)" << endl;
+    	out << vardecl;
+    	c = new Constraint(lhs, IndexType::WL, env->invariants, &pred);
+    	out << *c;
+    	out << "    ; check write label " << note << endl;
+    	out << "(check-sat)" << endl;
+    	out << "(pop)" << endl << endl;
+    }
 }
 
 void freshvariant (TypeEnv& env, Predicate& precond, Predicate postcond, map<perm_string, perm_string>& subst, unsigned int lineno) {

@@ -91,7 +91,7 @@ class SecType {
 
      
       //Apply a copy of this type with n as the name for the functiond def. 
-      virtual void give_name(std::string n){}
+      virtual void give_name(perm_string s){}
       virtual bool has_defs() { return false; }
       virtual const char * func_def_string() { return ""; }
     
@@ -189,7 +189,7 @@ class QuantType : public SecType {
     virtual bool has_defs(){return true;}
 
     void dump(ostream&o){
-        o << "(" << name.c_str() << " " << index_expr_trans << ")";
+        o << "(" << name.str() << " " << index_expr_trans << ")";
     }
 
 
@@ -207,19 +207,19 @@ class QuantType : public SecType {
 
     bool equals(SecType* st);
  
-    void give_name(std::string n){
-      name = n;
+    void give_name(perm_string s){
+      name = s;
     }
-
+    
     const char * func_def_string(){ 
         std::stringstream b;
-        b << "    (= (" << name.c_str() << " x)("
+        b << "    (= (" << name.str() << " x)("
           << def_expr << "))";
         const char * body = b.str().c_str();
 
         std::stringstream ss;
         ss.str("");
-        ss <<   "(declare-fun " << name.c_str() << " (Int) Label)" <<
+        ss <<   "(declare-fun fun_" << name.str() << " (Int) Label)" <<
         endl << "(assert (forall ((x Int))" <<
         endl << body <<
         endl << "))";
@@ -237,7 +237,7 @@ class QuantType : public SecType {
     PExpr *index_expr;
     QBounds* bound;
     // Name for declared function.
-    std::string name;
+    perm_string name;
 
     QuantType * deep_copy(){
         QuantType *t = new QuantType(index_var, def_expr);
@@ -384,10 +384,6 @@ class JoinType : public SecType {
 
       bool has_defs(){ return comp1_->has_defs() || comp2_->has_defs(); }
 
-      void give_name(std::string m){
-          comp1_->give_name((string(m)+string("_1")).c_str());
-          comp2_->give_name((string(m)+string("_2")).c_str());
-      }
 
       virtual const char * func_def_string(){ 
           std::stringstream ss;
@@ -396,6 +392,7 @@ class JoinType : public SecType {
           ss << comp2_->func_def_string();
           return ss.str().c_str(); 
       }
+
 
       virtual void get_bounds(QBounds *b){
         comp1_->get_bounds(b);
@@ -446,11 +443,6 @@ class MeetType : public SecType {
 
       bool has_defs(){ return comp1_->has_defs() || comp2_->has_defs(); }
 
-      void give_name(std::string m){
-          comp1_->give_name((string(m)+string("_1")).c_str());
-          comp2_->give_name((string(m)+string("_2")).c_str());
-      }
-
       virtual void get_bounds(QBounds *b){
         comp1_->get_bounds(b);
         comp2_->get_bounds(b);
@@ -465,15 +457,6 @@ class MeetType : public SecType {
           comp1_->collect_bound_exprs(m);
       }
 
-
-
-      virtual const char * func_def_string(){ 
-          std::stringstream ss;
-          ss.str("");
-          ss << comp1_->func_def_string();
-          ss << comp2_->func_def_string();
-          return ss.str().c_str(); 
-      }
 
   
     private:
@@ -570,8 +553,8 @@ struct Constraint {
 	SecType* right;
 	Predicate* pred;
 	Invariant* invariant;
-  QFuncDefs* def;
-  QBounds* bound;
+    QFuncDefs* def;
+    QBounds* bound;
 
 	Constraint(SecType* l, SecType* r, Invariant* inv, Predicate* p) {
 		left = l;
