@@ -71,7 +71,7 @@ class SecType {
       virtual bool isBottom() {return false;}
       virtual bool hasTop() {return false;}
       virtual bool isTop() {return false;};
-      virtual SecType* simplify() {return this;}
+      SecType* simplify() {return this;}
       virtual bool equals(SecType* st) {return false;}
       virtual SecType* subst(perm_string e1, perm_string e2) {return this;};
       virtual SecType* subst(map<perm_string, perm_string> m) {return this;};
@@ -189,7 +189,7 @@ class QuantType : public SecType {
     virtual bool has_defs(){return true;}
 
     void dump(ostream&o){
-        o << "(" << name.str() << " " << index_expr_trans << ")";
+        o << "(fun_" << name.str() << " " << index_expr_trans << ")";
     }
 
 
@@ -213,7 +213,7 @@ class QuantType : public SecType {
     
     const char * func_def_string(){ 
         std::stringstream b;
-        b << "    (= (" << name.str() << " x)("
+        b << "    (= ( fun_" << name.str() << " x)("
           << def_expr << "))";
         const char * body = b.str().c_str();
 
@@ -385,12 +385,15 @@ class JoinType : public SecType {
       bool has_defs(){ return comp1_->has_defs() || comp2_->has_defs(); }
 
 
-      virtual const char * func_def_string(){ 
-          std::stringstream ss;
-          ss.str("");
-          ss << comp1_->func_def_string();
-          ss << comp2_->func_def_string();
-          return ss.str().c_str(); 
+      const char * func_def_string(){ 
+          if(func_def == ""){
+            std::stringstream ss;
+            ss.str("");
+            ss << comp1_->func_def_string() << endl;
+            ss << comp2_->func_def_string();
+            func_def = ss.str(); 
+          }
+          return func_def.c_str();
       }
 
 
@@ -411,6 +414,7 @@ class JoinType : public SecType {
     private:
 	  SecType* comp1_;
 	  SecType* comp2_;
+      std::string func_def;
 };
 
 class MeetType : public SecType {
@@ -457,11 +461,21 @@ class MeetType : public SecType {
           comp1_->collect_bound_exprs(m);
       }
 
+      const char * func_def_string(){ 
+          if(func_def == ""){
+            std::stringstream ss;
+            ss.str("");
+            ss << comp1_->func_def_string() << endl;
+            ss << comp2_->func_def_string();
+            func_def = ss.str(); 
+          }
+          return func_def.c_str();
+      }
 
-  
     private:
 	  SecType* comp1_;
 	  SecType* comp2_;
+      std::string func_def;
 };
 
 struct Hypothesis {
