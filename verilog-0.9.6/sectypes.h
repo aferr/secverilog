@@ -71,7 +71,7 @@ class SecType {
       virtual bool isBottom() {return false;}
       virtual bool hasTop() {return false;}
       virtual bool isTop() {return false;};
-      SecType* simplify() {return this;}
+      virtual SecType* simplify() {return this;}
       virtual bool equals(SecType* st) {return false;}
       virtual SecType* subst(perm_string e1, perm_string e2) {return this;};
       virtual SecType* subst(map<perm_string, perm_string> m) {return this;};
@@ -212,18 +212,21 @@ class QuantType : public SecType {
     }
     
     const char * func_def_string(){ 
-        std::stringstream b;
-        b << "    (= ( fun_" << name.str() << " x)("
-          << def_expr << "))";
-        const char * body = b.str().c_str();
+        if( func_def==""){
+            std::stringstream b;
+            b << "    (= ( fun_" << name.str() << " x)("
+              << def_expr << "))";
+            const char * body = b.str().c_str();
 
-        std::stringstream ss;
-        ss.str("");
-        ss <<   "(declare-fun fun_" << name.str() << " (Int) Label)" <<
-        endl << "(assert (forall ((x Int))" <<
-        endl << body <<
-        endl << "))";
-        return ss.str().c_str(); 
+            std::stringstream ss;
+            ss.str("");
+            ss <<   "(declare-fun fun_" << name.str() << " (Int) Label)" <<
+            endl << "(assert (forall ((x Int))" <<
+            endl << body <<
+            endl << "))";
+            func_def = ss.str().c_str(); 
+        }
+        return func_def.c_str();
     }
 
     void collect_bound_exprs(set<perm_string>* m);
@@ -238,6 +241,7 @@ class QuantType : public SecType {
     QBounds* bound;
     // Name for declared function.
     perm_string name;
+    std::string func_def;
 
     QuantType * deep_copy(){
         QuantType *t = new QuantType(index_var, def_expr);
