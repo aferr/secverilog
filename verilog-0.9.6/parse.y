@@ -540,7 +540,11 @@ lqe
   ;
 
 vqe
-  : number
+  : '(' vqe ')'
+    {
+        $$ = $2;
+    }
+  | number
     {
       VQuantExpr* v = new VQENum($1);
       $$ = v;
@@ -562,16 +566,9 @@ vqe
         VQuantExpr* v = new VQEBinary($1, $3, sym);
         $$ = v;
     }
-  | vqe '&' vqe
+  | vqe '?' vqe ':' vqe
     {
-        perm_string sym = perm_string::literal("and");
-        VQuantExpr* v = new VQEBinary($1, $3, sym);
-        $$ = v;
-    }
-  | vqe '|' vqe
-    {
-        perm_string sym = perm_string::literal("or");
-        VQuantExpr* v = new VQEBinary($1, $3, sym);
+        VQuantExpr* v = new VQETernary($1, $3, $5);
         $$ = v;
     }
   ;

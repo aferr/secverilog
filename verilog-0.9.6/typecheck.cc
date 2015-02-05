@@ -1089,6 +1089,19 @@ void output_lattice(ostream& out)
 	out << "(assert (forall ((x Label) (y Label) (z Label)) (implies (and (leq x y) (leq x z)) (leq x (meet y z)))))" << endl;
 	out << "(assert (forall ((x Label) (y Label)) (and (leq (meet x y) x) (leq (meet x y) y))))" << endl;
 	out << "(assert (forall ((x Label) (y Label)) (= (meet x y) (meet y x))))" << endl;
+
+
+    out << 
+        "; convert int to bool" << endl <<
+        "(declare-fun IBOOL (Int) Bool)" << endl <<
+        "(assert (forall ((x Int))" << endl <<
+        "    (and" << endl <<
+        "        (implies (= x 0) (= (IBOOL x) false))" << endl <<
+        "        (implies (not (= x 0)) (= (IBOOL x) true))" << endl <<
+        "    )" << endl <<
+        "))" << endl;
+
+
 }
 
 // output the encoding of a lattice with two lables HIGH and LOW

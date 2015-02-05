@@ -19,6 +19,13 @@ QuantExpr* QESubVisitor::visit(VQEBinary* e){
             e->sym);
 }
 
+QuantExpr* QESubVisitor::visit(VQETernary *e){
+    return new VQETernary(
+            dynamic_cast<VQuantExpr*>(e->b->accept(this)),
+            dynamic_cast<VQuantExpr*>(e->e1->accept(this)),
+            dynamic_cast<VQuantExpr*>(e->e2->accept(this)));
+}
+
 QuantExpr* QESubVisitor::visit(LQEDep* e){
     return new LQEDep(e->name, 
             dynamic_cast<VQuantExpr*>(e->vqe->accept(this))
