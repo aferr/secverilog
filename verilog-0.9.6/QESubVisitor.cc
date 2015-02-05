@@ -12,6 +12,13 @@ QuantExpr* QESubVisitor::visit(VQEIndex* e){
     return e;
 }
 
+QuantExpr* QESubVisitor::visit(VQEBinary* e){
+    return new VQEBinary(
+            dynamic_cast<VQuantExpr*>(e->l->accept(this)),
+            dynamic_cast<VQuantExpr*>(e->r->accept(this)),
+            e->sym);
+}
+
 QuantExpr* QESubVisitor::visit(LQEDep* e){
     return new LQEDep(e->name, 
             dynamic_cast<VQuantExpr*>(e->vqe->accept(this))

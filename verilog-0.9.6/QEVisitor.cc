@@ -13,9 +13,14 @@ void* QEVisitor::visit(VQEIndex* e){
     return default_val();
 }
 
+void* QEVisitor::visit(VQEBinary* e){
+    return reduce(e->l->accept(this), e->r->accept(this));
+}
+
 void* QEVisitor::visit(LQEDep* e){
     return e->vqe->accept(this);
 }
+
 
 void* QEVisitor::reduce(void* a, void* b){
     return default_val();

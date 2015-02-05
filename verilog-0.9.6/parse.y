@@ -550,6 +550,30 @@ vqe
         VQuantExpr* v = new VQEVar(lex_strings.make($1));
         $$ = v;
     }
+  | vqe '+' vqe
+    {
+        perm_string sym = perm_string::literal("+");
+        VQuantExpr* v = new VQEBinary($1, $3, sym);
+        $$ = v;
+    }
+  | vqe '-' vqe
+    {
+        perm_string sym = perm_string::literal("-");
+        VQuantExpr* v = new VQEBinary($1, $3, sym);
+        $$ = v;
+    }
+  | vqe '&' vqe
+    {
+        perm_string sym = perm_string::literal("and");
+        VQuantExpr* v = new VQEBinary($1, $3, sym);
+        $$ = v;
+    }
+  | vqe '|' vqe
+    {
+        perm_string sym = perm_string::literal("or");
+        VQuantExpr* v = new VQEBinary($1, $3, sym);
+        $$ = v;
+    }
   ;
 
   /* The block_item_decl is used in function definitions, task

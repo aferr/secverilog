@@ -57,6 +57,16 @@ class VQEIndex: public VQuantExpr {
     perm_string name;
 };
 
+class VQEBinary : public VQuantExpr {
+    public :
+    VQEBinary(VQuantExpr *l, VQuantExpr *r, perm_string sym);
+    virtual QuantExpr* accept(QESubVisitor *v);
+    virtual void* accept(QEVisitor *v);
+    virtual void dump(ostream&o);
+    VQuantExpr *l;
+    VQuantExpr *r;
+    perm_string sym;
+};
 
 //-----------------------------------------------------------------------------
 // Label Quantifier Expressions
@@ -84,6 +94,7 @@ class QEVisitor {
     virtual void* visit(VQENum* e);
     virtual void* visit(VQEVar* e);
     virtual void* visit(VQEIndex* e);
+    virtual void* visit(VQEBinary* e);
     virtual void* visit(LQEDep* e);
     virtual void* reduce(void* a, void* b);
     virtual void* reduce(void* vals, ...);
@@ -98,5 +109,6 @@ class QESubVisitor {
     virtual QuantExpr* visit(VQENum* e);
     virtual QuantExpr* visit(VQEVar* e);
     virtual QuantExpr* visit(VQEIndex* e);
+    virtual QuantExpr* visit(VQEBinary* e);
     virtual QuantExpr* visit(LQEDep* e);
 };
