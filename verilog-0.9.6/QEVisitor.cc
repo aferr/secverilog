@@ -1,26 +1,59 @@
 #include "QuantExpr.h"
 #include <stdarg.h>
 
-void* QEVisitor::visit(VQENum* e){
+//-----------------------------------------------------------------------------
+// Integer Expressions
+//-----------------------------------------------------------------------------
+
+void* QEVisitor::visit(IQENum* e){
     return default_val();
 }
 
-void* QEVisitor::visit(VQEVar* e){
+void* QEVisitor::visit(IQEVar* e){
     return default_val();
 }
 
-void* QEVisitor::visit(VQEIndex* e){
+void* QEVisitor::visit(IQEIndex* e){
     return default_val();
 }
 
-void* QEVisitor::visit(VQEBinary* e){
+void* QEVisitor::visit(IQEBinary* e){
     return reduce(e->l->accept(this), e->r->accept(this));
 }
+
+void* QEVisitor::visit(IQETernary* e){
+    return reduce(e->b->accept(this),
+            e->e1->accept(this),
+            e->e2->accept(this));
+}
+
+//-----------------------------------------------------------------------------
+// Boolean Expressions
+//-----------------------------------------------------------------------------
+void* QEVisitor::visit(BQETrue* e){
+    return default_val();
+}
+void* QEVisitor::visit(BQEFalse* e){
+    return default_val();
+}
+void* QEVisitor::visit(BQEFromIQE* e){
+    return e->iexp->accept(this);
+}
+void* QEVisitor::visit(BQEBinary* e){
+    return reduce(e->l, e->r);
+}
+void* QEVisitor::visit(BQEEq* e){
+    return reduce(e->l, e->r);
+}
+
+
+//-----------------------------------------------------------------------------
+// Label Expressions
+//-----------------------------------------------------------------------------
 
 void* QEVisitor::visit(LQEDep* e){
     return e->vqe->accept(this);
 }
-
 
 void* QEVisitor::reduce(void* a, void* b){
     return default_val();

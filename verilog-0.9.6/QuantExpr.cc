@@ -1,65 +1,186 @@
 # include "QuantExpr.h"
 # include <stdio.h>
 # include <sstream>
+# include <iostream>
 
 //=============================================================================
-// Verinum Quantifier Expressions
+// Integer Quantifier Expressions
 //=============================================================================
 
 //-----------------------------------------------------------------------------
-// VQENum
+// IQENum
 //-----------------------------------------------------------------------------
-VQENum::VQENum(verinum* n) :
+IQENum::IQENum(verinum* n) :
   value(n->as_ulong()) {};
 
-VQENum::VQENum(unsigned long n) :
+IQENum::IQENum(unsigned long n) :
   value(n) {};
 
-void VQENum::dump(ostream& o){
+void IQENum::dump(ostream& o){
   o << value;
 }
 
-QuantExpr* VQENum::accept(QESubVisitor *v){
+QuantExpr* IQENum::accept(QESubVisitor *v){
     return v->visit(this);
 }
 
-void* VQENum::accept(QEVisitor *v){
+void* IQENum::accept(QEVisitor *v){
     return v->visit(this);
 }
 
 //-----------------------------------------------------------------------------
-// VQEVar
+// IQEVar
 //-----------------------------------------------------------------------------
-VQEVar::VQEVar(perm_string s) : name(s) {}
+IQEVar::IQEVar(perm_string s) : name(s) {}
 
-void VQEVar::dump(ostream& o){
+void IQEVar::dump(ostream& o){
     o << name.str();
 }
 
-QuantExpr* VQEVar::accept(QESubVisitor *v){
+QuantExpr* IQEVar::accept(QESubVisitor *v){
     return v->visit(this);
 }
 
-void* VQEVar::accept(QEVisitor *v){
+void* IQEVar::accept(QEVisitor *v){
     return v->visit(this);
 }
 
 //-----------------------------------------------------------------------------
-// VQEIndex
+// IQEIndex
 //-----------------------------------------------------------------------------
-VQEIndex::VQEIndex(){}
+IQEIndex::IQEIndex(){}
 
-QuantExpr* VQEIndex::accept(QESubVisitor *v){
+QuantExpr* IQEIndex::accept(QESubVisitor *v){
     return v->visit(this);
 }
 
-void VQEIndex::dump(ostream& o){
+void IQEIndex::dump(ostream& o){
     o << "x";
 }
-void* VQEIndex::accept(QEVisitor *v){
+void* IQEIndex::accept(QEVisitor *v){
     return v->visit(this);
 }
 
+//-----------------------------------------------------------------------------
+// IQEBinary
+//-----------------------------------------------------------------------------
+IQEBinary::IQEBinary(IQuantExpr* _l, IQuantExpr* _r, perm_string _sym) :
+    l(_l), r(_r), sym(_sym)
+{
+}
+
+QuantExpr* IQEBinary::accept(QESubVisitor *v){
+    return v->visit(this);
+}
+
+void IQEBinary::dump(ostream& o){
+    o << "(" << sym .str() << " " << l << " " << r << ")";
+}
+
+void* IQEBinary::accept(QEVisitor *v){
+    return v->visit(this);
+}
+//-----------------------------------------------------------------------------
+// IQETernary
+//-----------------------------------------------------------------------------
+IQETernary::IQETernary(BQuantExpr* _b, IQuantExpr* _e1, IQuantExpr* _e2) :
+    b(_b), e1(_e1), e2(_e2)
+{
+}
+
+QuantExpr* IQETernary::accept(QESubVisitor *v){
+    return v->visit(this);
+}
+
+void IQETernary::dump(ostream& o){
+    o << "(ite (IBOOL " << b << ") " << e1 << " " << e2 << ")";
+}
+
+void* IQETernary::accept(QEVisitor *v){
+    return v->visit(this);
+}
+
+
+//=============================================================================
+// Boolean Quantifier Expressions
+//=============================================================================
+
+//-----------------------------------------------------------------------------
+// BQETrue
+//-----------------------------------------------------------------------------
+QuantExpr* BQETrue::accept(QESubVisitor *v){
+    return v->visit(this);
+}
+void*      BQETrue::accept(QEVisitor *v){
+    return v->visit(this);
+}
+void       BQETrue::dump(ostream&o){
+    o << "true";
+}
+
+BQETrue::BQETrue(){};
+
+//-----------------------------------------------------------------------------
+// BQEFalse
+//-----------------------------------------------------------------------------
+QuantExpr* BQEFalse::accept(QESubVisitor *v){
+    return v->visit(this);
+}
+void*      BQEFalse::accept(QEVisitor *v){
+    return v->visit(this);
+}
+void       BQEFalse::dump(ostream&o){
+    o << "false";
+}
+
+BQEFalse::BQEFalse(){};
+
+//-----------------------------------------------------------------------------
+// BQEFromIQE
+//-----------------------------------------------------------------------------
+QuantExpr* BQEFromIQE::accept(QESubVisitor *v){
+    return v->visit(this);
+}
+void*      BQEFromIQE::accept(QEVisitor *v){
+    return v->visit(this);
+}
+void       BQEFromIQE::dump(ostream&o){
+    o << "(IBOOL " << iexp;
+}
+
+BQEFromIQE::BQEFromIQE(IQuantExpr *_iexp) : iexp(_iexp) {};
+
+//-----------------------------------------------------------------------------
+// BQEBinary
+//-----------------------------------------------------------------------------
+QuantExpr* BQEBinary::accept(QESubVisitor *v){
+    return v->visit(this);
+}
+void*      BQEBinary::accept(QEVisitor *v){
+    return v->visit(this);
+}
+void       BQEBinary::dump(ostream&o){
+    o << l << sym.str();
+}
+
+BQEBinary::BQEBinary(BQuantExpr *_l, BQuantExpr *_r, perm_string _sym) :
+    l(_l), r(_r), sym(_sym)
+{};
+
+//-----------------------------------------------------------------------------
+// BQEEq
+//-----------------------------------------------------------------------------
+QuantExpr* BQEEq::accept(QESubVisitor *v){
+    return v->visit(this);
+}
+void*      BQEEq::accept(QEVisitor *v){
+    return v->visit(this);
+}
+void       BQEEq::dump(ostream&o){
+    o << "(= " << l << " " << r << ")";
+}
+
+BQEEq::BQEEq(IQuantExpr *_l, IQuantExpr *_r) : l(_l), r(_r) {};
 
 //=============================================================================
 // Label Quantifier Expressions
@@ -68,8 +189,9 @@ void* VQEIndex::accept(QEVisitor *v){
 //-----------------------------------------------------------------------------
 //LQEDep
 //-----------------------------------------------------------------------------
-LQEDep::LQEDep(perm_string _name, VQuantExpr* _vqe) :
-  vqe(_vqe), name(_name) {};
+LQEDep::LQEDep(perm_string _name, IQuantExpr* _vqe) :
+  vqe(_vqe), name(_name) {
+};
 
 void LQEDep::dump(ostream& o){
   o << name.str() << " " << vqe;

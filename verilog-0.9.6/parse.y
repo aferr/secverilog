@@ -227,7 +227,8 @@ static PECallFunction*make_call_function(perm_string tn, PExpr*arg1, PExpr*arg2)
       list<index_component_t> *dimensions;
       
       SecType*sectype;
-      VQuantExpr*vqetype;
+      IQuantExpr*iqetype;
+      BQuantExpr*bqetype;
       LQuantExpr*lqetype;
 };
 
@@ -373,7 +374,8 @@ static PECallFunction*make_call_function(perm_string tn, PExpr*arg1, PExpr*arg2)
 
 %type <sectype> sec_label
 %type <sectype> sec_label_comp
-%type <vqetype> vqe
+%type <iqetype> iqe
+%type <bqetype> bqe
 %type <lqetype> lqe
 
 %token K_TAND
@@ -531,47 +533,96 @@ sec_label_comp
   ;
 
 lqe
-  : IDENTIFIER vqe
+  : IDENTIFIER bqe
+    {
+      fprintf(stderr, "parsed bqe\n");
+      perm_string ident = lex_strings.make($1);
+      LQuantExpr* l = new LQEDep(ident, new IQEVar(ident) );
+      $$ = l; 
+    }
+/*
+  | IDENTIFIER iqe
     {
       perm_string ident = lex_strings.make($1);
       LQuantExpr* l = new LQEDep(ident, $2);
       $$ = l; 
     }
+*/
   ;
 
-vqe
-  : '(' vqe ')'
+iqe
+  : '(' iqe ')'
     {
         $$ = $2;
     }
   | number
     {
-      VQuantExpr* v = new VQENum($1);
+      IQuantExpr* v = new IQENum($1);
       $$ = v;
     }
   | IDENTIFIER
     {
-        VQuantExpr* v = new VQEVar(lex_strings.make($1));
+        IQuantExpr* v = new IQEVar(lex_strings.make($1));
         $$ = v;
     }
-  | vqe '+' vqe
+  | iqe '+' iqe
     {
         perm_string sym = perm_string::literal("+");
-        VQuantExpr* v = new VQEBinary($1, $3, sym);
+        IQuantExpr* v = new IQEBinary($1, $3, sym);
         $$ = v;
     }
-  | vqe '-' vqe
+  | iqe '-' iqe
     {
         perm_string sym = perm_string::literal("-");
-        VQuantExpr* v = new VQEBinary($1, $3, sym);
+        IQuantExpr* v = new IQEBinary($1, $3, sym);
         $$ = v;
     }
-  | vqe '?' vqe ':' vqe
+  | bqe "?" iqe ':' iqe
     {
-        VQuantExpr* v = new VQETernary($1, $3, $5);
+        fprintf(stderr, "trying to parse here\n");
+        IQuantExpr *v = new IQETernary($1, $3, $5);
         $$ = v;
     }
   ;
+
+bqe
+  : '(' bqe ')'
+    {
+      $$ = $2;
+    }
+  | "true"
+    {
+        BQuantExpr* v = new BQETrue();
+        $$ = v;
+    }
+  | "false"
+    {
+        BQuantExpr* v = new BQETrue();
+        $$ = v;
+    }
+  | "bool" iqe
+    {
+        BQuantExpr* v = new BQEFromIQE($2);
+        $$ = v;
+    }
+  | bqe '&' bqe
+    {
+        perm_string sym = perm_string::literal("and");
+        BQuantExpr *v = new BQEBinary($1, $3, sym); 
+        $$ = v;
+    }
+  | bqe '|' bqe
+    {
+        perm_string sym = perm_string::literal("or");
+        BQuantExpr *v = new BQEBinary($1, $3, sym);
+        $$ = v;
+    }
+  | iqe "==" iqe
+    {
+        BQuantExpr *v = new BQEEq($1, $3);
+        $$ = v;
+    }
+;
 
   /* The block_item_decl is used in function definitions, task
      definitions, module definitions and named blocks. Wherever a new

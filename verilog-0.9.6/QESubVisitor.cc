@@ -1,33 +1,64 @@
 # include "QuantExpr.h"
 
-QuantExpr* QESubVisitor::visit(VQENum* e){
+//-----------------------------------------------------------------------------
+// Integer Expressions
+//-----------------------------------------------------------------------------
+QuantExpr* QESubVisitor::visit(IQENum* e){
     return e;
 }
 
-QuantExpr* QESubVisitor::visit(VQEVar* e){
+QuantExpr* QESubVisitor::visit(IQEVar* e){
     return e;
 }
 
-QuantExpr* QESubVisitor::visit(VQEIndex* e){
+QuantExpr* QESubVisitor::visit(IQEIndex* e){
     return e;
 }
 
-QuantExpr* QESubVisitor::visit(VQEBinary* e){
-    return new VQEBinary(
-            dynamic_cast<VQuantExpr*>(e->l->accept(this)),
-            dynamic_cast<VQuantExpr*>(e->r->accept(this)),
+QuantExpr* QESubVisitor::visit(IQEBinary* e){
+    return new IQEBinary(
+            dynamic_cast<IQuantExpr*>(e->l->accept(this)),
+            dynamic_cast<IQuantExpr*>(e->r->accept(this)),
             e->sym);
 }
 
-QuantExpr* QESubVisitor::visit(VQETernary *e){
-    return new VQETernary(
-            dynamic_cast<VQuantExpr*>(e->b->accept(this)),
-            dynamic_cast<VQuantExpr*>(e->e1->accept(this)),
-            dynamic_cast<VQuantExpr*>(e->e2->accept(this)));
+QuantExpr* QESubVisitor::visit(IQETernary *e){
+    return new IQETernary(
+            dynamic_cast<BQuantExpr*>(e->b->accept(this)),
+            dynamic_cast<IQuantExpr*>(e->e1->accept(this)),
+            dynamic_cast<IQuantExpr*>(e->e2->accept(this)));
 }
 
+//-----------------------------------------------------------------------------
+// Boolean Expressions
+//-----------------------------------------------------------------------------
+QuantExpr* QESubVisitor::visit(BQETrue* e){
+    return e;
+}
+QuantExpr* QESubVisitor::visit(BQEFalse* e){
+    return e;
+}
+QuantExpr* QESubVisitor::visit(BQEFromIQE* e){
+    return new BQEFromIQE(
+            dynamic_cast<IQuantExpr*>(e->iexp->accept(this)));
+}
+QuantExpr* QESubVisitor::visit(BQEBinary* e){
+    return new BQEBinary(
+            dynamic_cast<BQuantExpr*>(e->l->accept(this)),
+            dynamic_cast<BQuantExpr*>(e->r->accept(this)),
+            e->sym);
+}
+QuantExpr* QESubVisitor::visit(BQEEq* e){
+    return new BQEEq(
+            dynamic_cast<IQuantExpr*>(e->l->accept(this)),
+            dynamic_cast<IQuantExpr*>(e->r->accept(this)));
+}
+
+//-----------------------------------------------------------------------------
+// Label Expressions
+//-----------------------------------------------------------------------------
 QuantExpr* QESubVisitor::visit(LQEDep* e){
     return new LQEDep(e->name, 
-            dynamic_cast<VQuantExpr*>(e->vqe->accept(this))
+            dynamic_cast<IQuantExpr*>(e->vqe->accept(this))
             );
 }

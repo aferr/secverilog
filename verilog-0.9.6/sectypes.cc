@@ -202,12 +202,12 @@ SecType * QuantType::apply_index(PExpr* e){
    }
 
    fprintf(stderr, "currently unsupported indexing expression\n");
-   index_expr_trans = new VQEIndex();
+   index_expr_trans = new IQEIndex();
    return this;
 }
 
 SecType * QuantType::apply_index(PENumber *n){
-    VQENum *v = new VQENum(n->value().as_ulong());
+    IQENum *v = new IQENum(n->value().as_ulong());
     index_expr_trans = v;
     return this;
     // return new QuantType(index_var,
@@ -216,7 +216,7 @@ SecType * QuantType::apply_index(PENumber *n){
 
 SecType * QuantType::apply_index(PEIdent *n){
    perm_string varname = n->path().front().name;
-   index_expr_trans = new VQEVar(varname);
+   index_expr_trans = new IQEVar(varname);
    return this; 
 }
 

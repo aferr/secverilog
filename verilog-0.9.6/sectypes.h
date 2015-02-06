@@ -258,8 +258,8 @@ class QuantType : public SecType {
     class IndexSwapInVisitor : public QESubVisitor {
         public: 
         IndexSwapInVisitor(perm_string i) : index_var(i) {};
-        virtual QuantExpr* visit(VQEVar* e){
-            return (e->name == index_var) ? (QuantExpr*) (new VQEIndex()) : 
+        virtual QuantExpr* visit(IQEVar* e){
+            return (e->name == index_var) ? (QuantExpr*) (new IQEIndex()) : 
                 (QuantExpr*) e;
         }
         perm_string index_var;
@@ -268,7 +268,7 @@ class QuantType : public SecType {
     class IndexSwapOutVisitor : public QESubVisitor {
         public: 
         IndexSwapOutVisitor(QuantExpr* e) : expr(e) {};
-        virtual QuantExpr* visit(VQEIndex* e){
+        virtual QuantExpr* visit(IQEIndex* e){
             return expr;
         }
         QuantExpr* expr;
@@ -276,7 +276,7 @@ class QuantType : public SecType {
 
     class ExprCollector : public QEVisitor {
         public:
-        void* visit(VQEVar* e){
+        void* visit(IQEVar* e){
             set<perm_string> *s = new set<perm_string>();
             s->insert(e->name);
             return s;
