@@ -295,6 +295,8 @@ static PECallFunction*make_call_function(perm_string tn, PExpr*arg1, PExpr*arg2)
 %token K_potential K_pow K_sin K_sinh K_sqrt K_string K_tan K_tanh
 %token K_units
 
+%token SV_TRUE SV_FALSE SV_BOOL
+
 %type <flag>    from_exclude
 %type <number>  number
 %type <flag>    signed_opt reg_opt udp_reg_opt edge_operator automatic_opt
@@ -533,21 +535,12 @@ sec_label_comp
   ;
 
 lqe
-  : IDENTIFIER bqe
-    {
-      fprintf(stderr, "parsed bqe\n");
-      perm_string ident = lex_strings.make($1);
-      LQuantExpr* l = new LQEDep(ident, new IQEVar(ident) );
-      $$ = l; 
-    }
-/*
-  | IDENTIFIER iqe
+  : IDENTIFIER iqe
     {
       perm_string ident = lex_strings.make($1);
       LQuantExpr* l = new LQEDep(ident, $2);
       $$ = l; 
     }
-*/
   ;
 
 iqe
@@ -577,9 +570,8 @@ iqe
         IQuantExpr* v = new IQEBinary($1, $3, sym);
         $$ = v;
     }
-  | bqe "?" iqe ':' iqe
+  | bqe '?' iqe ':' iqe
     {
-        fprintf(stderr, "trying to parse here\n");
         IQuantExpr *v = new IQETernary($1, $3, $5);
         $$ = v;
     }
@@ -590,17 +582,17 @@ bqe
     {
       $$ = $2;
     }
-  | "true"
+  | SV_TRUE
     {
         BQuantExpr* v = new BQETrue();
         $$ = v;
     }
-  | "false"
-    {
-        BQuantExpr* v = new BQETrue();
-        $$ = v;
-    }
-  | "bool" iqe
+  | SV_FALSE
+     {
+         BQuantExpr* v = new BQEFalse();
+         $$ = v;
+     }
+  | SV_BOOL iqe
     {
         BQuantExpr* v = new BQEFromIQE($2);
         $$ = v;
@@ -617,7 +609,7 @@ bqe
         BQuantExpr *v = new BQEBinary($1, $3, sym);
         $$ = v;
     }
-  | iqe "==" iqe
+  | iqe K_EQ iqe
     {
         BQuantExpr *v = new BQEEq($1, $3);
         $$ = v;

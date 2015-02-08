@@ -93,7 +93,7 @@ QuantExpr* IQETernary::accept(QESubVisitor *v){
 }
 
 void IQETernary::dump(ostream& o){
-    o << "(ite (IBOOL " << b << ") " << e1 << " " << e2 << ")";
+    o << "(ite " << b << " " << e1 << " " << e2 << ")";
 }
 
 void* IQETernary::accept(QEVisitor *v){
@@ -160,7 +160,7 @@ void*      BQEBinary::accept(QEVisitor *v){
     return v->visit(this);
 }
 void       BQEBinary::dump(ostream&o){
-    o << l << sym.str();
+    o << "(" << sym.str() << " " << l << " " << r << ")";
 }
 
 BQEBinary::BQEBinary(BQuantExpr *_l, BQuantExpr *_r, perm_string _sym) :
