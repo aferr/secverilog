@@ -227,6 +227,9 @@ static PECallFunction*make_call_function(perm_string tn, PExpr*arg1, PExpr*arg2)
       list<index_component_t> *dimensions;
       
       SecType*sectype;
+      IQuantExpr*iqetype;
+      BQuantExpr*bqetype;
+      LQuantExpr*lqetype;
 };
 
 %token <text>   IDENTIFIER SYSTEM_IDENTIFIER STRING
@@ -291,6 +294,8 @@ static PECallFunction*make_call_function(perm_string tn, PExpr*arg1, PExpr*arg2)
 %token K_hypot K_idt_nature K_inf K_ln K_log K_max K_min K_nature
 %token K_potential K_pow K_sin K_sinh K_sqrt K_string K_tan K_tanh
 %token K_units
+
+%token SV_TRUE SV_FALSE SV_BOOL
 
 %type <flag>    from_exclude
 %type <number>  number
@@ -371,6 +376,9 @@ static PECallFunction*make_call_function(perm_string tn, PExpr*arg1, PExpr*arg2)
 
 %type <sectype> sec_label
 %type <sectype> sec_label_comp
+%type <iqetype> iqe
+%type <bqetype> bqe
+%type <lqetype> lqe
 
 %token K_TAND
 %right '?' ':'
@@ -513,19 +521,117 @@ sec_label_comp
     {
       $$ = new MeetType ($1, $3);
     }
+  | '|' IDENTIFIER '|' lqe
+    {
+      perm_string index = lex_strings.make($2);
+      SecType* type = new QuantType(index, $4);
+      $$ = type;
+    }
   | // use default label Low
     { 
       SecType* type = ConstType::BOT;
       $$ = type;
     } 
   ;
-  
+
+lqe
+  : IDENTIFIER iqe
+    {
+      perm_string ident = lex_strings.make($1);
+      LQuantExpr* l = new LQEDep(ident, $2);
+      $$ = l; 
+    }
+  | IDENTIFIER
+    {
+      perm_string ident = lex_strings.make($1);
+      $$ = new LQEConst(ident);
+    }
+  | bqe '?' lqe ':' lqe
+    {
+      $$ = new LQETernary( $1, $3, $5);
+    }
+  ;
+
+iqe
+  : '(' iqe ')'
+    {
+        $$ = $2;
+    }
+  | number
+    {
+      IQuantExpr* v = new IQENum($1);
+      $$ = v;
+    }
+  | IDENTIFIER
+    {
+        IQuantExpr* v = new IQEVar(lex_strings.make($1));
+        $$ = v;
+    }
+  | iqe '+' iqe
+    {
+        perm_string sym = perm_string::literal("+");
+        IQuantExpr* v = new IQEBinary($1, $3, sym);
+        $$ = v;
+    }
+  | iqe '-' iqe
+    {
+        perm_string sym = perm_string::literal("-");
+        IQuantExpr* v = new IQEBinary($1, $3, sym);
+        $$ = v;
+    }
+  | bqe '?' iqe ':' iqe
+    {
+        IQuantExpr *v = new IQETernary($1, $3, $5);
+        $$ = v;
+    }
+  ;
+
+bqe
+  : '(' bqe ')'
+    {
+      $$ = $2;
+    }
+  | SV_TRUE
+    {
+        BQuantExpr* v = new BQETrue();
+        $$ = v;
+    }
+  | SV_FALSE
+     {
+         BQuantExpr* v = new BQEFalse();
+         $$ = v;
+     }
+  | SV_BOOL iqe
+    {
+        BQuantExpr* v = new BQEFromIQE($2);
+        $$ = v;
+    }
+  | bqe '&' bqe
+    {
+        perm_string sym = perm_string::literal("and");
+        BQuantExpr *v = new BQEBinary($1, $3, sym); 
+        $$ = v;
+    }
+  | bqe '|' bqe
+    {
+        perm_string sym = perm_string::literal("or");
+        BQuantExpr *v = new BQEBinary($1, $3, sym);
+        $$ = v;
+    }
+  | iqe K_EQ iqe
+    {
+        BQuantExpr *v = new BQEEq($1, $3);
+        $$ = v;
+    }
+;
+
   /* The block_item_decl is used in function definitions, task
      definitions, module definitions and named blocks. Wherever a new
      scope is entered, the source may declare new registers and
      integers. This rule matches those declarations. The containing
      rule has presumably set up the scope. */
 
+//TODO range set
 block_item_decl
 	: attribute_list_opt K_reg
           primitive_type_opt signed_opt range
@@ -1922,6 +2028,7 @@ list_of_port_declarations
 		}
         ;
 
+//TODO range set
 port_declaration
   : attribute_list_opt
     K_input net_type_opt signed_opt range_opt sec_label IDENTIFIER
@@ -1941,6 +2048,7 @@ port_declaration
 	delete[]$7;
 	$$ = ptmp;
       }
+    //TODO range set
   | attribute_list_opt
     K_inout  net_type_opt signed_opt range_opt sec_label IDENTIFIER
       { Module::port_t*ptmp;
@@ -1959,6 +2067,7 @@ port_declaration
 	delete[]$7;
 	$$ = ptmp;
       }
+    //TODO range set
   | attribute_list_opt
     K_output net_type_opt signed_opt range_opt sec_label IDENTIFIER
       { Module::port_t*ptmp;
@@ -1977,6 +2086,7 @@ port_declaration
 	delete[]$7;
 	$$ = ptmp;
       }
+    //TODO range set
   | attribute_list_opt
     K_output var_type signed_opt range_opt sec_label IDENTIFIER
       { Module::port_t*ptmp;
@@ -1995,6 +2105,7 @@ port_declaration
 	delete[]$7;
 	$$ = ptmp;
       }
+    //TODO range set
   | attribute_list_opt
     K_output var_type signed_opt range_opt sec_label IDENTIFIER '=' expression
       { Module::port_t*ptmp;
@@ -2143,12 +2254,15 @@ module_item
 
 		{ ivl_variable_type_t dtype = $3;
 		  if (dtype == IVL_VT_NO_TYPE)
-			dtype = IVL_VT_LOGIC;
+		      dtype = IVL_VT_LOGIC;
+          if ($5!=0) {
+             $7->set_range((*$5)[1],(*$5)[0]);
+          }
 		  pform_makewire(@2, $5, $4, $8, $2,
-				 NetNet::NOT_A_PORT, dtype, $7, $1);
+            NetNet::NOT_A_PORT, dtype, $7, $1);
 		  if ($6 != 0) {
-			yyerror(@6, "sorry: net delays not supported.");
-			delete $6;
+			    yyerror(@6, "sorry: net delays not supported.");
+			    delete $6;
 		  }
 		  if ($1) delete $1;
 		}
@@ -2157,6 +2271,7 @@ module_item
      net_decl_assigns, which are <name> = <expr> assignment
      declarations. */
 
+    //TODO range set
 	| attribute_list_opt net_type
           primitive_type_opt signed_opt range_opt
           delay3_opt sec_label net_decl_assigns ';'
@@ -2191,12 +2306,14 @@ module_item
 		  }
 		}
 
+    //TODO range set
 	| K_trireg charge_strength_opt range_opt delay3_opt sec_label list_of_identifiers ';'
 		{ yyerror(@1, "sorry: trireg nets not supported.");
 		  delete $3;
 		  delete $4;
 		}
 
+    //TODO range set
 	| port_type signed_opt range_opt delay3_opt sec_label list_of_identifiers ';'
 		{ pform_set_port_type(@1, $6, $3, $2, $1, $5);
 		}
@@ -2205,11 +2322,13 @@ module_item
        input wire signed [h:l] <list>;
      This creates the wire and sets the port type all at once. */
 
+    //TODO range set
 	| port_type net_type signed_opt range_opt sec_label list_of_identifiers ';'
 		{ pform_makewire(@1, $4, $3, $6, $2, $1, IVL_VT_NO_TYPE, $5, 0,
 		                 SR_BOTH);
 		}
 
+    //TODO range set
 	| K_output var_type signed_opt range_opt sec_label list_of_port_identifiers ';'
 		{ list<pair<perm_string,PExpr*> >::const_iterator pp;
 		  list<perm_string>*tmp = new list<perm_string>;
@@ -2230,12 +2349,14 @@ module_item
      because the port declaration implies an external driver, which
      cannot be attached to a reg. These rules catch that error early. */
 
+    //TODO range set
 	| K_input var_type signed_opt range_opt sec_label list_of_identifiers ';'
 		{ pform_makewire(@1, $4, $3, $6, $2, NetNet::PINPUT,
 				 IVL_VT_NO_TYPE, $5, 0);
 		  yyerror(@2, "error: reg variables cannot be inputs.");
 		}
 
+    //TODO range set
 	| K_inout var_type signed_opt range_opt sec_label list_of_identifiers ';'
 		{ pform_makewire(@1, $4, $3, $6, $2, NetNet::PINOUT,
 				 IVL_VT_NO_TYPE, $5, 0);

@@ -24,6 +24,7 @@
  */
 # include  "PExpr.h"
 # include  "sectypes.h"
+# include  "pform_types.h"
 
 SecType* PEBinary::typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const
 {
@@ -67,7 +68,12 @@ SecType* PEIdent::typecheck(ostream&out, map<perm_string, SecType*>&varsToType) 
 	perm_string name = peek_tail_name(path_);
 	map<perm_string,SecType*>::const_iterator find = varsToType.find(name);
 	if (find != varsToType.end()) {
-		return (*find).second;
+        SecType* tau = (*find).second;
+        index_component_t index = path().back().index.front();
+        if(index.sel==index_component_t::SEL_BIT) { 
+            tau = tau->apply_index(index.msb);
+        }
+		return tau;
 	}
 	else {
 		cout <<  "Unbounded var name: " << name.str() << endl;

@@ -173,8 +173,9 @@ void PWire::typecheck(ostream&out, map<perm_string, SecType*>& varsToType) const
 
 		cout << ";" << endl;
 	}
-
+    
 	varsToType[basename()] = sectype_;
+    sectype_->give_name(basename());
 }
 
 /**
@@ -210,6 +211,22 @@ void Module::CollectDepExprs(ostream&out, TypeEnv & env) const {
 					<< (1 << (def->getRange() + 1)) - 1 << "))" << endl;
 		}
 	}
+}
+
+void CalculateQuantBounds(SecType *st, TypeEnv *env)
+{
+    set<perm_string> *exprs = new set<perm_string>;
+    st->collect_bound_exprs(exprs);
+    for( std::set<perm_string>::iterator ite = exprs->begin();
+            ite != exprs->end(); ite++) {
+        perm_string e = *ite;
+        map<perm_string,PWire*>::const_iterator cur = env->module->wires.find(e);
+        if(cur != env->module->wires.end()) {
+            PWire *wire = (*cur).second;
+            QBound *b = new QBound(pow(2,wire->getRange()+1)-1,0,e);
+            st->insert_bound(b);
+        }
+    }
 }
 
 /**
@@ -376,24 +393,40 @@ void AContrib::typecheck(ostream&out, TypeEnv& env, Predicate& pred) const {
  */
 void typecheck_assignment_constraint(ostream& out, SecType* lhs, SecType* rhs,
 		Predicate pred, string note, string vardecl, TypeEnv* env) {
+
 	out << endl << "(push)" << endl;
 	out << vardecl;
-	Constraint* c = new Constraint(lhs, rhs, env->invariants, &pred);
-	out << *c;
-	out << "    ; " << note << endl;
-	out << "(check-sat)" << endl;
-	out << "(pop)" << endl << endl;
+    
+  QFuncDefs* d = new QFuncDefs();
+  if(lhs->has_defs()){
+      d->defs.insert(lhs);
+  }
+  if(rhs->has_defs()){
+      d->defs.insert(rhs);
+  }
+  
+  QBounds *b = new QBounds();
+  CalculateQuantBounds(lhs, env);
+  CalculateQuantBounds(rhs, env);
+  lhs->get_bounds(b);
+  rhs->get_bounds(b);
 
-	// check restrictions on write labels
-	if (check_write) {
-		out << endl << "(push)" << endl;
-		out << vardecl;
-		c = new Constraint(lhs, IndexType::WL, env->invariants, &pred);
-		out << *c;
-		out << "    ; check write label " << note << endl;
-		out << "(check-sat)" << endl;
-		out << "(pop)" << endl << endl;
-	}
+  Constraint* c = new Constraint(lhs, rhs, env->invariants, &pred);
+  c->def = d;
+  c->bound = b;
+  out << *c;
+  out << "    ; " << note << endl;
+  out << "(check-sat)" << endl;
+  out << "(pop)" << endl << endl;
+  if (check_write) {
+  	out << endl << "(push)" << endl;
+  	out << vardecl;
+  	c = new Constraint(lhs, IndexType::WL, env->invariants, &pred);
+  	out << *c;
+  	out << "    ; check write label " << note << endl;
+  	out << "(check-sat)" << endl;
+  	out << "(pop)" << endl << endl;
+  }
 }
 
 /**
@@ -1080,6 +1113,19 @@ void output_lattice(ostream& out, char* lattice) {
 	out << "(assert (forall ((x Label) (y Label) (z Label)) (implies (and (leq x y) (leq x z)) (leq x (meet y z)))))" << endl;
 	out << "(assert (forall ((x Label) (y Label)) (and (leq (meet x y) x) (leq (meet x y) y))))" << endl;
 	out << "(assert (forall ((x Label) (y Label)) (= (meet x y) (meet y x))))" << endl;
+
+
+    out << 
+        "; convert int to bool" << endl <<
+        "(declare-fun IBOOL (Int) Bool)" << endl <<
+        "(assert (forall ((x Int))" << endl <<
+        "    (and" << endl <<
+        "        (implies (= x 0) (= (IBOOL x) false))" << endl <<
+        "        (implies (not (= x 0)) (= (IBOOL x) true))" << endl <<
+        "    )" << endl <<
+        "))" << endl;
+
+
 
 	out << endl << "; lattice elements" << endl;
 	out << "(declare-fun LOW () Label)" << endl;

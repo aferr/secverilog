@@ -25,11 +25,15 @@
  */
 # include  <string>
 # include  <sstream>
+# include  <stdio.h>
 # include  "PExpr.h"
 # include  "sectypes.h"
 
 extern StringHeap lex_strings;
 
+//----------------------------------------------------------------------------
+// ConstType
+//----------------------------------------------------------------------------
 ConstType* ConstType::TOP = new ConstType(lex_strings.make("HIGH"));
 ConstType* ConstType::BOT = new ConstType(lex_strings.make("LOW"));
 
@@ -68,7 +72,9 @@ SecType* ConstType::freshVars(unsigned int lineno, map<perm_string, perm_string>
 	return this;
 }
 
-/* type variables */
+//----------------------------------------------------------------------------a
+// VarType
+//-----------------------------------------------------------------------------
 
 VarType::VarType(perm_string varname)
 {
@@ -118,6 +124,81 @@ bool VarType::hasExpr(perm_string str)
 {
 	return varname_ == str;
 }
+
+//-----------------------------------------------------------------------------
+// QuantType
+//-----------------------------------------------------------------------------
+// Universally quantified types.
+QuantType::QuantType(perm_string _index_var, QuantExpr *_expr) 
+{
+    index_var = _index_var;
+    bound = new QBounds();
+    def_expr = _expr->accept(new IndexSwapInVisitor(_index_var));
+}
+
+bool QuantType::equals(SecType *st){
+  QuantType* at = dynamic_cast<QuantType*>(st);
+  if(at != NULL){
+    // Deep equality check the expression assuming the index is the same.
+    // return expr.equals(at->expr);
+  }
+  return false;
+}
+
+void QuantType::collect_bound_exprs(set<perm_string>* m)
+{
+    void* s_ = index_expr_trans ->accept(new ExprCollector());
+    set<perm_string> s = *(static_cast<set<perm_string>*>(s_));
+    for(set<perm_string>::iterator it=s.begin(); it!=s.end(); it++){
+        m->insert(*it);
+    }
+}
+
+
+SecType * QuantType::apply_index(PExpr* e){
+   // Dunamic typecasting is poor OO-Design. Instead, call a function of PExpr 
+   // that returns a QuantExpr.
+   // For now only handle integers and identifiers.
+
+   // QuantType* ret = deep_copy();
+   // ret->index_expr = PExpr;
+   // ret->index_expr_trans = PExpr->quantTranslation();   
+   // return ret;
+
+
+   PENumber *n = dynamic_cast<PENumber*>(e);
+   if(n != NULL){
+       return apply_index(n);
+   } 
+
+   PEIdent *i = dynamic_cast<PEIdent*>(e);
+   if(i != NULL){
+       return apply_index(i);
+   }
+
+   fprintf(stderr, "currently unsupported indexing expression\n");
+   index_expr_trans = new IQEIndex();
+   return this;
+}
+
+SecType * QuantType::apply_index(PENumber *n){
+    IQENum *v = new IQENum(n->value().as_ulong());
+    index_expr_trans = v;
+    return this;
+    // return new QuantType(index_var,
+    //         expr->accept(new IndexSwapOutVisitor(v)));
+}
+
+SecType * QuantType::apply_index(PEIdent *n){
+   perm_string varname = n->path().front().name;
+   index_expr_trans = new IQEVar(varname);
+   return this; 
+}
+
+
+//-----------------------------------------------------------------------------
+// IndexType
+//-----------------------------------------------------------------------------
 
 IndexType* IndexType::RL = new IndexType(perm_string::literal("Par"), perm_string::literal("ReadLabel"));
 IndexType* IndexType::WL = new IndexType(perm_string::literal("Par"), perm_string::literal("WriteLabel"));
@@ -212,6 +293,25 @@ bool IndexType::hasExpr(perm_string str)
 	return expr_ == str;
 }
 
+// Unclear if the below segments are needed after a merge:
+// CNF& CNF::append(const CNF& cnf)
+// {
+// 	CNF* ret = new CNF();
+// 	ret->cnf_type_.insert(ret->cnf_type_.begin(), cnf_type_.begin(), cnf_type_.end());
+// 	ret->cnf_type_.insert(ret->cnf_type_.begin(), cnf.cnf_type_.begin(), cnf.cnf_type_.end());
+// 	return *ret;
+// }
+// 
+// CNF& CNF::operator= (const CNF& cnf)
+// {
+// 	CNF* ret = new CNF();
+// 	ret->cnf_type_.insert(ret->cnf_type_.begin(), cnf.cnf_type_.begin(), cnf.cnf_type_.end());
+// 	return *ret;
+// }
+
+//-----------------------------------------------------------------------------
+// JoinType
+//-----------------------------------------------------------------------------
 JoinType::JoinType(SecType* ty1, SecType* ty2)
 {
 	comp1_ = ty1;
@@ -304,6 +404,9 @@ bool JoinType::hasExpr(perm_string str)
 	return comp1_->hasExpr(str) || comp2_->hasExpr(str);
 }
 
+//-----------------------------------------------------------------------------
+// MeetType
+//-----------------------------------------------------------------------------
 MeetType::MeetType(SecType* ty1, SecType* ty2)
 {
 	comp1_ = ty1;
