@@ -208,7 +208,13 @@ void* LQEDep::accept(QEVisitor *v){
 // LQEConst
 //-----------------------------------------------------------------------------
 LQEConst::LQEConst(perm_string _name) : name(_name)
-{}
+{
+  if(name == perm_string::literal("L")){
+    name = perm_string::literal("LOW");
+  } else if( name == perm_string::literal("H")){
+    name = perm_string::literal("HIGH");
+  }
+}
 
 void LQEConst::dump(ostream& o){
   o << name.str();
@@ -219,5 +225,24 @@ QuantExpr* LQEConst::accept(QESubVisitor *v){
 }
 
 void* LQEConst::accept(QEVisitor* v){
+  return v->visit(this);
+}
+
+//-----------------------------------------------------------------------------
+//LQETernary
+//-----------------------------------------------------------------------------
+LQETernary::LQETernary(BQuantExpr *_b, LQuantExpr *_l, LQuantExpr *_r) :
+  b(_b), l(_l), r(_r) {
+}
+
+void LQETernary::dump(ostream& o){
+  o << "ite " << b << " " << l << " " << r;
+}
+
+QuantExpr* LQETernary::accept(QESubVisitor *v){
+  return v->visit(this);
+}
+
+void* LQETernary::accept(QEVisitor* v){
   return v->visit(this);
 }

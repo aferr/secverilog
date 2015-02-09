@@ -169,6 +169,18 @@ class LQEConst : public LQuantExpr {
     perm_string name;
 };
 
+class LQETernary : public LQuantExpr {
+  public:
+    virtual void dump(ostream&o);
+    virtual QuantExpr* accept(QESubVisitor *v);
+    virtual void* accept(QEVisitor *v);
+
+    LQETernary(BQuantExpr *b, LQuantExpr *l, LQuantExpr *r);
+    BQuantExpr *b;
+    LQuantExpr *l;
+    LQuantExpr *r;
+};
+
 //-----------------------------------------------------------------------------
 // QEVisitor
 //-----------------------------------------------------------------------------
@@ -188,6 +200,7 @@ class QEVisitor {
 
     virtual void* visit(LQEDep* e);
     virtual void* visit(LQEConst* e);
+    virtual void* visit(LQETernary* e);
     virtual void* reduce(void* a, void* b);
     virtual void* reduce(void* vals, ...);
     virtual void* default_val();
@@ -212,4 +225,5 @@ class QESubVisitor {
 
     virtual QuantExpr* visit(LQEDep* e);
     virtual QuantExpr* visit(LQEConst* e);
+    virtual QuantExpr* visit(LQETernary* e);
 };

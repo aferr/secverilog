@@ -59,6 +59,13 @@ void* QEVisitor::visit(LQEConst* e){
   return default_val();
 }
 
+void* QEVisitor::visit(LQETernary* e){
+  return reduce(
+      e->b->accept(this),
+      e->l->accept(this),
+      e->r->accept(this));
+}
+
 //-----------------------------------------------------------------------------
 // Reduce / Default
 //-----------------------------------------------------------------------------

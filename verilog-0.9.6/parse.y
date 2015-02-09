@@ -546,6 +546,10 @@ lqe
       perm_string ident = lex_strings.make($1);
       $$ = new LQEConst(ident);
     }
+  | bqe '?' lqe ':' lqe
+    {
+      $$ = new LQETernary( $1, $3, $5);
+    }
   ;
 
 iqe

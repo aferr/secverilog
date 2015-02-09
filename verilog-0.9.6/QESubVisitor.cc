@@ -66,3 +66,11 @@ QuantExpr* QESubVisitor::visit(LQEDep* e){
 QuantExpr* QESubVisitor::visit(LQEConst* e){
     return e;
 }
+
+QuantExpr* QESubVisitor::visit(LQETernary* e){
+    return new LQETernary(
+            dynamic_cast<BQuantExpr*>(e->b->accept(this)),
+            dynamic_cast<LQuantExpr*>(e->l->accept(this)),
+            dynamic_cast<LQuantExpr*>(e->r->accept(this))
+            );
+}
