@@ -541,6 +541,11 @@ lqe
       LQuantExpr* l = new LQEDep(ident, $2);
       $$ = l; 
     }
+  | IDENTIFIER
+    {
+      perm_string ident = lex_strings.make($1);
+      $$ = new LQEConst(ident);
+    }
   ;
 
 iqe

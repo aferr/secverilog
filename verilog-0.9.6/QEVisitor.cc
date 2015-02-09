@@ -55,6 +55,13 @@ void* QEVisitor::visit(LQEDep* e){
     return e->vqe->accept(this);
 }
 
+void* QEVisitor::visit(LQEConst* e){
+  return default_val();
+}
+
+//-----------------------------------------------------------------------------
+// Reduce / Default
+//-----------------------------------------------------------------------------
 void* QEVisitor::reduce(void* a, void* b){
     return default_val();
 }

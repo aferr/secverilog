@@ -204,4 +204,20 @@ void* LQEDep::accept(QEVisitor *v){
     return v->visit(this);
 }
 
+//-----------------------------------------------------------------------------
+// LQEConst
+//-----------------------------------------------------------------------------
+LQEConst::LQEConst(perm_string _name) : name(_name)
+{}
 
+void LQEConst::dump(ostream& o){
+  o << name.str();
+}
+
+QuantExpr* LQEConst::accept(QESubVisitor *v){
+  return v->visit(this);
+}
+
+void* LQEConst::accept(QEVisitor* v){
+  return v->visit(this);
+}

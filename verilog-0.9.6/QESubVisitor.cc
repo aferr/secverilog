@@ -62,3 +62,7 @@ QuantExpr* QESubVisitor::visit(LQEDep* e){
             dynamic_cast<IQuantExpr*>(e->vqe->accept(this))
             );
 }
+
+QuantExpr* QESubVisitor::visit(LQEConst* e){
+    return e;
+}
