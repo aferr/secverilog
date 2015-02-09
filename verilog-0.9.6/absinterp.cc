@@ -25,7 +25,9 @@
 #include "Statement.h"
 #include "StringHeap.h"
 
-// invalidate all constraints constraining expr with name
+/**
+ * Invalidate all constraints constraining "name"
+ */
 void invalidate (Predicate& pred, perm_string name)
 {
 	set<Hypothesis*>::iterator ite = pred.hypotheses.begin();
@@ -44,6 +46,9 @@ void AContrib::absintp(Predicate& pred) const
 	throw "AContrib";
 }
 
+/**
+ * For blocking assignment, clear predicates on the lhs. Set up a new predicate on lhs if the rhs is a number.
+ */
 void PAssign::absintp(Predicate& pred, TypeEnv& env) const
 {
 	invalidate(pred, lval_->get_name());
@@ -63,11 +68,16 @@ void PCallTask::absintp(Predicate& pred, TypeEnv& env) const
 {
 }
 
+/**
+ * Do nothing for now. Add more details to improve precision later.
+ */
 void PCase::absintp(Predicate& pred, TypeEnv& env, unsigned idx) const
 {
-	// TODO: fix later
 }
 
+/**
+ * Set up a predicate for branches, if the condition is simple.
+ */
 void PCondit::absintp(Predicate& pred, TypeEnv& env, bool istrue) const
 {
 	if (istrue && if_) {
@@ -80,6 +90,9 @@ void PCondit::absintp(Predicate& pred, TypeEnv& env, bool istrue) const
 	}
 }
 
+/**
+ * Merge point of a branch. Simply take the intersection of two sets.
+ */
 void PCondit::merge(Predicate& pred1, Predicate& pred2, Predicate& ret) const
 {
 	std::set_intersection(pred1.hypotheses.begin(), pred1.hypotheses.end(),

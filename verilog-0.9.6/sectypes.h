@@ -24,8 +24,7 @@
  *
  * Basic types ::= High | Low (extend this later)
  * Type vars ::= \alpha
- * Type family ::= Par
- * Kind of Par : PWire -> Basic types
+ * Type family (IndexType) ::= f, functions from expressions to types
  * Type ::= Basic types | Type vars | (Type family) e
  *
  * Type environment:
@@ -42,7 +41,6 @@ class VarType;
 class JoinType;
 class IndexType;
 struct TypeEnv;
-struct CNF;
 
 class SecType {
 
@@ -63,45 +61,37 @@ class SecType {
     //  BasicType& operator= (const BasicType&);
 };
 
-/* for now, only support two types: L and H */
 class ConstType : public SecType {
 
-    public:
-      enum TYPES { LOW, HIGH, D1, D2 };
+public:
 
-      ConstType();
-      ConstType(TYPES t);
-      ConstType(perm_string name);
-      ~ConstType();
-      ConstType& operator= (const ConstType&);
-      void dump(ostream&o) {
-    	if (type_ == LOW)
-    	  o << "LOW";
-    	else if (type_ == HIGH)
-    	  o << "HIGH";
-	else if (type_ == D1)
-	  o << "D1";
-	else if (type_ == D2)
-	  o << "D2";
-      }
-      bool hasBottom() {return type_ == LOW;}
-      bool hasTop() {return type_ == HIGH;}
-      bool isBottom() {return type_ == LOW;}
-      bool isTop() {return type_ == HIGH;}
-      bool equals(SecType* st);
-      SecType* freshVars(unsigned int lineno, map<perm_string, perm_string>& m);
+	ConstType();
+	ConstType(perm_string name);
+	~ConstType();
+	void dump(ostream&o) {
+		o << name;
+	}
+	bool hasBottom() {
+		return name == "LOW";
+	}
+	bool hasTop() {
+		return name == "HIGH";
+	}
+	bool isBottom() {
+		return name == "LOW";
+	}
+	bool isTop() {
+		return name == "HIGH";
+	}
+	bool equals(SecType* st);
+	SecType* freshVars(unsigned int lineno, map<perm_string, perm_string>& m);
 
-    public:
-	// Manipulate the types.
-      void set_type(TYPES t);
-      TYPES get_type() const;
+public:
+  static ConstType* TOP;
+  static ConstType* BOT;
 
-    public:
-      static ConstType* TOP;
-      static ConstType* BOT;
-
-    private:
-      TYPES type_;
+private:
+	perm_string name;
 };
 
 /* type variables */
@@ -124,7 +114,7 @@ class VarType : public SecType {
       perm_string varname_;
 };
 
-/* type variables */
+/* Dynamic type */
 class IndexType : public SecType {
 
     public:
@@ -154,13 +144,6 @@ class IndexType : public SecType {
     private:
       perm_string name_;
       perm_string expr_;
-};
-
-struct CNF {
-    list<list<SecType> > cnf_type_;
-
-    CNF& operator= (const CNF&);
-    CNF& append (const CNF&);
 };
 
 /* a CompType can be a join/meet of CompTypes */
@@ -230,6 +213,9 @@ class MeetType : public SecType {
 	  SecType* comp2_;
 };
 
+/**
+ * An equality expression
+ */
 struct Hypothesis {
 	PExpr* bexpr_;
 

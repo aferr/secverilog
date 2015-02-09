@@ -220,15 +220,15 @@ AC_SUBST(strip_dynamic)
 
 # AX_CPP_PRECOMP
 # --------------
-AC_DEFUN([AX_CPP_PRECOMP],
-[# Darwin requires -no-cpp-precomp
-case "${host}" in
-    *-*-darwin*)
-        CPPFLAGS="-no-cpp-precomp $CPPFLAGS"
-        CFLAGS="-no-cpp-precomp $CFLAGS"
-        ;;
-esac
-])# AX_CPP_PRECOMP
+#AC_DEFUN([AX_CPP_PRECOMP],
+#[# Darwin requires -no-cpp-precomp
+#case "${host}" in
+#    *-*-darwin*)
+#        CPPFLAGS="-no-cpp-precomp $CPPFLAGS"
+#        CFLAGS="-no-cpp-precomp $CFLAGS"
+#        ;;
+#esac
+#])# AX_CPP_PRECOMP
 
 # AX_C99_STRTOD
 # -------------

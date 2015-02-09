@@ -395,7 +395,7 @@ void pform_startmodule(const char*name, const char*file, unsigned lineno,
       assert( pform_cur_module == 0 );
 
       perm_string lex_name = lex_strings.make(name);
-      pform_cur_module = new Module(lex_name);
+      pform_cur_module = new Module(lex_name, lex_strings.make(file));
       pform_cur_module->time_unit = pform_time_unit;
       pform_cur_module->time_precision = pform_time_prec;
 	/* If we have a timescale file then the time information is from

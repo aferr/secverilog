@@ -28,62 +28,37 @@
 # include  "PExpr.h"
 # include  "sectypes.h"
 
-ConstType* ConstType::TOP = new ConstType(HIGH);
-ConstType* ConstType::BOT = new ConstType(LOW);
+extern StringHeap lex_strings;
+
+ConstType* ConstType::TOP = new ConstType(lex_strings.make("HIGH"));
+ConstType* ConstType::BOT = new ConstType(lex_strings.make("LOW"));
 
 ConstType::ConstType()
 {
-	type_ = ConstType::LOW;
+	name = lex_strings.make("LOW");
 }
 
-ConstType::ConstType(perm_string name)
+ConstType::ConstType(perm_string n)
 {
 	// currently, only support Low and High
-	if (name == "Low" || name == "L")
-		type_ = ConstType::LOW;
-	else if (name == "High" || name == "H")
-		type_ = ConstType::HIGH;
-	else if (name == "D1")
-		type_ = ConstType::D1;
-	else if (name == "D2")
-		type_ = ConstType::D2;
+	if (n == "Low" || n == "L")
+		name = lex_strings.make("LOW");
+	else if (n == "High" || n == "H")
+		name = lex_strings.make("HIGH");
 	else {
-		cerr << "Only label Low(L), High(H), D1 and D2 are supported" << endl;
-		exit(0);
+		name =n;
 	}
-}
-
-ConstType::ConstType(TYPES t)
-{
-	type_ = t;
 }
 
 ConstType::~ConstType()
 {
 }
 
-ConstType& ConstType::operator= (const ConstType& t)
-{
-	ConstType* ret = new ConstType();
-	ret->set_type(t.type_);
-	return *ret;
-}
-
-void ConstType::set_type(ConstType::TYPES t)
-{
-	type_ = t;
-}
-
-ConstType::TYPES ConstType::get_type() const
-{
-	return type_;
-}
-
 bool ConstType::equals(SecType* st)
 {
 	ConstType* ct = dynamic_cast<ConstType*>(st);
 	if (ct!=NULL) {
-		return type_ == ct->type_;
+		return name == ct->name;
 	}
 	return false;
 }
@@ -237,30 +212,10 @@ bool IndexType::hasExpr(perm_string str)
 	return expr_ == str;
 }
 
-CNF& CNF::append(const CNF& cnf)
-{
-	CNF* ret = new CNF();
-	ret->cnf_type_.insert(ret->cnf_type_.begin(), cnf_type_.begin(), cnf_type_.end());
-	ret->cnf_type_.insert(ret->cnf_type_.begin(), cnf.cnf_type_.begin(), cnf.cnf_type_.end());
-	return *ret;
-}
-
-CNF& CNF::operator= (const CNF& cnf)
-{
-	CNF* ret = new CNF();
-	ret->cnf_type_.insert(ret->cnf_type_.begin(), cnf.cnf_type_.begin(), cnf.cnf_type_.end());
-	return *ret;
-}
-
 JoinType::JoinType(SecType* ty1, SecType* ty2)
 {
 	comp1_ = ty1;
 	comp2_ = ty2;
-	/*
-	list<SecType> l;
-	l.push_back(t);
-	type_.cnf_type_.push_back(l);
-	*/
 }
 
 JoinType::~JoinType()
@@ -353,11 +308,6 @@ MeetType::MeetType(SecType* ty1, SecType* ty2)
 {
 	comp1_ = ty1;
 	comp2_ = ty2;
-	/*
-	list<SecType> l;
-	l.push_back(t);
-	type_.cnf_type_.push_back(l);
-	*/
 }
 
 MeetType::~MeetType()

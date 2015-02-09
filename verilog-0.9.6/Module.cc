@@ -25,9 +25,10 @@
 # include  <cassert>
 
 /* n is a permallocated string. */
-Module::Module(perm_string n)
+Module::Module(perm_string n, perm_string f)
 : PScope(n)
 {
+      file = f;
       library_flag = false;
       is_cell = false;
       uc_drive = UCD_NONE;

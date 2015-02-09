@@ -65,8 +65,8 @@ class Module : public PScope, public LineInfo {
 
     public:
 	/* The name passed here is the module name, not the instance
-	   name. This make must be a permallocated string. */
-      explicit Module(perm_string name);
+	   name, as well as file name. This make must be a permallocated string. */
+      explicit Module(perm_string name, perm_string file);
       ~Module();
 
 	/* Initially false. This is set to true if the module has been
@@ -131,6 +131,9 @@ class Module : public PScope, public LineInfo {
 	// The mod_name() is the name of the module type.
       perm_string mod_name() const { return pscope_name(); }
 
+        // The file_name() is the name of the file that defines the module type.
+      perm_string file_name() const { return file; }
+
       void add_gate(PGate*gate);
 
       unsigned port_count() const;
@@ -149,11 +152,13 @@ class Module : public PScope, public LineInfo {
 
       bool elaborate_sig(Design*, NetScope*scope) const;
 
-      void typecheck(ostream&out, TypeEnv& env, map<perm_string,Module*> modules) const;
+      void typecheck(ostream&out, TypeEnv& env, map<perm_string,Module*> modules, char* depfun) const;
       void CollectDepExprs(ostream&out, TypeEnv & env) const;
 
     private:
       list<PGate*> gates_;
+
+      perm_string file;
 
       static void elaborate_parm_item_(perm_string name, const param_expr_t&cur,
 				       Design*des, NetScope*scope);

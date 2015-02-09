@@ -108,6 +108,8 @@ char*ivlpp_string = 0;
 char* depfile_name = NULL;
 FILE *depend_file = NULL;
 
+char* lattice_file_name = NULL;
+char* depfun_file_name = NULL;
 /*
  * These are the warning enable flags.
  */
@@ -173,6 +175,11 @@ const bool CASE_SENSITIVE = true;
  * Are we doing synthesis?
  */
 bool synthesis = false;
+
+/*
+ * quit after type checking
+ */
+bool typecheck_only = false;
 
 extern void cprop(Design*des);
 extern void synth(Design*des);
@@ -456,6 +463,12 @@ static bool set_default_timescale(const char*ts_string)
  *    depfile:<path>
  *        Give the path to an output dependency file.
  *
+ *    depfunfile:<path>
+ *        Give the path to a z3 file that defines type-level functions.
+ *
+ *    latticefile:<path>
+ *        Give the path to a z3 file that defines a security lattice.
+ *
  *    flag:<name>=<string>
  *        Generic compiler flag strings.
  *
@@ -560,6 +573,10 @@ static void read_iconfig_file(const char*ipath)
 	    } else if (strcmp(buf, "depfile") == 0) {
 		  depfile_name = strdup(cp);
 
+	    } else if (strcmp(buf, "latticefile") == 0) {
+		  lattice_file_name = strdup(cp);
+	    } else if (strcmp(buf, "depfunfile") == 0) {
+		  depfun_file_name = strdup(cp);
 	    } else if (strcmp(buf, "flag") == 0) {
 		  string parm = cp;
 		  parm_to_flagmap(parm);
@@ -643,7 +660,7 @@ static void read_iconfig_file(const char*ipath)
 			break;
 		  }
 
-	    } else if (strcmp(buf, "-y") == 0) {
+            } else if (strcmp(buf, "-y") == 0) {
 		  build_library_index(cp, CASE_SENSITIVE);
 
 	    } else if (strcmp(buf, "-yl") == 0) {
@@ -688,7 +705,7 @@ static void read_iconfig_file(const char*ipath)
 }
 
 extern Design* elaborate(list <perm_string> root);
-extern void typecheck(list <perm_string> root, map<perm_string,Module*> modules);
+extern void typecheck(map<perm_string,Module*> modules, char* lattice_file_name, char* depfun_file_name);
 
 #if defined(HAVE_TIMES)
 static double cycles_diff(struct tms *a, struct tms *b)
@@ -741,7 +758,6 @@ int main(int argc, char*argv[])
       bool help_flag = false;
       bool times_flag = false;
       bool version_flag = false;
-      bool typecheck_only = false;
 
       const char* net_path = 0;
       const char* pf_path = 0;
@@ -1013,7 +1029,7 @@ int main(int argc, char*argv[])
 	    cout << "TYPECHECKING" << endl;
       }
 
-      typecheck(roots, pform_modules);
+      typecheck(pform_modules, lattice_file_name, depfun_file_name);
 
       if (typecheck_only) {
     	  return 0;

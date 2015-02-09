@@ -1,9 +1,12 @@
-Use the following commands to verify a Verilog program, say prog.v, with security labels:
+Make a copy of secverilog.cp, named secverilog. Configure $z3home and
+$iverilog in this copy the folders of Z3 and iverilog binaries, if
+they are not in the PATH variable.
 
-iverilog -z prog.v
+Use the following commands to verify the examples contained in this
+folder. The expected results are contained in files "*.expected".
 
-The previous command generates a constraint file (module_name.z3), which can be checked by z3:
+./secverilog -F deptype-example.fun -z deptype-example.v
 
-z3 -smt2 z3file
+./secverilog -F diamond.fun -z diamond.v
 
-If all constraints are unsat, the original Verilog program is verified.
+./secverilog -F oneway.fun -l oneway.lattice -z oneway.v

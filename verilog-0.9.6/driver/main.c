@@ -43,7 +43,8 @@ const char HELP[] =
 "                [-D macro[=defn]] [-I includedir] [-M depfile] [-m module]\n"
 "                [-N file] [-o filename] [-p flag=value]\n"
 "                [-s topmodule] [-t target] [-T min|typ|max]\n"
-"                [-W class] [-y dir] [-Y suf] source_file(s)\n"
+"                [-W class] [-y dir] [-Y suf]\n"
+"                [-F depfunfile] [-l latticefile] [-z] source_file(s)\n"
 "\n"
 "See the man page for details.";
 
@@ -108,6 +109,8 @@ const char*opath = "a.out";
 const char*npath = 0;
 const char*targ  = "vvp";
 const char*depfile = 0;
+const char*latticefile = 0;
+const char*depfunfile = 0;
 
 const char*generation = "2005";
 const char*gen_specify = "no-specify";
@@ -831,7 +834,7 @@ int main(int argc, char **argv)
 	}
       }
 
-      while ((opt = getopt(argc, argv, "B:c:D:d:Ef:g:hI:M:m:N::o:p:Ss:T:t:vVW:y:Y:z")) != EOF) {
+      while ((opt = getopt(argc, argv, "B:c:D:d:Ef:F:g:hI:l:M:m:N::o:p:Ss:T:t:vVW:y:Y:z")) != EOF) {
 
 	    switch (opt) {
 		case 'B':
@@ -862,6 +865,10 @@ int main(int argc, char **argv)
 		  fprintf(iconfig_file, "debug:%s\n", optarg);
 		  break;
 
+                case 'F':
+                  depfunfile = optarg;
+                  break;
+
 		case 'g':
 		  if (process_generation(optarg) != 0)
 			return -1;
@@ -873,6 +880,10 @@ int main(int argc, char **argv)
 		case 'I':
 		  process_include_dir(optarg);
 		  break;
+
+                case 'l':
+                  latticefile = optarg;
+                  break;
 
 		case 'M':
 		  depfile = optarg;
@@ -1009,6 +1020,8 @@ int main(int argc, char **argv)
       fprintf(iconfig_file, "warnings:%s\n", warning_flags);
       fprintf(iconfig_file, "out:%s\n", opath);
       if (depfile) fprintf(iconfig_file, "depfile:%s\n", depfile);
+      if (latticefile) fprintf(iconfig_file, "latticefile:%s\n", latticefile);
+      if (depfunfile) fprintf(iconfig_file, "depfunfile:%s\n", depfunfile);
 
       while ( (command_filename = get_cmd_file()) ) {
 	    int rc;

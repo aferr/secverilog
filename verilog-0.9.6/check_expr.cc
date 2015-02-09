@@ -20,7 +20,7 @@
 # include "config.h"
 
 /*
- * This file type checks expressions
+ * This file type-checks expressions.
  */
 # include  "PExpr.h"
 # include  "sectypes.h"
@@ -89,13 +89,12 @@ SecType* PEString::typecheck(ostream&out, map<perm_string, SecType*>&varsToType)
 
 SecType* PETernary::typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const
 {
-	SecType* lexp = expr_->typecheck(out, varsToType);
-	SecType* texp = tru_->typecheck(out, varsToType);
-	SecType* fexp = fal_->typecheck(out, varsToType);
-	SecType* rhs = new JoinType(texp, fexp);
-	SecType* ret = new JoinType(lexp, rhs->simplify());
-//	return ret->simplify();
-	throw "All PETernary expressions should be translated\n";
+//	SecType* lexp = expr_->typecheck(out, varsToType);
+//	SecType* texp = tru_->typecheck(out, varsToType);
+//	SecType* fexp = fal_->typecheck(out, varsToType);
+//	SecType* rhs = new JoinType(texp, fexp);
+//	SecType* ret = new JoinType(lexp, rhs->simplify());
+	throw "All PETernary expressions should have been translated already.\n";
 }
 
 SecType* PEUnary::typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const

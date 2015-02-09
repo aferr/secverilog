@@ -1,15 +1,13 @@
 /* 
- * This example implements a finite state machine with 3 states, where
- * state 0 is L and states 2, 3 are H.
- * A timer controls the switch between L and H states every 10 cycles. 
+ * This file contains toy examples to test the soundness of the type
+ * system of SecVerilog
  */
 module sound();
 
-// current mode, 0 for L state 1; 1 for H states 2 and 3
 reg[1:0] {L} low;
 reg[1:0] {H} high;
 
-// assume Par[0] = L, Par[1] = H, Par[2] = H
+// assume Par[0] = L, Par[1] = H, Par[2] = H, Par[3] = H
 //
 reg[1:0] {Par x} x;
 reg[1:0] {Par y} y;
