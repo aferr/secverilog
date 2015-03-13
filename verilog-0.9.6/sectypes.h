@@ -46,6 +46,8 @@ class JoinType;
 class IndexType;
 struct TypeEnv;
 
+void CalculateQuantBounds(SecType *st, TypeEnv* env);
+
 struct QBound{
     long lower;
     long upper;
@@ -560,11 +562,27 @@ struct Constraint {
     QFuncDefs* def;
     QBounds* bound;
 
-	Constraint(SecType* l, SecType* r, Invariant* inv, Predicate* p) {
-		left = l;
-		right = r;
+	Constraint(SecType* lhs, SecType* rhs, Invariant* inv, Predicate* p,
+      TypeEnv* env) {
+		left = lhs;
+		right = rhs;
 		pred = p;
 		invariant = inv;
+    def = new QFuncDefs();
+    bound = new QBounds();
+
+    if(lhs->has_defs()){
+        def->defs.insert(lhs);
+    }
+    if(rhs->has_defs()){
+        def->defs.insert(rhs);
+    }
+    
+    CalculateQuantBounds(lhs, env);
+    CalculateQuantBounds(rhs, env);
+    lhs->get_bounds(bound);
+    rhs->get_bounds(bound);
+    
 	}
 };
 

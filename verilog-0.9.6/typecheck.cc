@@ -397,23 +397,7 @@ void typecheck_assignment_constraint(ostream& out, SecType* lhs, SecType* rhs,
 	out << endl << "(push)" << endl;
 	out << vardecl;
     
-  QFuncDefs* d = new QFuncDefs();
-  if(lhs->has_defs()){
-      d->defs.insert(lhs);
-  }
-  if(rhs->has_defs()){
-      d->defs.insert(rhs);
-  }
-  
-  QBounds *b = new QBounds();
-  CalculateQuantBounds(lhs, env);
-  CalculateQuantBounds(rhs, env);
-  lhs->get_bounds(b);
-  rhs->get_bounds(b);
-
-  Constraint* c = new Constraint(lhs, rhs, env->invariants, &pred);
-  c->def = d;
-  c->bound = b;
+  Constraint* c = new Constraint(lhs, rhs, env->invariants, &pred, env);
   out << *c;
   out << "    ; " << note << endl;
   out << "(check-sat)" << endl;
@@ -421,7 +405,7 @@ void typecheck_assignment_constraint(ostream& out, SecType* lhs, SecType* rhs,
   if (check_write) {
   	out << endl << "(push)" << endl;
   	out << vardecl;
-  	c = new Constraint(lhs, IndexType::WL, env->invariants, &pred);
+  	c = new Constraint(lhs, IndexType::WL, env->invariants, &pred, env);
   	out << *c;
   	out << "    ; check write label " << note << endl;
   	out << "(check-sat)" << endl;
@@ -598,7 +582,7 @@ void PGModule::typecheck(ostream&out, TypeEnv& env,
 							SecType* lhs = pinType;
 							Predicate pred;
 							Constraint* c = new Constraint(lhs, rhs,
-									env.invariants, &pred);
+									env.invariants, &pred, &env);
 							out << *c;
 							// debugging information
 							out << "    ; Instantiate parameter "
@@ -613,7 +597,7 @@ void PGModule::typecheck(ostream&out, TypeEnv& env,
 							SecType* lhs = paramType;
 							Predicate pred;
 							Constraint* c = new Constraint(lhs, rhs,
-									env.invariants, &pred);
+									env.invariants, &pred, &env);
 							out << *c;
 							// debugging information
 							out << "    ; Instantiate parameter "
