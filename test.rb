@@ -10,7 +10,7 @@ passed, total = [0, 0]
 Dir["test/*v"].each do |vfile|
   name = vfile.sub(/\.v/, '').sub(/test\//, '')
   expected = File.open("test/#{name}.expected",'r').read
-  actual   = %x[iverilog -z #{vfile} && z3 -smt2 #{name}.z3]
+  actual   = %x[../bin/iverilog -z #{vfile} && z3 -smt2 test/#{name}.z3]
   total +=1
   if actual == expected
     puts "PASSED #{name}".green

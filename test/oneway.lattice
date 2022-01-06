@@ -1,0 +1,6 @@
+; new lattice elements L1 and L2
+(declare-fun L1 () Label)
+(declare-fun L2 () Label)
+
+; lattice structure
+(assert (leq L1 L2))
