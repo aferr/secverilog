@@ -66,21 +66,26 @@ void LexicalScope::typecheck_parameters_(ostream&out, TypeEnv& env) const {
  */
 void LexicalScope::typecheck_localparams_(ostream&out, TypeEnv& env) const {
 	typedef map<perm_string, param_expr_t>::const_iterator parm_iter_t;
-	if (debug_typecheck) {
+	if (debug_typecheck) {	  
 		for (parm_iter_t cur = localparams.begin();
 				cur != localparams.end();
 				cur++) {
-			out << "check localparam ";
+			cout << "check localparam ";
 			if ((*cur).second.msb)
-				out << "[" << *(*cur).second.msb << ":" << *(*cur).second.lsb
+				cout << "[" << *(*cur).second.msb << ":" << *(*cur).second.lsb
 						<< "] ";
-			out << (*cur).first << " = ";
+			cout << (*cur).first << " = ";
 			if ((*cur).second.expr)
-				out << *(*cur).second.expr << ";" << endl;
+				cout << *(*cur).second.expr << ";" << endl;
 			else
-				out << "/* ERROR */;" << endl;
+				cout << "/* ERROR */;" << endl;
 		}
 	}
+	// local parameters can only be assigned to constants. So the label must be LOW
+	for (parm_iter_t cur = localparams.begin(); cur != localparams.end(); cur++) {
+		env.varsToType[(*cur).first] = ConstType::BOT;
+	}
+	
 }
 
 /**
@@ -92,7 +97,7 @@ void LexicalScope::typecheck_events_(ostream&out, TypeEnv& env) const {
 				cur != events.end();
 				cur++) {
 			PEvent*ev = (*cur).second;
-			out << "check event " << ev->name() << "; // " << ev->get_fileline()
+			cout << "check event " << ev->name() << "; // " << ev->get_fileline()
 					<< endl;
 		}
 	}
