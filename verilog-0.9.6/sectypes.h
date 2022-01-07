@@ -599,12 +599,12 @@ inline ostream& operator << (ostream&o, Predicate& pred)
 	set<Hypothesis*>::iterator i = l.begin();
 	if (i != l.end()) {
 		o << "(";
-		(*i)->bexpr_->dump(o);
+		(*i)->bexpr_->dumpz3(o);
 		o << ")";
 		i++;
 	}
 	for (; i != l.end() ; i++) {
-		o << " ("; (*i)->bexpr_->dump(o); o << ")";
+		o << " ("; (*i)->bexpr_->dumpz3(o); o << ")";
 	}
 	return o;
 }

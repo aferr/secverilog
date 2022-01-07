@@ -47,6 +47,7 @@ class PExpr : public LineInfo {
       virtual ~PExpr();
 
       virtual void dump(ostream&) const;
+      virtual void dumpz3(ostream&) const;      
       virtual SecType* typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const = 0;
 
         // This method tests whether the expression contains any
@@ -521,6 +522,7 @@ class PEBinary : public PExpr {
       ~PEBinary();
 
       virtual void dump(ostream&out) const;
+      virtual void dumpz3(ostream&out) const;      
       virtual SecType* typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const;
 
       virtual bool has_aa_term(Design*des, NetScope*scope) const;
