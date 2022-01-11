@@ -1,0 +1,5 @@
+Compiling file oneway.v
+Verifying file oneway.v
+fail
+(assert  (not(leq L2  L1)))    ; d1 = d2 @oneway.v:38
+Total: 1 assertions failed
