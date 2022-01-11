@@ -24,7 +24,7 @@
  */
 # include  "PExpr.h"
 # include  "sectypes.h"
-# include  "pform_types.h"
+# include  "basetypes.h"
 
 SecType* PEBinary::typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const
 {
@@ -68,12 +68,7 @@ SecType* PEIdent::typecheck(ostream&out, map<perm_string, SecType*>&varsToType) 
 	perm_string name = peek_tail_name(path_);
 	map<perm_string,SecType*>::const_iterator find = varsToType.find(name);
 	if (find != varsToType.end()) {
-        SecType* tau = (*find).second;
-        index_component_t index = path().back().index.front();
-        if(index.sel==index_component_t::SEL_BIT) { 
-            tau = tau->apply_index(index.msb);
-        }
-		return tau;
+		return (*find).second;
 	}
 	else {
 		cout <<  "Unbounded var name: " << name.str() << endl;
@@ -106,4 +101,45 @@ SecType* PETernary::typecheck(ostream&out, map<perm_string, SecType*>&varsToType
 SecType* PEUnary::typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const
 {
 	return expr_->typecheck(out, varsToType);
+}
+
+SecType* PEDeclassified::typecheck(ostream&out,
+        map<perm_string, SecType*>&varsToType) const
+{
+    return this->type;
+}
+
+
+//-----------------------------------------------------------------------------
+// Check Base Types
+//-----------------------------------------------------------------------------
+BaseType* PEConcat::check_base_type(ostream&out,
+        map<perm_string, BaseType*>&varsToBase){
+
+    // Default to combinational. Sequential if anything is sequential.
+    // Not sure that this actually makes sense...
+    //
+    // How about: can be all sequential or all combinational but not a mix.
+    //
+	BaseType* returnType;
+	if (repeat_!=NULL) {
+		returnType = repeat_->check_base_type(out, varsToBase);
+	} else if ( parms_.count() > 0 ){
+        returnType = parms_[0]->check_base_type(out, varsToBase);
+    }
+    assert(returnType);
+    for (unsigned idx = 0 ;  idx < parms_.count() ;  idx += 1) {
+        //TODO define equality correctly and then just check it here.
+        if(parms_[idx]->check_base_type(out, varsToBase)->isSeqType() !=
+                returnType->isSeqType()){
+            cout << "PEConcat found with multiple base types (com/seq)" << endl;
+            assert(false);
+        }
+    }
+    return returnType;
+}
+
+BaseType* PEIdent::check_base_type(ostream&out,
+        map<perm_string, BaseType*>&varsToBase) {
+    return varsToBase[peek_tail_name(path())];
 }

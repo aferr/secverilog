@@ -39,6 +39,7 @@
 # include  "parse_api.h"
 # include  "compiler.h"
 # include  "ivl_assert.h"
+# include  "parse_misc.h"
 
 void output_type_families(ostream& out, char* depfun);
 extern bool check_write;
@@ -58,35 +59,167 @@ void LexicalScope::typecheck_parameters_(ostream&out, TypeEnv& env) const {
 	// parameters can only be assigned to constants. So the label must be LOW
 	for (parm_iter_t cur = parameters.begin(); cur != parameters.end(); cur++) {
 		env.varsToType[(*cur).first] = ConstType::BOT;
+        if (debug_typecheck) {
+            cerr << " param " << (*cur).first << " has type ";
+            cerr << env.varsToType[(*cur).first] << endl ;
+        }
 	}
 }
 
 /**
- * Do nothing for now.
+ * These are constants. Set them to the bottom type.
  */
 void LexicalScope::typecheck_localparams_(ostream&out, TypeEnv& env) const {
 	typedef map<perm_string, param_expr_t>::const_iterator parm_iter_t;
-	if (debug_typecheck) {	  
+	if (debug_typecheck) {
+
+        if(dynamic_cast<const PScope*>(this)) {
+            const PScope* ps = dynamic_cast<const PScope*>(this);
+            fprintf(stderr, "typecheck_localparams for %s\n", ps->pscope_name().str());
+        } else {
+            fprintf(stderr, "checking localparams for a non-pscope lexscope\n");
+        }
+
 		for (parm_iter_t cur = localparams.begin();
 				cur != localparams.end();
 				cur++) {
-			cout << "check localparam ";
+			out << "check localparam ";
 			if ((*cur).second.msb)
-				cout << "[" << *(*cur).second.msb << ":" << *(*cur).second.lsb
+				out << "[" << *(*cur).second.msb << ":" << *(*cur).second.lsb
 						<< "] ";
-			cout << (*cur).first << " = ";
+			out << (*cur).first << " = ";
 			if ((*cur).second.expr)
-				cout << *(*cur).second.expr << ";" << endl;
+				out << *(*cur).second.expr << ";" << endl;
 			else
-				cout << "/* ERROR */;" << endl;
+				out << "/* ERROR */;" << endl;
 		}
 	}
-	// local parameters can only be assigned to constants. So the label must be LOW
-	for (parm_iter_t cur = localparams.begin(); cur != localparams.end(); cur++) {
+	for (parm_iter_t cur = localparams.begin();
+	    cur != localparams.end(); cur++) {
 		env.varsToType[(*cur).first] = ConstType::BOT;
-	}
-	
+        if (debug_typecheck) {
+            cerr << " localparam " << (*cur).first << " has type ";
+            cerr << *env.varsToType[(*cur).first] << endl ;
+        }
+    }
 }
+
+//-----------------------------------------------------------------------------
+// Next Cycle Transformation
+//-----------------------------------------------------------------------------
+
+void Module::next_cycle_transform(ostream&out, TypeEnv&env) {
+    // This transformation moves all assignments to sequential logic into 
+    // assignments to next-cycle objects.
+	for (list<PProcess*>::const_iterator behav = behaviors.begin();
+			behav != behaviors.end(); behav++) {
+        if(debug_typecheck) 
+            fprintf(stderr, "NextCycleTransform:: %s\n", typeid(*behav).name());
+		(*behav)->next_cycle_transform(out, env);
+	}
+    typedef set<perm_string>::const_iterator seqvar_iter_t;
+    for (seqvar_iter_t cur = env.seqVars.begin();
+            cur != env.seqVars.end(); cur++) {
+        behaviors.push_back(gen_assign_next_block(*cur));
+    }
+
+}
+
+PProcess* Module::gen_assign_next_block(perm_string id){
+    PEIdent* clk = new PEIdent(perm_string::literal("clk"));
+    PEEvent*posclock = new PEEvent(PEEvent::POSEDGE, clk);
+    svector<PEEvent*>*clkeventlist = new svector<PEEvent*>(1);
+    (*clkeventlist)[0] = posclock;
+    PEventStatement* event_expr = new PEventStatement(*clkeventlist);
+
+    PEIdent*nexted_id = new PEIdent(nextify_perm_string(id));
+    PEIdent*unnexted_id = new PEIdent(id);
+    PAssign*asgn = new PAssign(unnexted_id, nexted_id);
+
+    event_expr->set_statement(asgn);
+
+    PProcess*ret = new PProcess(IVL_PR_ALWAYS, event_expr);
+    return ret;
+}
+
+void PProcess::next_cycle_transform(ostream&out, TypeEnv&env) const {
+    if(statement_ == NULL) return;
+    if(debug_typecheck) 
+        fprintf(stderr, "NextCycleTransform:: %s\n", typeid(*statement_).name());
+    statement_->next_cycle_transform(out, env);
+}
+
+Statement* Statement::next_cycle_transform(ostream&out, TypeEnv&env) {
+    return this;
+}
+
+Statement* PEventStatement::next_cycle_transform(ostream&out, TypeEnv&env) {
+    statement_ = statement_->next_cycle_transform(out,env);
+    return this;
+}
+
+Statement* PBlock::next_cycle_transform(ostream&out, TypeEnv&env) {
+    for(int i=0; i<list_.count(); i++) {
+        if(debug_typecheck) 
+            fprintf(stderr, "NextCycleTransform:: %s\n", typeid(list_[i]).name());
+        list_[i]=list_[i]->next_cycle_transform(out, env);
+    }
+    return this;
+}
+
+Statement* PCondit::next_cycle_transform(ostream&out, TypeEnv&env) {
+    if(if_ != NULL)
+        if_   = if_->next_cycle_transform(out, env);
+    if(else_ != NULL)
+        else_ = else_->next_cycle_transform(out, env);
+    return this;
+}
+
+// This is the only rule where something actually happens. Only the left 
+// hand-side of the assignment is transformed.
+Statement* PAssign_::next_cycle_transform(ostream&out, TypeEnv&env) {
+    assert(lval_);
+    lval_ = lval_->next_cycle_transform(out, env);
+    return this;
+}
+
+Statement* PCAssign::next_cycle_transform(ostream&out, TypeEnv&env) {
+    lval_ = lval_->next_cycle_transform(out, env);
+    return this;
+}
+PExpr* PExpr::next_cycle_transform(ostream&out, TypeEnv&env) { return this; }
+
+PExpr* PEIdent::next_cycle_transform(ostream&out, TypeEnv&env) { 
+    BaseType*bt = check_base_type(out,env.varsToBase);
+    assert(bt);
+    // if bt is seqtype, make it into next cycle version
+    if(bt == NULL) {
+        fprintf(stderr, "WARN: null basetype: %s",
+                peek_tail_name(path()).str());
+        return this;
+    }
+    if(bt->isSeqType()){
+        return new PEIdent(nextify_perm_string(peek_tail_name(path())));
+    }
+    return this;
+}
+
+
+// PCallTask
+// PCase
+// PCAssign
+// PDeassign
+// PDelayStatement
+// PDisable
+// PEventStatement
+// PForce
+// PForever
+// PForStatement
+// PNoop
+// PRepeat
+// PRelease
+// PTrigger
+// PWhile
 
 /**
  * Do nothing for now.
@@ -97,7 +230,7 @@ void LexicalScope::typecheck_events_(ostream&out, TypeEnv& env) const {
 				cur != events.end();
 				cur++) {
 			PEvent*ev = (*cur).second;
-			cout << "check event " << ev->name() << "; // " << ev->get_fileline()
+			out << "check event " << ev->name() << "; // " << ev->get_fileline()
 					<< endl;
 		}
 	}
@@ -111,14 +244,17 @@ void LexicalScope::typecheck_wires_(ostream&out, TypeEnv& env) const {
 	for (map<perm_string, PWire*>::const_iterator wire = wires.begin();
 			wire != wires.end();
 			wire++) {
-		(*wire).second->typecheck(out, env.varsToType);
+		(*wire).second->typecheck(out, env.varsToType, env.varsToBase, env.seqVars);
 	}
 }
 
 /*
  * Type-check a wire.
  */
-void PWire::typecheck(ostream&out, map<perm_string, SecType*>& varsToType) const {
+void PWire::typecheck(ostream&out, map<perm_string, SecType*>& varsToType,
+        map<perm_string, BaseType*>& varsToBase,
+        set<perm_string>& seqVars) const {
+//void PWire::typecheck(ostream&out, TypeEnv&env) const {
 	if (debug_typecheck) {
 		cout << "PWire::check " << type_;
 
@@ -178,9 +314,21 @@ void PWire::typecheck(ostream&out, map<perm_string, SecType*>& varsToType) const
 
 		cout << ";" << endl;
 	}
-    
 	varsToType[basename()] = sectype_;
-    sectype_->give_name(basename());
+    varsToBase[basename()] = basetype_;
+    if(sectype_ == NULL) {
+        fprintf(stderr, "WARN: Found NULL sectype for %s, using BOT",
+                basename().str());
+        varsToType[basename()] = ConstType::BOT;
+    }
+    if(debug_typecheck) {
+        cerr << "updating typeEnv for " << basename();
+        cerr << " with sectype: " << *(varsToType[basename()]);
+        cerr << " and basetype: " << varsToBase[basename()]->name() << endl;
+    }
+    if(basetype_->isSeqType() &&
+            (port_type_ == NetNet::NOT_A_PORT ||
+             port_type_ == NetNet::POUTPUT) ) seqVars.insert(basename());
 }
 
 /**
@@ -218,27 +366,11 @@ void Module::CollectDepExprs(ostream&out, TypeEnv & env) const {
 	}
 }
 
-void CalculateQuantBounds(SecType *st, TypeEnv *env)
-{
-    set<perm_string> *exprs = new set<perm_string>;
-    st->collect_bound_exprs(exprs);
-    for( std::set<perm_string>::iterator ite = exprs->begin();
-            ite != exprs->end(); ite++) {
-        perm_string e = *ite;
-        map<perm_string,PWire*>::const_iterator cur = env->module->wires.find(e);
-        if(cur != env->module->wires.end()) {
-            PWire *wire = (*cur).second;
-            QBound *b = new QBound(pow(2,wire->getRange()+1)-1,0,e);
-            st->insert_bound(b);
-        }
-    }
-}
-
 /**
  * Type-check a module.
  */
 void Module::typecheck(ostream&out, TypeEnv& env,
-		map<perm_string, Module*> modules, char* depfun) const {
+		map<perm_string, Module*> modules, char* depfun) {
 	if (debug_typecheck) {
 		cout << "Module::check " << mod_name() << endl;
 
@@ -258,8 +390,9 @@ void Module::typecheck(ostream&out, TypeEnv& env,
 			cout << ")" << endl;
 		}
 	}
-
+    
 	typecheck_parameters_(out, env);
+    if(debug_typecheck) fprintf(stderr, "typechecking localparams\n");
 	typecheck_localparams_(out, env);
 
 	typedef map<perm_string, LineInfo*>::const_iterator genvar_iter_t;
@@ -282,11 +415,19 @@ void Module::typecheck(ostream&out, TypeEnv& env,
 	typecheck_events_(out, env);
 
 	// Iterate through and display all the wires (including registers).
+    if(debug_typecheck) fprintf(stderr, "typechecking wires\n");
 	typecheck_wires_(out, env);
+
+    if(debug_typecheck) fprintf(stderr, "next-cycle transform \n");
+    next_cycle_transform(out,env);
+
+    if(debug_typecheck) fprintf(stderr, "collecting dependands\n");
 	CollectDepExprs(out, env);
+    if(debug_typecheck) fprintf(stderr, "outputting type families\n");
 	output_type_families(out, depfun);
 
 	// remove an invariant if some variable does not show up
+    if(debug_typecheck) fprintf(stderr, "optimizing invariants\n");
 	for (set<Equality*>::iterator invite = env.invariants->invariants.begin();
 			invite != env.invariants->invariants.end();) {
 		set<perm_string> vars, diff;
@@ -306,6 +447,7 @@ void Module::typecheck(ostream&out, TypeEnv& env,
 	}
 	out << endl << "; assertions to be verified" << endl;
 
+    if(debug_typecheck) fprintf(stderr, "checking generates\n");
 	typedef list<PGenerate*>::const_iterator genscheme_iter_t;
 	for (genscheme_iter_t cur = generate_schemes.begin();
 			cur != generate_schemes.end(); cur++) {
@@ -313,18 +455,21 @@ void Module::typecheck(ostream&out, TypeEnv& env,
 	}
 
 	// Dump the task definitions.
+    if(debug_typecheck) fprintf(stderr, "dump tasks\n");
 	typedef map<perm_string, PTask*>::const_iterator task_iter_t;
 	for (task_iter_t cur = tasks.begin(); cur != tasks.end(); cur++) {
-		out << "PTask ignored" << endl;
+		cerr << "PTask ignored" << endl;
 	}
 
 	// Dump the function definitions.
+    if(debug_typecheck) fprintf(stderr, "dump functions\n");
 	typedef map<perm_string, PFunction*>::const_iterator func_iter_t;
 	for (func_iter_t cur = funcs.begin(); cur != funcs.end(); cur++) {
 		cerr << "PFunction" << endl;
 	}
 
 	// Iterate through and display all the gates.
+    if(debug_typecheck) fprintf(stderr, "checking gates\n");
 	for (list<PGate*>::const_iterator gate = gates_.begin();
 			gate != gates_.end(); gate++) {
 		PGAssign* pgassign = dynamic_cast<PGAssign*>(*gate);
@@ -341,16 +486,19 @@ void Module::typecheck(ostream&out, TypeEnv& env,
 
 	// The code above should collect a typing environment for all variables.
 	// The following code performs intra-process type checking.
+    if(debug_typecheck) fprintf(stderr, "checking processes\n");
 	for (list<PProcess*>::const_iterator behav = behaviors.begin();
 			behav != behaviors.end(); behav++) {
 		(*behav)->typecheck(out, env);
 	}
 
+    if(debug_typecheck) fprintf(stderr, "checking AProcesses\n");
 	for (list<AProcess*>::const_iterator idx = analog_behaviors.begin();
 			idx != analog_behaviors.end(); idx++) {
 		throw "AProcess";
 	}
 
+    if(debug_typecheck) fprintf(stderr, "checking PSpecPaths\n");
 	for (list<PSpecPath*>::const_iterator spec = specify_paths.begin();
 			spec != specify_paths.end(); spec++) {
 		throw "PSpecPath";
@@ -368,6 +516,10 @@ void PProcess::typecheck(ostream&out, TypeEnv& env) const {
 	// initial is not synthesizable, just ignore them
 	if (type_ != IVL_PR_INITIAL) {
 		Predicate emptypred;
+        if(debug_typecheck) {
+            cerr << "pprocess checking statement of type ";
+            cerr << typeid(*statement_).name() << endl;
+        }
 		statement_->typecheck(out, env, emptypred);
 	}
 }
@@ -398,24 +550,25 @@ void AContrib::typecheck(ostream&out, TypeEnv& env, Predicate& pred) const {
  */
 void typecheck_assignment_constraint(ostream& out, SecType* lhs, SecType* rhs,
 		Predicate pred, string note, string vardecl, TypeEnv* env) {
-
 	out << endl << "(push)" << endl;
 	out << vardecl;
-    
-  Constraint* c = new Constraint(lhs, rhs, env->invariants, &pred, env);
-  out << *c;
-  out << "    ; " << note << endl;
-  out << "(check-sat)" << endl;
-  out << "(pop)" << endl << endl;
-  if (check_write) {
-  	out << endl << "(push)" << endl;
-  	out << vardecl;
-  	c = new Constraint(lhs, IndexType::WL, env->invariants, &pred, env);
-  	out << *c;
-  	out << "    ; check write label " << note << endl;
-  	out << "(check-sat)" << endl;
-  	out << "(pop)" << endl << endl;
-  }
+	Constraint* c = new Constraint(lhs, rhs, env->invariants, &pred);
+	out << *c;
+	out << "    ; " << note << endl;
+    out << "(echo \"" << note << "\")" << endl;
+	out << "(check-sat)" << endl;
+	out << "(pop)" << endl << endl;
+
+	// check restrictions on write labels
+	if (check_write) {
+		out << endl << "(push)" << endl;
+		out << vardecl;
+		c = new Constraint(lhs, IndexType::WL, env->invariants, &pred);
+		out << *c;
+		out << "    ; check write label " << note << endl;
+		out << "(check-sat)" << endl;
+		out << "(pop)" << endl << endl;
+	}
 }
 
 /**
@@ -427,8 +580,35 @@ void typecheck_assignment(ostream& out, PExpr* lhs, PExpr* rhs, TypeEnv* env,
 	PETernary* ternary = dynamic_cast<PETernary*>(rhs);
 	if (ternary == NULL) {
 		SecType* ltype, *rtype;
+        BaseType* lbase;
 		ltype = lhs->typecheck(out, env->varsToType);
-		rtype = new JoinType(rhs->typecheck(out, env->varsToType), env->pc);
+        lbase = lhs->check_base_type(out, env->varsToBase);
+        
+        //If ltype is sequential, substitute its free variables with the 
+        //next-cycle version of that variable.
+        if(lbase->isNextType()){
+            ltype  = ltype->next_cycle(env);
+            env->pc = env->pc->next_cycle(env);
+        }
+        
+        rtype = new JoinType(rhs->typecheck(out, env->varsToType), env->pc);
+
+        if(lbase->isSeqType()){
+            // Sequential logic is actually checked by the next cycle logic 
+            // generated by the next cycle transformation. This must be the 
+            // trusted, compiler-generated assignment
+            rtype = ConstType::BOT;
+        }
+
+
+        if(debug_typecheck){
+            cout << "line no" << lineno << endl;
+            cout << "ltype: " << *ltype << endl;
+            cout << "rtype: " << *rtype << endl;
+            cout << "lbase: " << lbase->name() << endl;
+            cout << "lhs: " << *lhs << endl;
+            cout << "rhs: " << *rhs << endl;
+        }
 
 		// if nothing depends on LHS, simple case
 		if (!lhs->typecheck(out, env->varsToType)->hasExpr(lhs->get_name())) {
@@ -587,7 +767,7 @@ void PGModule::typecheck(ostream&out, TypeEnv& env,
 							SecType* lhs = pinType;
 							Predicate pred;
 							Constraint* c = new Constraint(lhs, rhs,
-									env.invariants, &pred, &env);
+									env.invariants, &pred);
 							out << *c;
 							// debugging information
 							out << "    ; Instantiate parameter "
@@ -602,7 +782,7 @@ void PGModule::typecheck(ostream&out, TypeEnv& env,
 							SecType* lhs = paramType;
 							Predicate pred;
 							Constraint* c = new Constraint(lhs, rhs,
-									env.invariants, &pred, &env);
+									env.invariants, &pred);
 							out << *c;
 							// debugging information
 							out << "    ; Instantiate parameter "
@@ -781,6 +961,13 @@ void PCase::typecheck(ostream&out, TypeEnv& env, Predicate& pred) const {
 void PCondit::typecheck(ostream&out, TypeEnv& env, Predicate& pred) const {
 	if (debug_typecheck) {
 		cout << "PCondit::check " << "if (" << *expr_ << ")" << endl;
+
+        cout << "depvars currently in scope:" << endl;
+	    for (set<perm_string>::iterator depite = env.dep_exprs.begin();
+			depite != env.dep_exprs.end(); depite++) {
+            cout << *depite << endl;
+        }
+
 	}
 
 	SecType* oldpc = env.pc;
@@ -1103,19 +1290,6 @@ void output_lattice(ostream& out, char* lattice) {
 	out << "(assert (forall ((x Label) (y Label)) (and (leq (meet x y) x) (leq (meet x y) y))))" << endl;
 	out << "(assert (forall ((x Label) (y Label)) (= (meet x y) (meet y x))))" << endl;
 
-
-    out << 
-        "; convert int to bool" << endl <<
-        "(declare-fun IBOOL (Int) Bool)" << endl <<
-        "(assert (forall ((x Int))" << endl <<
-        "    (and" << endl <<
-        "        (implies (= x 0) (= (IBOOL x) false))" << endl <<
-        "        (implies (not (= x 0)) (= (IBOOL x) true))" << endl <<
-        "    )" << endl <<
-        "))" << endl;
-
-
-
 	out << endl << "; lattice elements" << endl;
 	out << "(declare-fun LOW () Label)" << endl;
 	out << "(declare-fun HIGH () Label)" << endl;
@@ -1182,7 +1356,9 @@ void typecheck(map<perm_string, Module*> modules,
 		// \A is a conjunction of predicates on PWire
 		map<perm_string, SecType*> *varsToType =
 				new map<perm_string, SecType*>();
-		TypeEnv* env = new TypeEnv(*varsToType, ConstType::BOT, rmod);
+		map<perm_string, BaseType*> *varsToBase=
+				new map<perm_string, BaseType*>();
+		TypeEnv* env = new TypeEnv(*varsToType, *varsToBase, ConstType::BOT, rmod);
 
 		ofstream z3file;
 		string z3filename = string(rmod->file_name().str());

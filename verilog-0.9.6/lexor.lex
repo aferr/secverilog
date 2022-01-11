@@ -161,10 +161,6 @@ S [afpnumkKMGT]
 "-:" { return K_PO_NEG; }
 "<+" { return K_CONTRIBUTE; }
 
-"true" {return SV_TRUE;}
-"false" {return SV_FALSE;}
-"bool" {return SV_BOOL;}
-
   /* Watch out for the tricky case of (*). Cannot parse this as "(*"
      and ")", but since I know that this is really ( * ), replace it
      with "*" and return that. */

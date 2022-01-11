@@ -34,6 +34,8 @@ class NetExpr;
 class NetScope;
 class SecType;
 class PCondit;
+struct TypeEnv;
+class BaseType;
 /*
  * The PExpr class hierarchy supports the description of
  * expressions. The parser can generate expression objects from the
@@ -47,8 +49,8 @@ class PExpr : public LineInfo {
       virtual ~PExpr();
 
       virtual void dump(ostream&) const;
-      virtual void dumpz3(ostream&) const;      
       virtual SecType* typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const = 0;
+      virtual PExpr* next_cycle_transform(ostream&out, TypeEnv&env);
 
         // This method tests whether the expression contains any
         // references to automatically allocated variables.
@@ -59,6 +61,11 @@ class PExpr : public LineInfo {
       virtual bool is_neg_wellformed(set<perm_string> s) {return is_wellformed(s);};
       virtual PExpr* neg_to_wellformed(set<perm_string> s) {return to_wellformed(s);};
       virtual PExpr* subst(map<perm_string, perm_string> m) {return this;}
+      virtual BaseType* check_base_type(ostream&out,
+              map<perm_string, BaseType*>&varsToBase) {
+          assert(false);
+      }
+
 
 	// This method tests the width that the expression wants to
 	// be. It is used by elaboration of assignments to figure out
@@ -165,6 +172,92 @@ class PExpr : public LineInfo {
 
 ostream& operator << (ostream&, const PExpr&);
 
+class PEDeclassified : public PExpr {
+    protected:
+        PExpr *ex;
+        SecType *type;
+
+    public:
+        explicit PEDeclassified(PExpr *, SecType*);
+        ~PEDeclassified(){};
+
+      virtual void dump(ostream&os) const{
+          return ex->dump(os);
+      }
+
+      virtual SecType* typecheck(ostream&out, map<perm_string,
+              SecType*>&varsToType) const;
+      virtual bool has_aa_term(Design*des, NetScope*scope) const{
+          return ex->has_aa_term(des,scope);
+      }
+      virtual bool contains_expr(perm_string that) { 
+          return ex->contains_expr(that);
+      }
+      virtual bool is_wellformed(set<perm_string> s) {
+          return ex->is_wellformed(s);
+      }
+      virtual PExpr* to_wellformed(set<perm_string> s) {
+          return new PEDeclassified(ex->to_wellformed(s), type);
+      }
+      virtual bool is_neg_wellformed(set<perm_string> s) {
+          return ex->is_neg_wellformed(s);
+      }
+      virtual PExpr* neg_to_wellformed(set<perm_string> s) {
+          return new PEDeclassified(ex->neg_to_wellformed(s), type);
+      }
+      virtual PExpr* subst(map<perm_string, perm_string> m) {
+          return new PEDeclassified(ex->subst(m),type);
+      }
+
+      // virtual unsigned test_width(Design*des, NetScope*scope,
+	  //   		  unsigned min, unsigned lval,
+	  //   		  ivl_variable_type_t&expr_type,
+	  //   		  bool&unsized_flag){
+      //     return ex->test_width(des,scope,min,lval,expr_type,unsized_flag);
+      // }
+
+      ivl_variable_type_t expr_type() const { return ex->expr_type(); }
+      unsigned expr_width() const           { return ex->expr_width(); }
+      const perm_string get_name() const{ return ex->get_name(); }
+      virtual bool elaborate_sig(Design*des, NetScope*scope) const{
+          return ex->elaborate_sig(des,scope);
+      }
+
+      virtual NetExpr*elaborate_expr(Design*des, NetScope*sc,int w, bool s) const{
+          return ex->elaborate_expr(des,sc,w,s);
+      }
+
+      virtual NetExpr*elaborate_pexpr(Design*des, NetScope*sc) const{
+          return ex->elaborate_pexpr(des,sc);
+      }
+
+      virtual NetNet* elaborate_lnet(Design*des, NetScope*scope) const{
+          return ex->elaborate_lnet(des,scope);
+      }
+
+      virtual NetNet* elaborate_bi_net(Design*des, NetScope*scope) const{
+          return ex->elaborate_bi_net(des,scope);
+      }
+
+      virtual NetAssign_* elaborate_lval(Design*des,
+					 NetScope*scope,
+					 bool is_force) const{
+          return ex->elaborate_lval(des,scope,is_force);
+      }
+
+      virtual verinum* eval_const(Design*des, NetScope*sc) const{
+          return ex->eval_const(des,sc);
+      }
+
+      virtual bool is_collapsible_net(Design*des, NetScope*scope) const{
+          return ex->is_collapsible_net(des,scope);
+      }
+
+      virtual bool is_the_same(const PExpr*that) const {
+          return ex->is_the_same(that);
+      }
+
+};
 class ExprComparator
 {
 public:
@@ -183,6 +276,9 @@ class PEConcat : public PExpr {
       virtual verinum* eval_const(Design*des, NetScope*sc) const;
       virtual void dump(ostream&) const;
       virtual SecType* typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const;
+
+      virtual BaseType* check_base_type(ostream&out,
+              map<perm_string, BaseType*>&varsToBase);
 
       virtual bool has_aa_term(Design*des, NetScope*scope) const;
 
@@ -282,9 +378,12 @@ class PEIdent : public PExpr {
 	// Add another name to the string of hierarchy that is the
 	// current identifier.
       void append_name(perm_string);
+      virtual PExpr* next_cycle_transform(ostream&out, TypeEnv&env);
 
       virtual void dump(ostream&) const;
       virtual SecType* typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const;
+
+      virtual BaseType* check_base_type(ostream&out, map<perm_string, BaseType*>&varsToBase);
 
       virtual bool has_aa_term(Design*des, NetScope*scope) const;
 
@@ -522,7 +621,6 @@ class PEBinary : public PExpr {
       ~PEBinary();
 
       virtual void dump(ostream&out) const;
-      virtual void dumpz3(ostream&out) const;      
       virtual SecType* typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const;
 
       virtual bool has_aa_term(Design*des, NetScope*scope) const;

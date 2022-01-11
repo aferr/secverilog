@@ -78,7 +78,6 @@ Unpack the tar-ball and cd into the verilog-######### directory
 (presumably that is how you got to this README) and compile the source
 with the commands:
 
-  autoconf
   ./configure
   make
 

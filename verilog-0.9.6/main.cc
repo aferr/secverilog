@@ -758,7 +758,6 @@ int main(int argc, char*argv[])
       bool help_flag = false;
       bool times_flag = false;
       bool version_flag = false;
-
       const char* net_path = 0;
       const char* pf_path = 0;
       int opt;
@@ -1029,7 +1028,9 @@ int main(int argc, char*argv[])
 	    cout << "TYPECHECKING" << endl;
       }
 
+      if(debug_typecheck) fprintf(stderr, "about to typecheck\n");
       typecheck(pform_modules, lattice_file_name, depfun_file_name);
+      if(debug_typecheck) fprintf(stderr, "done with typecheck\n");
 
       if (typecheck_only) {
     	  return 0;

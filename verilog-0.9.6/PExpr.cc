@@ -23,6 +23,7 @@
 #include <iostream>
 #include <sstream>
 #include <typeinfo>
+#include <string>
 
 //#include "compiler.h"
 //#include "config.h"
@@ -33,6 +34,7 @@
 #include "Statement.h"
 #include "StringHeap.h"
 #include "verireal.h"
+#include "parse_misc.h"
 
 PExpr::PExpr()
 {
@@ -81,6 +83,16 @@ bool PExpr::is_collapsible_net(Design*, NetScope*) const
       return false;
 }
 
+//-----------------------------------------------------------------------------
+// PEDeclassified
+//-----------------------------------------------------------------------------
+
+PEDeclassified::PEDeclassified(PExpr*e, SecType*t) :
+    ex(e), type(t) {};
+
+//-----------------------------------------------------------------------------
+// PEBinary
+//-----------------------------------------------------------------------------
 PEBinary::PEBinary(char op, PExpr*l, PExpr*r)
 : op_(op), left_(l), right_(r)
 {
@@ -110,9 +122,9 @@ bool PEBinary::is_wellformed(set<perm_string> s)
 	// 'a': and
 	// 'L' : leq
 	// 'n' : !=
-	if (op_ == 'e' || op_ == 'o' || op_ == 'L' || op_ == 'n')
+	if (op_ == 'e' || op_ == 'o' || op_ == 'L' || op_ == 'n' || op_ == 'G')
 		return left_->is_wellformed(s) && right_->is_wellformed(s);
-	if (op_ == 'a')
+    if (op_ == 'a')
 		return left_->is_wellformed(s) || right_->is_wellformed(s);
 	else
 		return false;
@@ -120,7 +132,7 @@ bool PEBinary::is_wellformed(set<perm_string> s)
 
 PExpr* PEBinary::to_wellformed(set<perm_string> s)
 {
-	if (op_ == 'e' || op_ == 'o' || op_ == 'L' || op_ == 'n') {
+	if (op_ == 'e' || op_ == 'o' || op_ == 'L' || op_ == 'n' || op_ == 'G') {
 		if (left_->is_wellformed(s) && right_->is_wellformed(s))
 			return new PEBinary(op_, left_->to_wellformed(s), right_->to_wellformed(s));
 	}
@@ -330,6 +342,10 @@ const verireal& PEFNumber::value() const
       return *value_;
 }
 
+//-----------------------------------------------------------------------------
+// PEIdent
+//-----------------------------------------------------------------------------
+
 PEIdent::PEIdent(const pform_name_t&that)
 : path_(that)
 {
@@ -337,7 +353,7 @@ PEIdent::PEIdent(const pform_name_t&that)
 
 PEIdent::PEIdent(perm_string s)
 {
-      path_.push_back(name_component_t(s));
+    path_.push_back(name_component_t(s));
 }
 
 PEIdent::~PEIdent()
@@ -352,7 +368,7 @@ bool PEIdent::has_aa_term(Design*des, NetScope*scope) const
 
       const NetExpr*ex1, *ex2;
 
-      scope = symbol_search(0, des, scope, path_, net, par, eve, ex1, ex2);
+      scope = symbol_search(0, des, scope, path(), net, par, eve, ex1, ex2);
 
       if (scope)
             return scope->is_auto();
@@ -503,14 +519,15 @@ bool PEUnary::contains_expr(perm_string that)
 bool PEUnary::is_wellformed(set<perm_string> s)
 {
 	// only "not" is translated
-	return op_ == 'N';
+    // TODO: check if sub-expression is well-formed?
+	return (op_ == 'N' || op_ == '!');
 }
 
 PExpr* PEUnary::to_wellformed(set<perm_string> s)
 {
-	if (op_ == 'N')
-		return this;
-	else
+	if (is_wellformed(s))
+        return new PEUnary(op_, expr_->to_wellformed(s));
+    else
 		return NULL;
 }
 

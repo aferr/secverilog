@@ -34,6 +34,7 @@ class ostream;
 class PExpr;
 class Design;
 class SecType;
+class BaseType;
 
 /*
  * The different type of PWire::set_range() calls.
@@ -58,6 +59,7 @@ class PWire : public LineInfo {
 	    NetNet::Type t,
 	    NetNet::PortType pt,
 	    SecType* st,
+	    BaseType* bt,
 	    ivl_variable_type_t dt);
 
 	// Return a hierarchical name.
@@ -66,7 +68,9 @@ class PWire : public LineInfo {
       NetNet::Type get_wire_type() const;
       bool set_wire_type(NetNet::Type);
       SecType* get_sec_type() const;
+      BaseType* get_base_type() const;
       bool set_sec_type(SecType*);
+      bool set_base_type(BaseType*);
 
       NetNet::PortType get_port_type() const;
       bool set_port_type(NetNet::PortType);
@@ -91,7 +95,9 @@ class PWire : public LineInfo {
 	// Write myself to the specified stream.
       void dump(ostream&out, unsigned ind=4) const;
 
-      void typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const;
+      void typecheck(ostream&out, map<perm_string, SecType*>&varsToType,
+              map<perm_string, BaseType*>&varsToBase,
+              set<perm_string>&seqVars) const;
 
       NetNet* elaborate_sig(Design*, NetScope*scope) const;
       long getRange() const;
@@ -101,6 +107,7 @@ class PWire : public LineInfo {
       NetNet::Type type_;
       NetNet::PortType port_type_;
       SecType* sectype_;
+      BaseType* basetype_;
       ivl_variable_type_t data_type_;
       bool signed_;
       bool isint_;		// original type of integer
