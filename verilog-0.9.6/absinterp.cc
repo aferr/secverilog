@@ -78,16 +78,17 @@ void PCase::absintp(Predicate& pred, TypeEnv& env, unsigned idx) const
 /**
  * Set up a predicate for branches, if the condition is simple.
  */
-void PCondit::absintp(Predicate& pred, TypeEnv& env, bool istrue) const
+void PCondit::absintp(Predicate& pred, TypeEnv& env, bool istrue, bool useAllExprs) const
 {
-	if (istrue && if_) {
-		if (expr_->is_wellformed(env.dep_exprs))
-			pred.hypotheses.insert(new Hypothesis(expr_->to_wellformed(env.dep_exprs)));
-	}
-	else if (else_) {
-		if (expr_->is_neg_wellformed(env.dep_exprs))
-			pred.hypotheses.insert(new Hypothesis(new PEUnary('N', expr_->neg_to_wellformed(env.dep_exprs))));
-	}
+  
+  if (istrue && if_) {
+    if (useAllExprs || expr_->is_wellformed(env.dep_exprs))
+      pred.hypotheses.insert(new Hypothesis(expr_, new PENumber(new verinum((uint64_t)1, 32))));
+  }
+  else if (else_) {
+    if (useAllExprs || expr_->is_neg_wellformed(env.dep_exprs))
+      pred.hypotheses.insert(new Hypothesis(expr_, new PENumber(new verinum((uint64_t)0, 32))));
+  }
 }
 
 /**

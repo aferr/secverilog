@@ -2,14 +2,14 @@ module labelprop(
 		 input {L} clk,
 		 input {L} rst,
 		 input seq {L} l_in,
-		 input seq {Domain l_in} d_in
+		 input seq {LH l_in} d_in
 		 );
 
    reg seq {L} n_lbl;
-   reg seq {Domain n_lbl} n_data;
+   reg seq {LH n_lbl} n_data;
 
    reg seq {L} n_lbl_2;
-   reg seq {Domain n_lbl_2} n_data_2;
+   reg seq {LH n_lbl_2} n_data_2;
 
    
    always@(posedge clk) begin

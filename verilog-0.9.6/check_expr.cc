@@ -32,6 +32,11 @@ SecType* PEBinary::typecheck(ostream&out, map<perm_string, SecType*>&varsToType)
 	SecType* ty2 = right_->typecheck(out, varsToType);
 	return new JoinType(ty1, ty2);
 }
+void PEBinary::collect_idens(set<perm_string>&s) const
+{
+  left_->collect_idens(s);
+  right_->collect_idens(s);
+}
 
 SecType* PECallFunction::typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const
 {
@@ -39,7 +44,10 @@ SecType* PECallFunction::typecheck(ostream&out, map<perm_string, SecType*>&varsT
 	cout << "PECallFunction is ignored" << endl;
 	return ConstType::BOT;
 }
-
+void PECallFunction::collect_idens(set<perm_string>&s) const
+{
+  return;
+}
 SecType* PEConcat::typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const
 {
 	SecType* last = ConstType::BOT;
@@ -51,18 +59,31 @@ SecType* PEConcat::typecheck(ostream&out, map<perm_string, SecType*>&varsToType)
     }
     return last;
 }
+void PEConcat::collect_idens(set<perm_string>&s) const
+{
+  if (repeat_!= NULL) { repeat_->collect_idens(s); }
+  for (unsigned idx = 0 ;  idx < parms_.count() ;  idx += 1) {
+    parms_[idx]->collect_idens(s);
+  }    
+}
 
 SecType* PEEvent::typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const
 {
 	throw "PEEvent";
 }
-
+void PEEvent::collect_idens(set<perm_string>&s) const
+{
+  throw "PEEvent";
+}
 // float constants have label Low
 SecType* PEFNumber::typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const
 {
 	return ConstType::BOT;
 }
-
+void PEFNumber::collect_idens(set<perm_string>&s) const
+{
+  return;
+}
 SecType* PEIdent::typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const
 {
 	perm_string name = peek_tail_name(path_);
@@ -75,19 +96,28 @@ SecType* PEIdent::typecheck(ostream&out, map<perm_string, SecType*>&varsToType) 
 		return ConstType::TOP;
 	}
 }
-
+void PEIdent::collect_idens(set<perm_string>&s) const
+{
+  s.insert(get_name());
+}
 // integer constants have label Low
 SecType* PENumber::typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const
 {
 	return ConstType::BOT;
 }
-
+void PENumber::collect_idens(set<perm_string>&s) const
+{
+  return;
+}
 // string constants have label Low
 SecType* PEString::typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const
 {
 	return ConstType::BOT;
 }
-
+void PEString::collect_idens(set<perm_string>&s) const
+{
+  return;
+}
 SecType* PETernary::typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const
 {
 //	SecType* lexp = expr_->typecheck(out, varsToType);
@@ -97,18 +127,27 @@ SecType* PETernary::typecheck(ostream&out, map<perm_string, SecType*>&varsToType
 //	SecType* ret = new JoinType(lexp, rhs->simplify());
 	throw "All PETernary expressions should have been translated already.\n";
 }
-
+void PETernary::collect_idens(set<perm_string>&s) const
+{
+  throw "All PETernary expressions should have been translated already.\n";
+}
 SecType* PEUnary::typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const
 {
 	return expr_->typecheck(out, varsToType);
 }
-
+void PEUnary::collect_idens(set<perm_string>&s) const
+{
+  expr_->collect_idens(s);
+}
 SecType* PEDeclassified::typecheck(ostream&out,
         map<perm_string, SecType*>&varsToType) const
 {
     return this->type;
 }
-
+void PEDeclassified::collect_idens(set<perm_string>&s) const
+{
+  ex->collect_idens(s);
+}
 
 //-----------------------------------------------------------------------------
 // Check Base Types

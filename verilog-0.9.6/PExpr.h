@@ -51,7 +51,7 @@ class PExpr : public LineInfo {
       virtual void dump(ostream&) const;
       virtual SecType* typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const = 0;
       virtual PExpr* next_cycle_transform(ostream&out, TypeEnv&env);
-
+      virtual void collect_idens(set<perm_string>&s) const { return; };
         // This method tests whether the expression contains any
         // references to automatically allocated variables.
       virtual bool has_aa_term(Design*des, NetScope*scope) const;
@@ -187,6 +187,7 @@ class PEDeclassified : public PExpr {
 
       virtual SecType* typecheck(ostream&out, map<perm_string,
               SecType*>&varsToType) const;
+      virtual void collect_idens(set<perm_string>&s) const;      
       virtual bool has_aa_term(Design*des, NetScope*scope) const{
           return ex->has_aa_term(des,scope);
       }
@@ -276,6 +277,7 @@ class PEConcat : public PExpr {
       virtual verinum* eval_const(Design*des, NetScope*sc) const;
       virtual void dump(ostream&) const;
       virtual SecType* typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const;
+      virtual void collect_idens(set<perm_string>&s) const;      
 
       virtual BaseType* check_base_type(ostream&out,
               map<perm_string, BaseType*>&varsToBase);
@@ -329,6 +331,7 @@ class PEEvent : public PExpr {
 
       virtual void dump(ostream&) const;
       virtual SecType* typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const;
+      virtual void collect_idens(set<perm_string>&s) const;      
 
       virtual bool has_aa_term(Design*des, NetScope*scope) const;
 
@@ -363,6 +366,7 @@ class PEFNumber : public PExpr {
 
       virtual void dump(ostream&) const;
       virtual SecType* typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const;
+      virtual void collect_idens(set<perm_string>&s) const;      
 
     private:
       verireal*value_;
@@ -382,6 +386,7 @@ class PEIdent : public PExpr {
 
       virtual void dump(ostream&) const;
       virtual SecType* typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const;
+      virtual void collect_idens(set<perm_string>&s) const;      
 
       virtual BaseType* check_base_type(ostream&out, map<perm_string, BaseType*>&varsToBase);
 
@@ -526,6 +531,7 @@ class PENumber : public PExpr {
 
       virtual void dump(ostream&) const;
       virtual SecType* typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const;
+      virtual void collect_idens(set<perm_string>&s) const;      
       virtual unsigned test_width(Design*des, NetScope*scope,
 				  unsigned min, unsigned lval,
 				  ivl_variable_type_t&expr_type,
@@ -564,6 +570,7 @@ class PEString : public PExpr {
       string value() const;
       virtual void dump(ostream&) const;
       virtual SecType* typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const;
+      virtual void collect_idens(set<perm_string>&s) const;      
 
       virtual unsigned test_width(Design*des, NetScope*scope,
 				  unsigned min, unsigned lval,
@@ -587,6 +594,7 @@ class PEUnary : public PExpr {
 
       virtual void dump(ostream&out) const;
       virtual SecType* typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const;
+      virtual void collect_idens(set<perm_string>&s) const;      
 
       virtual bool has_aa_term(Design*des, NetScope*scope) const;
       virtual bool contains_expr(perm_string that);
@@ -622,6 +630,7 @@ class PEBinary : public PExpr {
 
       virtual void dump(ostream&out) const;
       virtual SecType* typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const;
+      virtual void collect_idens(set<perm_string>&s) const;      
 
       virtual bool has_aa_term(Design*des, NetScope*scope) const;
       virtual bool contains_expr(perm_string that);
@@ -767,6 +776,7 @@ class PETernary : public PExpr {
 
       virtual void dump(ostream&out) const;
       virtual SecType* typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const;
+      virtual void collect_idens(set<perm_string>&s) const;      
 
       virtual bool has_aa_term(Design*des, NetScope*scope) const;
 
@@ -813,6 +823,7 @@ class PECallFunction : public PExpr {
 
       virtual void dump(ostream &) const;
       virtual SecType* typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const;
+      virtual void collect_idens(set<perm_string>&s) const;      
 
       virtual bool has_aa_term(Design*des, NetScope*scope) const;
 

@@ -145,19 +145,19 @@ void PProcess::next_cycle_transform(ostream&out, TypeEnv&env) const {
   statement_->next_cycle_transform(out, env);
 }
 
-void PProcess::collect_dep_invariants(ostream&out, TypeEnv&env) const {
-  if(statement_ == NULL) return;
+bool PProcess::collect_dep_invariants(ostream&out, TypeEnv&env, Predicate&pred) {
+  if(statement_ == NULL) return false;
   if(debug_typecheck) 
     fprintf(stderr, "collect_dep_invariants:: %s\n", typeid(*statement_).name());
-  statement_->collect_dep_invariants(out, env);
+  return statement_->collect_dep_invariants(out, env, pred);
 }
 
 Statement* Statement::next_cycle_transform(ostream&out, TypeEnv&env) {
   return this;
 }
 
-void Statement::collect_dep_invariants(ostream&out, TypeEnv&env) const {
-  return;
+bool Statement::collect_dep_invariants(ostream&out, TypeEnv&env, Predicate&pred) {
+  return false;
 }
 
 Statement* PEventStatement::next_cycle_transform(ostream&out, TypeEnv&env) {
@@ -165,8 +165,8 @@ Statement* PEventStatement::next_cycle_transform(ostream&out, TypeEnv&env) {
   return this;
 }
 
-void PEventStatement::collect_dep_invariants(ostream&out, TypeEnv&env) const {
-  statement_->collect_dep_invariants(out,env);
+bool PEventStatement::collect_dep_invariants(ostream&out, TypeEnv&env, Predicate&pred) {
+  return statement_->collect_dep_invariants(out,env, pred);
 }
 
 Statement* PBlock::next_cycle_transform(ostream&out, TypeEnv&env) {
@@ -178,12 +178,14 @@ Statement* PBlock::next_cycle_transform(ostream&out, TypeEnv&env) {
   return this;
 }
 
-void PBlock::collect_dep_invariants(ostream&out, TypeEnv&env) const {
+bool PBlock::collect_dep_invariants(ostream&out, TypeEnv&env, Predicate&pred) {
+  bool result = false;
   for(uint i=0; i<list_.count(); i++) {
     if(debug_typecheck) 
       fprintf(stderr, "collect_dep_invariants:: %s\n", typeid(list_[i]).name());
-    list_[i]->collect_dep_invariants(out, env);
-  }  
+    result |= list_[i]->collect_dep_invariants(out, env, pred);
+  }
+  return result;
 }
 
 Statement* PCondit::next_cycle_transform(ostream&out, TypeEnv&env) {
@@ -194,12 +196,23 @@ Statement* PCondit::next_cycle_transform(ostream&out, TypeEnv&env) {
   return this;
 }
 
-//TODO insert assumptions about cond and add cond to z3 env
-void PCondit::collect_dep_invariants(ostream&out, TypeEnv&env) const {
-  if (if_ != NULL)
-    if_->collect_dep_invariants(out, env);
-  if(else_ != NULL)
-    else_->collect_dep_invariants(out, env);  
+bool PCondit::collect_dep_invariants(ostream&out, TypeEnv&env, Predicate&pred) {
+  Predicate oldPred = pred;
+  bool result = false;
+  if (if_ != NULL) {
+    absintp(pred, env, true, true);
+    result |= if_->collect_dep_invariants(out, env, pred);
+    pred.hypotheses = oldPred.hypotheses;
+  }
+  if(else_ != NULL) {
+    absintp(pred, env, false, true);
+    result |= else_->collect_dep_invariants(out, env, pred);
+    pred.hypotheses = oldPred.hypotheses;    
+  }
+  if(result) {
+    expr_->collect_idens(env.dep_exprs);
+  }
+  return result;
 }
 
 // This is the only rule where something actually happens. Only the left 
@@ -210,10 +223,25 @@ Statement* PAssign_::next_cycle_transform(ostream&out, TypeEnv&env) {
   return this;
 }
 
-//TODO if LVal is NextType and appears in dependent expression
-//assert (= lval rval)
-void PAssign_::collect_dep_invariants(ostream&out, TypeEnv&env) const {
-  
+bool PAssign_::collect_dep_invariants(ostream&out, TypeEnv&env, Predicate&pred) {
+  //  PEIdent* lhs = dynamic_cast<PEIdent*>(lval());
+  BaseType* btype = lval()->check_base_type(out, env.varsToBase);
+  //if lhs appears in dependent type and is a next cycle value
+  if (btype->isNextType() && (env.dep_exprs.find(lval()->get_name()) != env.dep_exprs.end())) {
+    bool hasPreds = !pred.hypotheses.empty();
+    out << "(assert ";
+    if (hasPreds) {
+      out << "(=> " << pred << " ";
+    }
+    out << "(= " << *lval() << " " << *rval() << ")";
+    if (hasPreds) {
+      out << ")";
+    }
+    out << ")" << endl;
+    return true;
+  } else {
+    return false;
+  }
 }
 
 Statement* PCAssign::next_cycle_transform(ostream&out, TypeEnv&env) {
@@ -365,6 +393,20 @@ void PWire::typecheck(ostream&out, map<perm_string, SecType*>& varsToType,
       port_type_ == NetNet::POUTPUT) ) seqVars.insert(basename());
 }
 
+void Module::dumpExprDefs(ostream&out, set<perm_string>exprs) const {
+  for (std::set<perm_string>::iterator ite = exprs.begin();
+       ite != exprs.end(); ite++) {
+    out << "(declare-fun " << (*ite) << " () Int)" << endl;
+    perm_string temp = *ite;
+    map<perm_string, PWire*>::const_iterator cur = wires.find(temp);
+    if (cur != wires.end()) {
+      PWire* def = (*cur).second;
+      out << "(assert (<= 0  " << (*ite) << "))" << endl;
+      out << "(assert (<= " << (*ite) << " "
+	  << (1 << (def->getRange() + 1)) - 1 << "))" << endl;
+    }
+  }  
+}
 /**
  * Collect all expressions that  appears in dependent types.
  */
@@ -386,18 +428,20 @@ void Module::CollectDepExprs(ostream&out, TypeEnv & env) const {
   // declare the expressions as variables in z3 file
   out << endl << "; variables to be solved" << endl;
 
-  for (std::set<perm_string>::iterator ite = env.dep_exprs.begin();
-       ite != env.dep_exprs.end(); ite++) {
-    out << "(declare-fun " << (*ite) << " () Int)" << endl;
-    perm_string temp = *ite;
-    map<perm_string, PWire*>::const_iterator cur = wires.find(temp);
-    if (cur != wires.end()) {
-      PWire* def = (*cur).second;
-      out << "(assert (<= 0  " << (*ite) << "))" << endl;
-      out << "(assert (<= " << (*ite) << " "
-	  << (1 << (def->getRange() + 1)) - 1 << "))" << endl;
-    }
-  }
+  dumpExprDefs(out, env.dep_exprs);
+  
+  // for (std::set<perm_string>::iterator ite = env.dep_exprs.begin();
+  //      ite != env.dep_exprs.end(); ite++) {
+  //   out << "(declare-fun " << (*ite) << " () Int)" << endl;
+  //   perm_string temp = *ite;
+  //   map<perm_string, PWire*>::const_iterator cur = wires.find(temp);
+  //   if (cur != wires.end()) {
+  //     PWire* def = (*cur).second;
+  //     out << "(assert (<= 0  " << (*ite) << "))" << endl;
+  //     out << "(assert (<= " << (*ite) << " "
+  // 	  << (1 << (def->getRange() + 1)) - 1 << "))" << endl;
+  //   }
+  // }
 }
 
 /**
@@ -405,6 +449,17 @@ void Module::CollectDepExprs(ostream&out, TypeEnv & env) const {
  * Only generate if expr is of next type and appears in a dependent label.
  */
 void Module::CollectDepInvariants(ostream&out, TypeEnv & env) const {
+  out << "; invariants about dependent variables" << endl;
+  set<perm_string> oldDeps = env.dep_exprs;
+  for (list<PProcess*>::const_iterator behav = behaviors.begin();
+       behav != behaviors.end(); behav++) {
+    Predicate emptyPred;
+    (*behav)->collect_dep_invariants(out, env, emptyPred);
+  }
+  set<perm_string> newDeps;
+  std::set_difference(env.dep_exprs.begin(), env.dep_exprs.end(),
+		      oldDeps.begin(), oldDeps.end(), std::inserter(newDeps, newDeps.end()));
+  dumpExprDefs(out, newDeps);
 }
 
 /**
@@ -467,6 +522,7 @@ void Module::typecheck(ostream&out, TypeEnv& env,
   if(debug_typecheck) fprintf(stderr, "outputting type families\n");
   output_type_families(out, depfun);
 
+  CollectDepInvariants(out, env);
   // remove an invariant if some variable does not show up
   if(debug_typecheck) fprintf(stderr, "optimizing invariants\n");
   for (set<Equality*>::iterator invite = env.invariants->invariants.begin();
