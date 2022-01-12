@@ -126,12 +126,8 @@ void Module::next_cycle_transform(ostream&out, TypeEnv&env) {
 }
 
 PProcess* Module::gen_assign_next_block(perm_string id){
-  PEIdent* clk = new PEIdent(perm_string::literal("clk"));
-  PEEvent*posclock = new PEEvent(PEEvent::POSEDGE, clk);
-  svector<PEEvent*>*clkeventlist = new svector<PEEvent*>(1);
-  (*clkeventlist)[0] = posclock;
-  PEventStatement* event_expr = new PEventStatement(*clkeventlist);
-
+  //make the assignment in an always@(*) block
+  PEventStatement* event_expr = new PEventStatement();
   PEIdent*nexted_id = new PEIdent(nextify_perm_string(id));
   PEIdent*unnexted_id = new PEIdent(id);
   PAssign*asgn = new PAssign(unnexted_id, nexted_id);
