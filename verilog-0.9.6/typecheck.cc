@@ -145,8 +145,19 @@ void PProcess::next_cycle_transform(ostream&out, TypeEnv&env) const {
   statement_->next_cycle_transform(out, env);
 }
 
+void PProcess::collect_dep_invariants(ostream&out, TypeEnv&env) const {
+  if(statement_ == NULL) return;
+  if(debug_typecheck) 
+    fprintf(stderr, "collect_dep_invariants:: %s\n", typeid(*statement_).name());
+  statement_->collect_dep_invariants(out, env);
+}
+
 Statement* Statement::next_cycle_transform(ostream&out, TypeEnv&env) {
   return this;
+}
+
+void Statement::collect_dep_invariants(ostream&out, TypeEnv&env) const {
+  return;
 }
 
 Statement* PEventStatement::next_cycle_transform(ostream&out, TypeEnv&env) {
@@ -154,13 +165,25 @@ Statement* PEventStatement::next_cycle_transform(ostream&out, TypeEnv&env) {
   return this;
 }
 
+void PEventStatement::collect_dep_invariants(ostream&out, TypeEnv&env) const {
+  statement_->collect_dep_invariants(out,env);
+}
+
 Statement* PBlock::next_cycle_transform(ostream&out, TypeEnv&env) {
-  for(int i=0; i<list_.count(); i++) {
+  for(uint i=0; i<list_.count(); i++) {
     if(debug_typecheck) 
       fprintf(stderr, "NextCycleTransform:: %s\n", typeid(list_[i]).name());
     list_[i]=list_[i]->next_cycle_transform(out, env);
   }
   return this;
+}
+
+void PBlock::collect_dep_invariants(ostream&out, TypeEnv&env) const {
+  for(uint i=0; i<list_.count(); i++) {
+    if(debug_typecheck) 
+      fprintf(stderr, "collect_dep_invariants:: %s\n", typeid(list_[i]).name());
+    list_[i]->collect_dep_invariants(out, env);
+  }  
 }
 
 Statement* PCondit::next_cycle_transform(ostream&out, TypeEnv&env) {
@@ -171,6 +194,14 @@ Statement* PCondit::next_cycle_transform(ostream&out, TypeEnv&env) {
   return this;
 }
 
+//TODO insert assumptions about cond and add cond to z3 env
+void PCondit::collect_dep_invariants(ostream&out, TypeEnv&env) const {
+  if (if_ != NULL)
+    if_->collect_dep_invariants(out, env);
+  if(else_ != NULL)
+    else_->collect_dep_invariants(out, env);  
+}
+
 // This is the only rule where something actually happens. Only the left 
 // hand-side of the assignment is transformed.
 Statement* PAssign_::next_cycle_transform(ostream&out, TypeEnv&env) {
@@ -179,10 +210,17 @@ Statement* PAssign_::next_cycle_transform(ostream&out, TypeEnv&env) {
   return this;
 }
 
+//TODO if LVal is NextType and appears in dependent expression
+//assert (= lval rval)
+void PAssign_::collect_dep_invariants(ostream&out, TypeEnv&env) const {
+  
+}
+
 Statement* PCAssign::next_cycle_transform(ostream&out, TypeEnv&env) {
   lval_ = lval_->next_cycle_transform(out, env);
   return this;
 }
+
 PExpr* PExpr::next_cycle_transform(ostream&out, TypeEnv&env) { return this; }
 
 PExpr* PEIdent::next_cycle_transform(ostream&out, TypeEnv&env) { 
@@ -360,6 +398,13 @@ void Module::CollectDepExprs(ostream&out, TypeEnv & env) const {
 	  << (1 << (def->getRange() + 1)) - 1 << "))" << endl;
     }
   }
+}
+
+/**
+ * Generate invariants about the next cycle values of labels.
+ * Only generate if expr is of next type and appears in a dependent label.
+ */
+void Module::CollectDepInvariants(ostream&out, TypeEnv & env) const {
 }
 
 /**
@@ -604,6 +649,8 @@ void typecheck_assignment(ostream& out, PExpr* lhs, PExpr* rhs, TypeEnv* env,
       cout << "lbase: " << lbase->name() << endl;
       cout << "lhs: " << *lhs << endl;
       cout << "rhs: " << *rhs << endl;
+      cout << "precond: " << precond << endl;
+      cout << "postcond: " << postcond << endl;
     }
 
     // if nothing depends on LHS, simple case
