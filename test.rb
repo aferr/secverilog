@@ -7,10 +7,11 @@ class String
 end
 
 passed, total = [0, 0]
-Dir["test/*v"].each do |vfile|
+%x[rm test/*.z3]
+Dir["test/*.v"].each do |vfile|
   name = vfile.sub(/\.v/, '').sub(/test\//, '')
   expected = File.open("test/#{name}.expected",'r').read
-  actual   = %x[../bin/iverilog -z #{vfile} && z3 -smt2 test/#{name}.z3]
+  actual   = %x[../bin/iverilog -F test/#{name}.fun -l test/#{name}.lattice -z #{vfile} && z3 -smt2 test/#{name}.z3 | grep "sat"]
   total +=1
   if actual == expected
     puts "PASSED #{name}".green
@@ -22,5 +23,6 @@ Dir["test/*v"].each do |vfile|
   end
 end
 
-%x[rm *z3]
+%x[rm test/*.z3]
 puts "Passed #{passed}/#{total} tests"
+exit(total-passed);

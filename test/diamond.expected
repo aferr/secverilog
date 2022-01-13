@@ -1,6 +1,4 @@
-Compiling file diamond.v
-Verifying file diamond.v
-fail
-(assert  (not(leq D1  D2)))    ; d2 = d1 @diamond.v:33
-(assert  (not(leq D2  D1)))    ; d1 = d2 @diamond.v:38
-Total: 2 assertions failed
+unsat
+unsat
+sat
+sat
