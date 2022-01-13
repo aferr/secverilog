@@ -451,16 +451,20 @@ void Module::CollectDepExprs(ostream&out, TypeEnv & env) const {
 void Module::CollectDepInvariants(ostream&out, TypeEnv & env) const {
   out << "; invariants about dependent variables" << endl;
   set<perm_string> oldDeps = env.dep_exprs;
+  //collect invariants and print them after definining new variables
+  stringstream invs;
   for (list<PProcess*>::const_iterator behav = behaviors.begin();
        behav != behaviors.end(); behav++) {
     Predicate emptyPred;
-    (*behav)->collect_dep_invariants(out, env, emptyPred);
+    (*behav)->collect_dep_invariants(invs, env, emptyPred);
   }
   set<perm_string> newDeps;
   std::set_difference(env.dep_exprs.begin(), env.dep_exprs.end(),
 		      oldDeps.begin(), oldDeps.end(), std::inserter(newDeps, newDeps.end()));
   dumpExprDefs(out, newDeps);
+  out << invs.str();
 }
+
 
 /**
  * Type-check a module.
