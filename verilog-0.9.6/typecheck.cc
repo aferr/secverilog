@@ -224,7 +224,6 @@ Statement* PAssign_::next_cycle_transform(ostream&out, TypeEnv&env) {
 }
 
 bool PAssign_::collect_dep_invariants(ostream&out, TypeEnv&env, Predicate&pred) {
-  //  PEIdent* lhs = dynamic_cast<PEIdent*>(lval());
   BaseType* btype = lval()->check_base_type(out, env.varsToBase);
   //if lhs appears in dependent type and is a next cycle value
   if (btype->isNextType() && (env.dep_exprs.find(lval()->get_name()) != env.dep_exprs.end())) {

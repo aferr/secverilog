@@ -80,14 +80,25 @@ void PCase::absintp(Predicate& pred, TypeEnv& env, unsigned idx) const
  */
 void PCondit::absintp(Predicate& pred, TypeEnv& env, bool istrue, bool useAllExprs) const
 {
-  
+  //If the condition is just a variable, set it up as equal to 1 or 0
+  PEIdent* condvar = dynamic_cast<PEIdent*>(expr_);
   if (istrue && if_) {
-    if (useAllExprs || expr_->is_wellformed(env.dep_exprs))
-      pred.hypotheses.insert(new Hypothesis(expr_, new PENumber(new verinum((uint64_t)1, 32))));
+    if (useAllExprs || expr_->is_wellformed(env.dep_exprs)) {
+      if (condvar != NULL) {
+	pred.hypotheses.insert(new Hypothesis(expr_, new PENumber(new verinum((uint64_t)1, 32))));	
+      } else {
+	pred.hypotheses.insert(new Hypothesis(expr_));
+      }
+    }
   }
   else if (else_) {
-    if (useAllExprs || expr_->is_neg_wellformed(env.dep_exprs))
-      pred.hypotheses.insert(new Hypothesis(expr_, new PENumber(new verinum((uint64_t)0, 32))));
+    if (useAllExprs || expr_->is_neg_wellformed(env.dep_exprs)) {
+      if (condvar != NULL) {
+	pred.hypotheses.insert(new Hypothesis(expr_, new PENumber(new verinum((uint64_t)0, 32))));	
+      } else {
+	pred.hypotheses.insert(new Hypothesis(new PEUnary('N', expr_)));
+      }
+    }
   }
 }
 
