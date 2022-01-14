@@ -332,13 +332,11 @@ inline ostream& operator << (ostream&o, Predicate& pred)
 	set<Hypothesis*> l = pred.hypotheses;
 	set<Hypothesis*>::iterator i = l.begin();
 	if (i != l.end()) {
-		o << "(";
-		(*i)->bexpr_->dump(o);
-		o << ")";
+		(*i)->bexpr_->dumpz3(o);
 		i++;
 	}
 	for (; i != l.end() ; i++) {
-		o << " ("; (*i)->bexpr_->dump(o); o << ")";
+	  (*i)->bexpr_->dumpz3(o);
 	}
 	return o;
 }

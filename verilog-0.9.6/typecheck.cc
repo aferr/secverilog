@@ -232,7 +232,11 @@ bool PAssign_::collect_dep_invariants(ostream&out, TypeEnv&env, Predicate&pred) 
     if (hasPreds) {
       out << "(=> " << pred << " ";
     }
-    out << "(= " << *lval() << " " << *rval() << ")";
+    out << "(= ";
+    lval()->dumpz3(out);
+    out << " ";
+    rval()->dumpz3(out);
+    out << ")";
     if (hasPreds) {
       out << ")";
     }
@@ -250,7 +254,8 @@ Statement* PCAssign::next_cycle_transform(ostream&out, TypeEnv&env) {
 
 PExpr* PExpr::next_cycle_transform(ostream&out, TypeEnv&env) { return this; }
 
-PExpr* PEIdent::next_cycle_transform(ostream&out, TypeEnv&env) { 
+PExpr* PEIdent::next_cycle_transform(ostream&out, TypeEnv&env) {
+  
   BaseType*bt = check_base_type(out,env.varsToBase);
   assert(bt);
   // if bt is seqtype, make it into next cycle version
@@ -427,20 +432,7 @@ void Module::CollectDepExprs(ostream&out, TypeEnv & env) const {
   // declare the expressions as variables in z3 file
   out << endl << "; variables to be solved" << endl;
 
-  dumpExprDefs(out, env.dep_exprs);
-  
-  // for (std::set<perm_string>::iterator ite = env.dep_exprs.begin();
-  //      ite != env.dep_exprs.end(); ite++) {
-  //   out << "(declare-fun " << (*ite) << " () Int)" << endl;
-  //   perm_string temp = *ite;
-  //   map<perm_string, PWire*>::const_iterator cur = wires.find(temp);
-  //   if (cur != wires.end()) {
-  //     PWire* def = (*cur).second;
-  //     out << "(assert (<= 0  " << (*ite) << "))" << endl;
-  //     out << "(assert (<= " << (*ite) << " "
-  // 	  << (1 << (def->getRange() + 1)) - 1 << "))" << endl;
-  //   }
-  // }
+  dumpExprDefs(out, env.dep_exprs);  
 }
 
 /**

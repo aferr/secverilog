@@ -49,6 +49,7 @@ class PExpr : public LineInfo {
       virtual ~PExpr();
 
       virtual void dump(ostream&) const;
+      virtual void dumpz3(ostream&) const;      
       virtual SecType* typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const = 0;
       virtual PExpr* next_cycle_transform(ostream&out, TypeEnv&env);
       virtual void collect_idens(set<perm_string>&s) const { return; };
@@ -184,7 +185,9 @@ class PEDeclassified : public PExpr {
       virtual void dump(ostream&os) const{
           return ex->dump(os);
       }
-
+      virtual void dumpz3(ostream&os) const {
+	return ex->dumpz3(os);
+      }
       virtual SecType* typecheck(ostream&out, map<perm_string,
               SecType*>&varsToType) const;
       virtual void collect_idens(set<perm_string>&s) const;      
@@ -276,6 +279,7 @@ class PEConcat : public PExpr {
 
       virtual verinum* eval_const(Design*des, NetScope*sc) const;
       virtual void dump(ostream&) const;
+      virtual void dumpz3(ostream&) const;      
       virtual SecType* typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const;
       virtual void collect_idens(set<perm_string>&s) const;      
 
@@ -330,6 +334,7 @@ class PEEvent : public PExpr {
       PExpr* expr() const;
 
       virtual void dump(ostream&) const;
+      virtual void dumpz3(ostream&) const;      
       virtual SecType* typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const;
       virtual void collect_idens(set<perm_string>&s) const;      
 
@@ -365,6 +370,7 @@ class PEFNumber : public PExpr {
       virtual NetExpr*elaborate_pexpr(Design*des, NetScope*sc) const;
 
       virtual void dump(ostream&) const;
+      virtual void dumpz3(ostream&) const;      
       virtual SecType* typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const;
       virtual void collect_idens(set<perm_string>&s) const;      
 
@@ -385,6 +391,8 @@ class PEIdent : public PExpr {
       virtual PExpr* next_cycle_transform(ostream&out, TypeEnv&env);
 
       virtual void dump(ostream&) const;
+      virtual void dumpz3(ostream&) const;
+      virtual void dumpEq(ostream&out, int val) const;
       virtual SecType* typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const;
       virtual void collect_idens(set<perm_string>&s) const;      
 
@@ -530,6 +538,7 @@ class PENumber : public PExpr {
       const verinum& value() const;
 
       virtual void dump(ostream&) const;
+      virtual void dumpz3(ostream&) const;      
       virtual SecType* typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const;
       virtual void collect_idens(set<perm_string>&s) const;      
       virtual unsigned test_width(Design*des, NetScope*scope,
@@ -569,6 +578,7 @@ class PEString : public PExpr {
 
       string value() const;
       virtual void dump(ostream&) const;
+      virtual void dumpz3(ostream&) const;      
       virtual SecType* typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const;
       virtual void collect_idens(set<perm_string>&s) const;      
 
@@ -593,6 +603,7 @@ class PEUnary : public PExpr {
       ~PEUnary();
 
       virtual void dump(ostream&out) const;
+      virtual void dumpz3(ostream&out) const;      
       virtual SecType* typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const;
       virtual void collect_idens(set<perm_string>&s) const;      
 
@@ -629,6 +640,7 @@ class PEBinary : public PExpr {
       ~PEBinary();
 
       virtual void dump(ostream&out) const;
+      virtual void dumpz3(ostream&out) const;      
       virtual SecType* typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const;
       virtual void collect_idens(set<perm_string>&s) const;      
 
@@ -775,6 +787,7 @@ class PETernary : public PExpr {
       ~PETernary();
 
       virtual void dump(ostream&out) const;
+      virtual void dumpz3(ostream&out) const;      
       virtual SecType* typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const;
       virtual void collect_idens(set<perm_string>&s) const;      
 
@@ -822,6 +835,7 @@ class PECallFunction : public PExpr {
       ~PECallFunction();
 
       virtual void dump(ostream &) const;
+      virtual void dumpz3(ostream &) const;      
       virtual SecType* typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const;
       virtual void collect_idens(set<perm_string>&s) const;      
 
