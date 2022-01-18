@@ -85,18 +85,18 @@ void PCondit::absintp(Predicate& pred, TypeEnv& env, bool istrue, bool useAllExp
   if (istrue && if_) {
     if (useAllExprs || expr_->is_wellformed(env.dep_exprs)) {
       if (condvar != NULL) {
-	pred.hypotheses.insert(new Hypothesis(expr_, new PENumber(new verinum((uint64_t)1, 32))));	
+	pred.hypotheses.insert(new Hypothesis(expr_->to_wellformed(env.dep_exprs), new PENumber(new verinum((uint64_t)1, 32))));	
       } else {
-	pred.hypotheses.insert(new Hypothesis(expr_));
+	pred.hypotheses.insert(new Hypothesis(expr_->to_wellformed(env.dep_exprs)));
       }
     }
   }
   else if (!istrue && else_) {
     if (useAllExprs || expr_->is_neg_wellformed(env.dep_exprs)) {
       if (condvar != NULL) {
-	pred.hypotheses.insert(new Hypothesis(expr_, new PENumber(new verinum((uint64_t)0, 32))));	
+	pred.hypotheses.insert(new Hypothesis(expr_->neg_to_wellformed(env.dep_exprs), new PENumber(new verinum((uint64_t)0, 32))));	
       } else {
-	pred.hypotheses.insert(new Hypothesis(new PEUnary('N', expr_)));
+	pred.hypotheses.insert(new Hypothesis(new PEUnary('N', expr_->neg_to_wellformed(env.dep_exprs))));
       }
     }
   }

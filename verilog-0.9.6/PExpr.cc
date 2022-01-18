@@ -144,7 +144,7 @@ PExpr* PEBinary::to_wellformed(set<perm_string> s)
 		else if (right_->is_wellformed(s))
 			return right_->to_wellformed(s);
 	}
-	return NULL;
+	return this;
 }
 
 bool PEBinary::is_neg_wellformed(set<perm_string> s)
@@ -177,7 +177,7 @@ PExpr* PEBinary::neg_to_wellformed(set<perm_string> s)
 		else if (right_->is_neg_wellformed(s))
 			return right_->neg_to_wellformed(s);
 	}
-	return NULL;
+	return this;
 }
 
 PExpr* PEBinary::subst(map<perm_string, perm_string> m)
@@ -387,11 +387,7 @@ bool PEIdent::is_wellformed(set<perm_string> s)
 
 PExpr* PEIdent::to_wellformed(set<perm_string> s)
 {
-	std::set<perm_string>::iterator ite = s.find(get_name());
-	if (ite != s.end())
-		return this;
-	else
-		return NULL;
+  return this;
 }
 
 PExpr* PEIdent::subst(map<perm_string, perm_string> m)
@@ -525,10 +521,10 @@ bool PEUnary::is_wellformed(set<perm_string> s)
 
 PExpr* PEUnary::to_wellformed(set<perm_string> s)
 {
-	if (is_wellformed(s))
-        return new PEUnary(op_, expr_->to_wellformed(s));
-    else
-		return NULL;
+  if (is_wellformed(s))
+    return new PEUnary(op_, expr_->to_wellformed(s));
+  else
+    return this;
 }
 
 PExpr* PEUnary::subst(map<perm_string, perm_string> m)
