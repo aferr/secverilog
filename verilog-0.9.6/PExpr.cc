@@ -177,7 +177,7 @@ PExpr* PEBinary::neg_to_wellformed(set<perm_string> s)
 		else if (right_->is_neg_wellformed(s))
 			return right_->neg_to_wellformed(s);
 	}
-	return this;
+	return to_wellformed(s);
 }
 
 PExpr* PEBinary::subst(map<perm_string, perm_string> m)
