@@ -210,7 +210,6 @@ bool PCondit::collect_dep_invariants(ostream&out, TypeEnv&env, Predicate&pred) {
     pred.hypotheses = oldPred.hypotheses;    
   }
   if(result) {
-    cout << "Collecting iden " << *expr_ << endl;
     expr_->collect_idens(env.dep_exprs);
   }
   return result;
