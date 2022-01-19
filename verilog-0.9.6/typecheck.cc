@@ -225,8 +225,8 @@ Statement* PAssign_::next_cycle_transform(ostream&out, TypeEnv&env) {
 
 bool PAssign_::collect_dep_invariants(ostream&out, TypeEnv&env, Predicate&pred) {
   BaseType* btype = lval()->check_base_type(out, env.varsToBase);
-  //if lhs appears in dependent type and is a next cycle value
-  if (btype->isNextType() && (env.dep_exprs.find(lval()->get_name()) != env.dep_exprs.end())) {
+  //if lhs appears in dependent type
+  if ((env.dep_exprs.find(lval()->get_name()) != env.dep_exprs.end())) {
     bool hasPreds = !pred.hypotheses.empty();
     out << "(assert ";
     if (hasPreds) {
@@ -866,7 +866,10 @@ void PGModule::typecheck(ostream&out, TypeEnv& env,
 		  << get_pin_name(idx) << " in module "
 		  << get_type() << " @" << get_fileline()
 		  << endl;
-	      out << "(check-sat)" << endl;
+	      out << "(echo \"parameter " << get_pin_name(idx)
+		  << " for module " << get_type() << " @" << get_fileline()
+		  << "\")" << endl;
+	      out << "(check-sat)" << endl;	      
 	      out << "(pop)" << endl << endl;
 	    } else if (porttype == NetNet::POUTPUT
 		       || porttype == NetNet::PINOUT) {
@@ -881,6 +884,9 @@ void PGModule::typecheck(ostream&out, TypeEnv& env,
 		  << get_pin_name(idx) << " in module "
 		  << get_type() << " @" << get_fileline()
 		  << endl;
+	      out << "(echo \"parameter " << get_pin_name(idx)
+		  << " for module " << get_type() << " @" << get_fileline()
+		  << "\")" << endl;	      
 	      out << "(check-sat)" << endl;
 	      out << "(pop)" << endl << endl;
 	    }
