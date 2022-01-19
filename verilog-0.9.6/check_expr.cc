@@ -84,21 +84,54 @@ void PEFNumber::collect_idens(set<perm_string>&s) const
 {
   return;
 }
+SecType* PEIdent::typecheckName(ostream&out, map<perm_string, SecType*>&varsToType) const {
+  perm_string name = peek_tail_name(path_);
+  map<perm_string,SecType*>::const_iterator find = varsToType.find(name);
+  if (find != varsToType.end()) {
+    return (*find).second;
+  } else {
+    cerr <<  "Unbounded var name: " << name.str() << endl;
+    return ConstType::TOP;
+  }
+}
+
+SecType* PEIdent::typecheckIdx(ostream&out, map<perm_string, SecType*>&varsToType) const {
+  SecType* result = ConstType::BOT;
+  for (std::list<index_component_t>::const_iterator idxit = path_.back().index.begin();
+       idxit != path_.back().index.end(); idxit++) {
+    if (idxit->msb != NULL) {
+      SecType *tmsb = idxit->msb->typecheck(out, varsToType);
+      result = new JoinType(result, tmsb);
+    }
+    if (idxit->lsb != NULL) {
+      SecType *tlsb = idxit->msb->typecheck(out, varsToType);
+      result = new JoinType(result, tlsb);
+    }
+  }
+  return result;
+}
+
 SecType* PEIdent::typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const
 {
-	perm_string name = peek_tail_name(path_);
-	map<perm_string,SecType*>::const_iterator find = varsToType.find(name);
-	if (find != varsToType.end()) {
-		return (*find).second;
-	}
-	else {
-		cout <<  "Unbounded var name: " << name.str() << endl;
-		return ConstType::TOP;
-	}
+  //idents are like: varname[bit select]
+  //need to join index label with name label
+  SecType* namelbl = typecheckName(out, varsToType);
+  SecType* idxlbl = typecheckIdx(out, varsToType);
+  return new JoinType(namelbl, idxlbl);
 }
+
 void PEIdent::collect_idens(set<perm_string>&s) const
 {
-  s.insert(get_name());
+  s.insert(peek_tail_name(path_));
+  for (std::list<index_component_t>::const_iterator idxit = path_.back().index.begin();
+	 idxit != path_.back().index.end(); idxit++) {
+   if (idxit->msb != NULL) {
+     idxit->msb->collect_idens(s);
+   }
+   if (idxit->lsb != NULL) {
+     idxit->lsb->collect_idens(s);
+   }
+  }
 }
 // integer constants have label Low
 SecType* PENumber::typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const

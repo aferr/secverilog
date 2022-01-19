@@ -393,6 +393,8 @@ class PEIdent : public PExpr {
       virtual void dump(ostream&) const;
       virtual void dumpz3(ostream&) const;
       virtual void dumpEq(ostream&out, int val) const;
+      virtual SecType* typecheckName(ostream&out, map<perm_string, SecType*>&varsToType) const;
+      virtual SecType* typecheckIdx(ostream&out, map<perm_string, SecType*>&varsToType) const;      
       virtual SecType* typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const;
       virtual void collect_idens(set<perm_string>&s) const;      
 
