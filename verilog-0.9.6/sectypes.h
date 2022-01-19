@@ -331,6 +331,9 @@ inline ostream& operator << (ostream&o, Predicate& pred)
 {
 	set<Hypothesis*> l = pred.hypotheses;
 	set<Hypothesis*>::iterator i = l.begin();
+	if (l.size() > 1) {
+	  o << "(and ";
+	}
 	if (i != l.end()) {
 		(*i)->bexpr_->dumpz3(o);
 		i++;
@@ -338,6 +341,9 @@ inline ostream& operator << (ostream&o, Predicate& pred)
 	for (; i != l.end() ; i++) {
 	  (*i)->bexpr_->dumpz3(o);
 	}
+	if (l.size() > 1) {
+	  o << ") ";
+	}	
 	return o;
 }
 

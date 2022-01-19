@@ -680,9 +680,7 @@ void typecheck_assignment(ostream& out, PExpr* lhs, PExpr* rhs, TypeEnv* env,
     //next-cycle version of that variable.
     if(lbase->isNextType()){
       ltype  = ltype->next_cycle(env);
-      env->pc = env->pc->next_cycle(env);
     }
-        
     rtype = new JoinType(rhs->typecheck(out, env->varsToType), env->pc);
 
     if(lbase->isSeqType()){
@@ -1054,12 +1052,12 @@ void PCase::typecheck(ostream&out, TypeEnv& env, Predicate& pred) const {
  */
 void PCondit::typecheck(ostream&out, TypeEnv& env, Predicate& pred) const {
   if (debug_typecheck) {
-    cout << "PCondit::check " << "if (" << *expr_ << ")" << endl;
+    cerr << "PCondit::check " << "if (" << *expr_ << ")" << endl;
 
-    cout << "depvars currently in scope:" << endl;
+    cerr << "depvars currently in scope:" << endl;
     for (set<perm_string>::iterator depite = env.dep_exprs.begin();
 	 depite != env.dep_exprs.end(); depite++) {
-      cout << *depite << endl;
+      cerr << *depite << endl;
     }
 
   }
@@ -1111,19 +1109,21 @@ void PCondit::typecheck(ostream&out, TypeEnv& env, Predicate& pred) const {
     absintp(pred, env, true, false);
     if_->typecheck(out, env, pred);
   }
+
   Predicate afterif = pred;
   pred.hypotheses = beforeif;
+
   if (else_) {
     absintp(pred, env, false, false);
     else_->typecheck(out, env, pred);
   }
   Predicate afterelse = pred;
-
   // at the merge point, we assume no assumptions are valid anymore
   env.pc = oldpc;
   env.aliveVars = oldalive;
   pred.hypotheses.clear();
   merge(afterif, afterelse, pred);
+  
 }
 
 /**
@@ -1180,19 +1180,19 @@ void PEventStatement::typecheck(ostream&out, TypeEnv& env,
 				Predicate& pred) const {
   if (debug_typecheck) {
     if (expr_.count() == 0) {
-      cout << "PEventStatement::check " << "@* ";
+      cerr << "PEventStatement::check " << "@* ";
     } else {
-      cout << "PEventStatement::check" << "@(" << *(expr_[0]);
+      cerr << "PEventStatement::check" << "@(" << *(expr_[0]);
       if (expr_.count() > 1)
 	for (unsigned idx = 1; idx < expr_.count(); idx += 1)
-	  cout << " or " << *(expr_[idx]);
-      cout << ")";
+	  cerr << " or " << *(expr_[idx]);
+      cerr << ")";
     }
 
     if (statement_) {
-      cout << endl;
+      cerr << endl;
     } else {
-      cout << " ;" << endl;
+      cerr << " ;" << endl;
     }
   }
 
