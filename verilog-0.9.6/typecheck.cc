@@ -166,6 +166,7 @@ Statement* PEventStatement::next_cycle_transform(ostream&out, TypeEnv&env) {
 }
 
 bool PEventStatement::collect_dep_invariants(ostream&out, TypeEnv&env, Predicate&pred) {
+  if (debug_typecheck) fprintf(stderr, "collect_dep_invariants:: %s\n", typeid(*statement_).name());
   return statement_->collect_dep_invariants(out,env, pred);
 }
 
@@ -197,19 +198,23 @@ Statement* PCondit::next_cycle_transform(ostream&out, TypeEnv&env) {
 }
 
 bool PCondit::collect_dep_invariants(ostream&out, TypeEnv&env, Predicate&pred) {
+  if (debug_typecheck) fprintf(stderr, "collect_dep_invariants on if\n");
   Predicate oldPred = pred;
   bool result = false;
   if (if_ != NULL) {
     absintp(pred, env, true, true);
     result |= if_->collect_dep_invariants(out, env, pred);
     pred.hypotheses = oldPred.hypotheses;
+    cerr << "here" << endl;
   }
   if(else_ != NULL) {
     absintp(pred, env, false, true);
     result |= else_->collect_dep_invariants(out, env, pred);
-    pred.hypotheses = oldPred.hypotheses;    
+    pred.hypotheses = oldPred.hypotheses;
+    cerr << "herefalse" << endl;    
   }
   if(result) {
+    cerr << "hereresult" << endl;
     expr_->collect_idens(env.dep_exprs);
   }
   return result;
@@ -225,7 +230,13 @@ Statement* PAssign_::next_cycle_transform(ostream&out, TypeEnv&env) {
 
 bool PAssign_::collect_dep_invariants(ostream&out, TypeEnv&env, Predicate&pred) {
   PEIdent* rident = dynamic_cast<PEIdent*>(rval());
-  bool isNextAssign = (rident != NULL && rident->check_base_type(out, env.varsToBase)->isNextType());
+  bool isNextAssign = false;
+  if (rident != NULL) {
+    BaseType *rtyp = rident->check_base_type(out, env.varsToBase);
+    if (rtyp) {
+      isNextAssign = rtyp->isNextType();
+    }
+  }
   BaseType *ltyp = lval()->check_base_type(out, env.varsToBase);
   bool isLeftSeq = ltyp->isNextType() || ltyp->isSeqType();
   //if lhs appears in dependent type, and is a seq or next type and this is not the generated assignment (x = x_next_)
