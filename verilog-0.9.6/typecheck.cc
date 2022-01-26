@@ -224,9 +224,14 @@ Statement* PAssign_::next_cycle_transform(ostream&out, TypeEnv&env) {
 }
 
 bool PAssign_::collect_dep_invariants(ostream&out, TypeEnv&env, Predicate&pred) {
-  BaseType* btype = lval()->check_base_type(out, env.varsToBase);
-  //if lhs appears in dependent type
-  if ((env.dep_exprs.find(lval()->get_name()) != env.dep_exprs.end())) {
+  PEIdent* rident = dynamic_cast<PEIdent*>(rval());
+  bool isNextAssign = (rident != NULL && rident->check_base_type(out, env.varsToBase)->isNextType());
+  BaseType *ltyp = lval()->check_base_type(out, env.varsToBase);
+  bool isLeftSeq = ltyp->isNextType() || ltyp->isSeqType();
+  //if lhs appears in dependent type, and is a seq or next type and this is not the generated assignment (x = x_next_)
+  if ((env.dep_exprs.find(lval()->get_name()) != env.dep_exprs.end()) &&
+      isLeftSeq && !isNextAssign) {
+    
     bool hasPreds = !pred.hypotheses.empty();
     out << "(assert ";
     if (hasPreds) {
@@ -241,6 +246,8 @@ bool PAssign_::collect_dep_invariants(ostream&out, TypeEnv&env, Predicate&pred) 
       out << ")";
     }
     out << ")" << endl;
+    //also collect rhs variables in the dep_exprs to define them in z3 file
+    rval()->collect_idens(env.dep_exprs);
     return true;
   } else {
     return false;
@@ -437,7 +444,7 @@ void Module::CollectDepExprs(ostream&out, TypeEnv & env) const {
 
 /**
  * Generate invariants about the next cycle values of labels.
- * Only generate if expr is of next type and appears in a dependent label.
+ * Only generate if expr is in a dependent label but skip the automatic next_cycle_transform assignment
  */
 void Module::CollectDepInvariants(ostream&out, TypeEnv & env) const {
   out << "; invariants about dependent variables" << endl;

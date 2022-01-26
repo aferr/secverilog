@@ -162,8 +162,12 @@ SecType* PETernary::typecheck(ostream&out, map<perm_string, SecType*>&varsToType
 }
 void PETernary::collect_idens(set<perm_string>&s) const
 {
-  throw "All PETernary expressions should have been translated already.\n";
+
+  expr_->collect_idens(s);
+  tru_->collect_idens(s);
+  fal_->collect_idens(s);
 }
+
 SecType* PEUnary::typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const
 {
 	return expr_->typecheck(out, varsToType);
