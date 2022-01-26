@@ -205,16 +205,13 @@ bool PCondit::collect_dep_invariants(ostream&out, TypeEnv&env, Predicate&pred) {
     absintp(pred, env, true, true);
     result |= if_->collect_dep_invariants(out, env, pred);
     pred.hypotheses = oldPred.hypotheses;
-    cerr << "here" << endl;
   }
   if(else_ != NULL) {
     absintp(pred, env, false, true);
     result |= else_->collect_dep_invariants(out, env, pred);
     pred.hypotheses = oldPred.hypotheses;
-    cerr << "herefalse" << endl;    
   }
   if(result) {
-    cerr << "hereresult" << endl;
     expr_->collect_idens(env.dep_exprs);
   }
   return result;
