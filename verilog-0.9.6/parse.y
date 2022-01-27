@@ -380,8 +380,10 @@ static PECallFunction*make_call_function(perm_string tn, PExpr*arg1, PExpr*arg2)
 %type <specpath> specify_simple_path specify_simple_path_decl
 %type <specpath> specify_edge_path specify_edge_path_decl
 
+
 %type <sectype> sec_label
 %type <sectype> sec_label_comp
+%type <perm_strings> iden_list
 %type <basetype> base_type
 
 %token K_TAND
@@ -510,11 +512,10 @@ sec_label_comp
       SecType* type = new ConstType(name);
       $$ = type;
     } 
-  | IDENTIFIER IDENTIFIER
+  | IDENTIFIER iden_list 
     { 
       perm_string name = lex_strings.make($1);
-      perm_string expr = lex_strings.make($2);
-      SecType* type = new IndexType(name, expr);
+      SecType* type = new IndexType(name, *$2);
       $$ = type;
     } 
   | IDENTIFIER '(' K_next IDENTIFIER ')'
@@ -522,7 +523,9 @@ sec_label_comp
       perm_string name = lex_strings.make($1);
       perm_string expr = lex_strings.make($4);
       expr = nextify_perm_string(expr);
-      SecType* type = new IndexType(name, expr);
+      list<perm_string> *tmp = new list<perm_string>;
+      tmp->push_back(expr);
+      SecType* type = new IndexType(name, *tmp);
       $$ = type;
     }
   | sec_label_comp K_join sec_label_comp
@@ -540,6 +543,23 @@ sec_label_comp
     } 
   ;
 
+iden_list
+  : IDENTIFIER
+  { list<perm_string> *tmp = new list<perm_string>;
+    tmp->push_back(lex_strings.make($1));
+    $$ = tmp;
+    delete[]$1;
+  }
+  | iden_list ',' IDENTIFIER
+   {
+     list<perm_string>*tmp = $1;
+     tmp->push_back(lex_strings.make($3));
+     $$ = tmp;
+     delete[]$3;
+   };
+;
+
+  
 base_type
   : K_seq
     {

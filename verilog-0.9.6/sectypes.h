@@ -127,19 +127,23 @@ class VarType : public SecType {
 class IndexType : public SecType {
 
     public:
-	  IndexType(perm_string name, perm_string expr);
+	  IndexType(perm_string name, const list<perm_string>&exprs);
       ~IndexType();
       IndexType& operator= (const IndexType&);
       void dump(ostream&o) {
-      	o << "(" << name_ << " " << expr_ << ")";
+      	o << "(" << name_ << " ";
+	for (list<perm_string>::iterator it = exprs_.begin(); it != exprs_.end(); ++it){
+	  o << *it << " ";
+	}
+	o << ")";
       }
       bool equals(SecType* st);
 
     public:
 	// Manipulate the types.
-      void set_type(const perm_string name , perm_string expr);
+      void set_type(const perm_string name , list<perm_string>&exprs);
       perm_string get_name() const;
-      perm_string get_expr() const;
+      list<perm_string> get_exprs() const;
       SecType* subst(perm_string e1, perm_string e2);
       SecType* subst(map<perm_string, perm_string> m);
       virtual SecType* next_cycle(TypeEnv*env);
@@ -153,7 +157,7 @@ class IndexType : public SecType {
 
     private:
       perm_string name_;
-      perm_string expr_;
+      list<perm_string> exprs_;
 };
 
 /* a CompType can be a join/meet of CompTypes */

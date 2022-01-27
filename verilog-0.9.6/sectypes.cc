@@ -121,13 +121,15 @@ bool VarType::hasExpr(perm_string str)
 	return varname_ == str;
 }
 
-IndexType* IndexType::RL = new IndexType(perm_string::literal("Par"), perm_string::literal("ReadLabel"));
-IndexType* IndexType::WL = new IndexType(perm_string::literal("Par"), perm_string::literal("WriteLabel"));
+list<perm_string> rllist(1, perm_string::literal("ReadLabel"));
+list<perm_string> wllist(1, perm_string::literal("WriteLabel"));
+IndexType* IndexType::RL = new IndexType(perm_string::literal("Par"), rllist);
+IndexType* IndexType::WL = new IndexType(perm_string::literal("Par"), wllist);
 
-IndexType::IndexType(perm_string name, perm_string expr)
+IndexType::IndexType(perm_string name, const list<perm_string>&exprs)
 {
 	name_ = name;
-	expr_ = expr;
+	exprs_ = exprs;
 }
 
 IndexType::~IndexType()
@@ -136,14 +138,14 @@ IndexType::~IndexType()
 
 IndexType& IndexType::operator= (const IndexType& t)
 {
-	IndexType* ret =  new IndexType(t.name_, t.expr_);
+	IndexType* ret = new IndexType(t.name_, t.exprs_);
 	return *ret;
 }
 
-void IndexType::set_type(const perm_string name , perm_string expr)
+void IndexType::set_type(const perm_string name , list<perm_string>&exprs)
 {
 	name_ = name;
-	expr_ = expr;
+	exprs_ = exprs;
 }
 
 perm_string IndexType::get_name() const
@@ -151,78 +153,104 @@ perm_string IndexType::get_name() const
 	return name_;
 }
 
-perm_string IndexType::get_expr() const
+list<perm_string> IndexType::get_exprs() const
 {
-	return expr_;
+	return exprs_;
 }
 
 SecType* IndexType::subst(perm_string e1, perm_string e2)
 {
-	if (expr_ == e1)
-		return new IndexType(name_, e2);
-	else
-		return this;
+  list<perm_string> *substlist = new list<perm_string>;
+  for (list<perm_string>::iterator it = exprs_.begin(); it != exprs_.end(); ++it){
+    if (*it == e1) {
+      substlist->push_back(e2);
+    } else {
+      substlist->push_back(*it);
+    }
+  }
+  return new IndexType(name_, *substlist);
 }
 
 SecType* IndexType::subst(map<perm_string, perm_string> m)
 {
-	map<perm_string, perm_string>::iterator ite = m.find(expr_);
-	if (ite != m.end())
-		return subst((*ite).first, (*ite).second);
-	else
-		return this;
+  list<perm_string> *substlist = new list<perm_string>;
+  for (list<perm_string>::iterator it = exprs_.begin(); it != exprs_.end(); ++it){
+    map<perm_string, perm_string>::iterator ite = m.find(*it);    
+    if (ite != m.end()) {
+      substlist->push_back(ite->second);
+    } else {
+      substlist->push_back(*it);
+    }
+  }
+  return new IndexType(name_, *substlist); 
 }
 
 SecType* IndexType::next_cycle(TypeEnv*env)
 {
-    BaseType* fv_base = env->varsToBase[expr_];
-    if(fv_base->isSeqType()) return new IndexType(name_,nextify_perm_string(expr_));
-    else return this;
+  list<perm_string> *nextlist = new list<perm_string>;
+  for (list<perm_string>::iterator it = exprs_.begin(); it != exprs_.end(); ++it){
+    BaseType* fv_base = env->varsToBase[*it];
+    if (fv_base->isSeqType()) {
+      nextlist->push_back(nextify_perm_string(*it));
+    } else {
+      nextlist->push_back(*it);
+    }
+  }
+    return new IndexType(name_, *nextlist);
 }
 
 bool IndexType::equals(SecType* st)
 {
 	IndexType* it = dynamic_cast<IndexType*>(st);
 	if (it!=NULL) {
-		return name_ == it->name_ && expr_ == it->expr_;
+		return name_ == it->name_ && exprs_ == it->exprs_;
 	}
 	return false;
 }
 
+bool isConstStr(perm_string s)
+{
+  const char* chars = s.str();
+  int i=0;
+  while (chars[i] != '\0') {
+    if (chars[i] < '0' || chars[i] > '9') {
+      return false;
+    }
+    i++;
+  }
+  return true;
+}
+
 void IndexType::collect_dep_expr(set<perm_string>& m)
 {
-	// expr_ might be replaced with a constant in a substitution. In this case, do not return expr_
-	const char* chars = expr_.str();
-	int i=0;
-	bool succ = true;
-	while (chars[i] != '\0') {
-		if (chars[i] < '0' || chars[i] > '9') {
-			succ = false;
-			break;
-		}
-		i++;
-	}
-	if (!succ) { 
-        // If this is a seqtype and so is its free variable, the next-cycle 
-        // value of the label is the dependand
-		m.insert(expr_);
-        m.insert(nextify_perm_string(expr_));
+  for (list<perm_string>::iterator it = exprs_.begin(); it != exprs_.end(); ++it){
+    perm_string ex = *it;
+    if (!isConstStr(ex)) {      
+      m.insert(ex);
+      // If this is a seqtype and so is its free variable, the next-cycle 
+      // value of the label is the dependand      
+      m.insert(nextify_perm_string(ex));
     }
+  }
 }
 
 SecType* IndexType::freshVars(unsigned int lineno, map<perm_string, perm_string>& m)
 {
+  list<perm_string> *substlist = new list<perm_string>;
+  for (list<perm_string>::iterator it = exprs_.begin(); it != exprs_.end(); ++it){
 	stringstream ss;
-	ss << expr_ << lineno;
-    const std::string* tmp = new string(ss.str());
+	ss << *it << lineno;
+	const std::string* tmp = new string(ss.str());
 	perm_string newexpr = perm_string::literal(tmp->c_str());
-	m[expr_] = newexpr;
-	return new IndexType(name_, newexpr);
+	m[*it] = newexpr;
+	substlist->push_back(newexpr);
+  }
+  return new IndexType(name_, *substlist);
 }
 
 bool IndexType::hasExpr(perm_string str)
 {
-	return expr_ == str;
+  return (std::find(exprs_.begin(), exprs_.end(), str) != exprs_.end());
 }
 
 JoinType::JoinType(SecType* ty1, SecType* ty2)
