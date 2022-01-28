@@ -105,7 +105,6 @@ class PAssign_  : public Statement {
       explicit PAssign_(PExpr*lval, PExpr*cnt, PEventStatement*de, PExpr*ex);
       virtual ~PAssign_() =0;
 
-      virtual Statement* next_cycle_transform(ostream&out, TypeEnv&env);
       virtual bool collect_dep_invariants(ostream&out, TypeEnv& env, Predicate& pred);
       
       PExpr* lval() const  { return lval_; }
@@ -150,6 +149,7 @@ class PAssignNB  : public PAssign_ {
       explicit PAssignNB(PExpr*lval, PExpr*ex);
       explicit PAssignNB(PExpr*lval, PExpr*de, PExpr*ex);
       explicit PAssignNB(PExpr*lval, PExpr*cnt, PEventStatement*de, PExpr*ex);
+      virtual Statement* next_cycle_transform(ostream&out, TypeEnv&env);      
       ~PAssignNB();
 
       virtual void dump(ostream&out, unsigned ind) const;

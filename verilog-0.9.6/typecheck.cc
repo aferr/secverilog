@@ -219,7 +219,7 @@ bool PCondit::collect_dep_invariants(ostream&out, TypeEnv&env, Predicate&pred) {
 
 // This is the only rule where something actually happens. Only the left 
 // hand-side of the assignment is transformed.
-Statement* PAssign_::next_cycle_transform(ostream&out, TypeEnv&env) {
+Statement* PAssignNB::next_cycle_transform(ostream&out, TypeEnv&env) {
   assert(lval_);
   lval_ = lval_->next_cycle_transform(out, env);
   return this;
