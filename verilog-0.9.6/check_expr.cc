@@ -88,7 +88,13 @@ SecType* PEIdent::typecheckName(ostream&out, map<perm_string, SecType*>&varsToTy
   perm_string name = peek_tail_name(path_);
   map<perm_string,SecType*>::const_iterator find = varsToType.find(name);
   if (find != varsToType.end()) {
-    return (*find).second;
+    SecType* tau = (*find).second;
+    //TODO handle full paths properly
+    index_component_t index = path().back().index.front();
+    if (index.sel == index_component_t::SEL_BIT) {
+      tau = tau->apply_index(index.msb);
+    }
+    return tau;
   } else {
     cerr <<  "Unbounded var name: " << name.str() << endl;
     return ConstType::TOP;

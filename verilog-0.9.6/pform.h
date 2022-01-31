@@ -33,6 +33,7 @@
 # include  "verinum.h"
 # include  "discipline.h"
 # include  "sectypes.h"
+# include  "QuantExpr.h"
 # include  <iostream>
 # include  <string>
 # include  <list>

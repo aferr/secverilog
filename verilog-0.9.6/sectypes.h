@@ -35,6 +35,7 @@
 # include  <string>
 # include  "StringHeap.h"
 # include  "basetypes.h"
+# include  "QuantExpr.h"
 # include <sstream>
 # include <fstream>
 # include <cstdlib>
@@ -67,6 +68,7 @@ class SecType {
       virtual void collect_dep_expr(set<perm_string>& m) {};
       virtual bool hasExpr(perm_string str) {return false;};
       virtual SecType* freshVars(unsigned int lineno, map<perm_string, perm_string>& m) {return this;};
+      virtual SecType* apply_index(PExpr *e) { return this; }
     //  BasicType& operator= (const BasicType&);
 };
 
@@ -227,6 +229,25 @@ class MeetType : public SecType {
     private:
 	  SecType* comp1_;
 	  SecType* comp2_;
+};
+
+class QuantType : public SecType {
+
+ public:
+  QuantType(perm_string index_var, QuantExpr *e);
+  ~QuantType();
+
+  void dump(ostream&o) {
+    o << "(fun_" << name.str() << " " << index_expr_trans << ")";
+  }
+
+ private:
+  perm_string index_var;
+  QuantExpr *def_expr;
+  QuantExpr *index_expr_trans;
+  PExpr *index_expr;
+  perm_string name;
+  
 };
 
 /**

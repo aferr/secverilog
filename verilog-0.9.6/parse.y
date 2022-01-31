@@ -27,7 +27,7 @@
 # include  "Statement.h"
 # include  "PSpec.h"
 # include  "sectypes.h"
-// # include  "basetypes.h"
+# include  "QuantExpr.h"
 # include  <stack>
 # include  <cstring>
 # include  <sstream>
@@ -53,6 +53,7 @@ static struct {
       svector<PExpr*>* range;
 } port_declaration_context = {NetNet::NONE, NetNet::NOT_A_PORT,
                               IVL_VT_NO_TYPE, new ConstType(),
+			      
                               new BaseType(), false, 0};
 
 /* The task and function rules need to briefly hold the pointer to the
@@ -231,6 +232,8 @@ static PECallFunction*make_call_function(perm_string tn, PExpr*arg1, PExpr*arg2)
       list<index_component_t> *dimensions;
       
       SecType*sectype;
+      IQuantExpr*iqetype;
+      LQuantExpr*lqetype;  
       BaseType*basetype;
 };
 
@@ -298,6 +301,8 @@ static PECallFunction*make_call_function(perm_string tn, PExpr*arg1, PExpr*arg2)
 %token K_potential K_pow K_sin K_sinh K_sqrt K_string K_tan K_tanh
 %token K_units
 
+ /* Tokens for Index Quantified Types */
+%token SV_TRUE SV_FALSE SV_BOOL
 /* Tokens used for labelchange */
 %token K_seq K_com K_next
 
@@ -381,6 +386,8 @@ static PECallFunction*make_call_function(perm_string tn, PExpr*arg1, PExpr*arg2)
 %type <specpath> specify_edge_path specify_edge_path_decl
 
 
+%type <iqetype> iqe
+%type <lqetype> lqe
 %type <sectype> sec_label
 %type <sectype> sec_label_comp
 %type <perm_strings> iden_list
@@ -536,6 +543,12 @@ sec_label_comp
     {
       $$ = new MeetType ($1, $3);
     }
+  | '|' IDENTIFIER '|' lqe
+    {
+      perm_string index = lex_strings.make($2);
+      SecType* type = new QuantType(index, $4);
+      $$ = type;
+    }
   | // use default label Low
     { 
       SecType* type = ConstType::BOT;
@@ -543,6 +556,36 @@ sec_label_comp
     } 
   ;
 
+lqe
+  : IDENTIFIER iqe
+    {
+      perm_string ident = lex_strings.make($1);
+      LQuantExpr* l = new LQEDep(ident, $2);
+      $$ = l;
+    }
+  | IDENTIFIER
+    {
+      perm_string ident = lex_strings.make($1);
+      $$ = new LQEConst(ident);
+    };
+;
+
+iqe
+  : '(' iqe ')'
+  {
+    $$ = $2;
+  }
+  | number
+  {
+    IQuantExpr* v = new IQENum($1);
+    $$ = v;
+  }
+  | IDENTIFIER
+  {
+    IQuantExpr* v = new IQEVar(lex_strings.make($1));
+    $$ = v;
+  }
+;
 iden_list
   : IDENTIFIER
   { list<perm_string> *tmp = new list<perm_string>;

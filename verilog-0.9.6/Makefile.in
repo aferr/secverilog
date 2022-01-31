@@ -151,6 +151,7 @@ net_link.o net_modulo.o net_nex_input.o net_nex_output.o \
 net_proc.o net_scope.o net_tran.o net_udp.o pad_to_width.o \
 parse.o parse_misc.o pform.o pform_analog.o pform_disciplines.o \
 pform_dump.o pform_types.o \
+QESubVisitor.o QuantExpr.o QEVisitor.o \
 sectypes.o set_width.o symbol_search.o sync.o sys_funcs.o \
 basetypes.o \
 typecheck.o verinum.o verireal.o target.o \

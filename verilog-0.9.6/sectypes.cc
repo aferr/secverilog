@@ -457,6 +457,15 @@ bool MeetType::hasExpr(perm_string str)
 	return comp1_->hasExpr(str) || comp2_->hasExpr(str);
 }
 
+//---------------------------------------------
+// QuantType
+//---------------------------------------------
+QuantType::QuantType(perm_string _index_var, QuantExpr *_expr)
+{
+  index_var = _index_var;
+  //  def_expr = _expr->accept(new IndexSwapInVisitor(_index_var));
+}
+
 Hypothesis* Hypothesis::subst(map<perm_string, perm_string> m)
 {
 	return new Hypothesis(bexpr_->subst(m));
