@@ -44,7 +44,7 @@ const char HELP[] =
 "                [-N file] [-o filename] [-p flag=value]\n"
 "                [-s topmodule] [-t target] [-T min|typ|max]\n"
 "                [-W class] [-y dir] [-Y suf]\n"
-"                [-F depfunfile] [-l latticefile] [-z] source_file(s)\n"
+"                [-F depfunfile] [-l latticefile] [-x] [-z] source_file(s)\n"
 "\n"
 "See the man page for details.";
 
@@ -155,6 +155,7 @@ static char iconfig_common_path[4096] = "";
 int synth_flag = 0;
 int verbose_flag = 0;
 int typecheck_only = 0;
+int skip_typecheck = 0;
 
 FILE *fp;
 
@@ -426,7 +427,13 @@ static int t_compile()
 	    strcpy(cmd+ncmd, zz);
 	    ncmd += rc;
       }
-
+      if (skip_typecheck) {
+	const char*xx = " -x";
+	rc = strlen(xx);
+	cmd = realloc(cmd, ncmd+rc+1);
+	strcpy(cmd+ncmd, xx);
+	ncmd += rc;
+      }
       if (npath != 0) {
 	    snprintf(tmp, sizeof tmp, " -N\"%s\"", npath);
 	    rc = strlen(tmp);
@@ -834,7 +841,7 @@ int main(int argc, char **argv)
 	}
       }
 
-      while ((opt = getopt(argc, argv, "B:c:D:d:Ef:F:g:hI:l:M:m:N::o:p:Ss:T:t:vVW:y:Y:z")) != EOF) {
+      while ((opt = getopt(argc, argv, "B:c:D:d:Ef:F:g:hI:l:M:m:N::o:p:Ss:T:t:vVW:y:Y:zx")) != EOF) {
 
 	    switch (opt) {
 		case 'B':
@@ -942,6 +949,9 @@ int main(int argc, char **argv)
 		case 'z':
 		  typecheck_only = 1;
 		  break;
+	    case 'x':
+	      skip_typecheck = 1;
+	      break;
 		case '?':
 		default:
 		  fclose(source_file);
