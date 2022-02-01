@@ -1016,7 +1016,7 @@ void pform_make_udp(perm_string name, bool synchronous_flag,
       svector<PWire*> pins(parms->size() + 1);
 
 	/* Make the PWire for the output port. */
-      cerr << "Unchecked code in pform_make_udp pform.cc" << endl;
+      //      cerr << "Unchecked code in pform_make_udp pform.cc" << endl;
       pins[0] = new PWire(out_name,
 			  synchronous_flag? NetNet::REG : NetNet::WIRE,
 			  NetNet::POUTPUT, new ConstType(), new BaseType(), IVL_VT_LOGIC);
