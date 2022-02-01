@@ -1818,7 +1818,7 @@ svector<PWire*>*pform_make_task_ports(NetNet::PortType pt,
 {
       assert(names);
       svector<PWire*>*res = new svector<PWire*>(0);
-      cerr << "Unchecked code pform_make_task_ports pform.cc" << endl;
+      //      cerr << "Unchecked code pform_make_task_ports pform.cc" << endl;
       for (list<perm_string>::iterator cur = names->begin()
 		 ; cur != names->end() ; cur ++ ) {
 
@@ -2231,7 +2231,7 @@ svector<PWire*>* pform_make_udp_input_ports(list<perm_string>*names)
 {
       svector<PWire*>*out = new svector<PWire*>(names->size());
 
-      cerr << "Unchecked code pform_make_udp_input_ports pform.cc" << endl;
+      //      cerr << "Unchecked code pform_make_udp_input_ports pform.cc" << endl;
       unsigned idx = 0;
       for (list<perm_string>::iterator cur = names->begin()
 		 ; cur != names->end()
