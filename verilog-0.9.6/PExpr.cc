@@ -122,29 +122,32 @@ bool PEBinary::is_wellformed(set<perm_string> s)
 	// 'a': and
 	// 'L' : leq
 	// 'n' : !=
-	if (op_ == 'e' || op_ == 'o' || op_ == 'L' || op_ == 'n' || op_ == 'G')
-		return left_->is_wellformed(s) && right_->is_wellformed(s);
-    if (op_ == 'a')
-		return left_->is_wellformed(s) || right_->is_wellformed(s);
-	else
-		return false;
+  if (op_ == 'e' || op_ == 'o' || op_ == 'L' || op_ == 'n' || op_ == 'G' || op_ == '<' || op_ == '>') {
+    return left_->is_wellformed(s) && right_->is_wellformed(s);
+  } else {
+    cout << "Operator: " << op_ << " is not wellformed";
+  }
+  if (op_ == 'a')
+    return left_->is_wellformed(s) || right_->is_wellformed(s);
+  else
+    return false;
 }
 
 PExpr* PEBinary::to_wellformed(set<perm_string> s)
 {
-	if (op_ == 'e' || op_ == 'o' || op_ == 'L' || op_ == 'n' || op_ == 'G') {
-		if (left_->is_wellformed(s) && right_->is_wellformed(s))
-			return new PEBinary(op_, left_->to_wellformed(s), right_->to_wellformed(s));
-	}
-	if (op_ == 'a') {
-		if (left_->is_wellformed(s) && right_->is_wellformed(s))
-			return new PEBinary(op_, left_->to_wellformed(s), right_->to_wellformed(s));
-		else if (left_->is_wellformed(s))
-			return left_->to_wellformed(s);
-		else if (right_->is_wellformed(s))
-			return right_->to_wellformed(s);
-	}
-	return this;
+  if (op_ == 'e' || op_ == 'o' || op_ == 'L' || op_ == 'n' || op_ == 'G' || op_ == '<' || op_ == '>') {
+    if (left_->is_wellformed(s) && right_->is_wellformed(s))
+      return new PEBinary(op_, left_->to_wellformed(s), right_->to_wellformed(s));
+  }
+  if (op_ == 'a') {
+    if (left_->is_wellformed(s) && right_->is_wellformed(s))
+      return new PEBinary(op_, left_->to_wellformed(s), right_->to_wellformed(s));
+    else if (left_->is_wellformed(s))
+      return left_->to_wellformed(s);
+    else if (right_->is_wellformed(s))
+      return right_->to_wellformed(s);
+  }
+  return this;
 }
 
 bool PEBinary::is_neg_wellformed(set<perm_string> s)

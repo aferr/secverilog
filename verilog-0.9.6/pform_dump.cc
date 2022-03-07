@@ -524,6 +524,13 @@ void PEBinary::dumpz3(ostream&out) const
     out << "))";
     return;
   }
+  if ((op_ == '>') || (op_ == '<')) {
+    out << "(" << op_;
+    left_->dumpz3(out);
+    out << " ";
+    right_->dumpz3(out);
+    out << ")";
+  }
   
   throw "No support for given binary operator";
       // out << "(" << *left_ << ")";
