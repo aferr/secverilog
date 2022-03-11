@@ -124,13 +124,13 @@ bool PEBinary::is_wellformed(set<perm_string> s)
 	// 'n' : !=
   if (op_ == 'e' || op_ == 'o' || op_ == 'L' || op_ == 'n' || op_ == 'G' || op_ == '<' || op_ == '>') {
     return left_->is_wellformed(s) && right_->is_wellformed(s);
-  } else {
-    cout << "Operator: " << op_ << " is not wellformed";
   }
   if (op_ == 'a')
     return left_->is_wellformed(s) || right_->is_wellformed(s);
-  else
+  else {
+    cout << "Operator: " << op_ << " is not wellformed";    
     return false;
+  }
 }
 
 PExpr* PEBinary::to_wellformed(set<perm_string> s)
