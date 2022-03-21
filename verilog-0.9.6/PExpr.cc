@@ -158,7 +158,7 @@ bool PEBinary::is_neg_wellformed(set<perm_string> s)
 	// 'a': and
 	// 'L' : leq
 	// 'n' : !=
-	if (op_ == 'e' || op_ == 'a' || op_ == 'L' || op_ == 'n')
+	if (op_ == 'e' || op_ == 'a' || op_ == 'L' || op_ == 'n' || op_ == '<' || op_ == '>')
 		return left_->is_neg_wellformed(s) && right_->is_neg_wellformed(s);
 	if (op_ == 'o')
 		return left_->is_neg_wellformed(s) || right_->is_neg_wellformed(s);
@@ -168,7 +168,7 @@ bool PEBinary::is_neg_wellformed(set<perm_string> s)
 
 PExpr* PEBinary::neg_to_wellformed(set<perm_string> s)
 {
-	if (op_ == 'e' || op_ == 'a' || op_ == 'L' || op_ == 'n') {
+	if (op_ == 'e' || op_ == 'a' || op_ == 'L' || op_ == 'n' || op_ == '<' || op_ == '>') {
 		if (left_->is_neg_wellformed(s) && right_->is_neg_wellformed(s))
 			return new PEBinary(op_, left_->neg_to_wellformed(s), right_->neg_to_wellformed(s));
 	}

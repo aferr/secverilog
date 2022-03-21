@@ -525,7 +525,7 @@ void PEBinary::dumpz3(ostream&out) const
     return;
   }
   if ((op_ == '>') || (op_ == '<')) {
-    out << "(" << op_;
+    out << "(" << op_ << " ";
     left_->dumpz3(out);
     out << " ";
     right_->dumpz3(out);
