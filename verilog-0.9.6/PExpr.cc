@@ -517,9 +517,8 @@ bool PEUnary::contains_expr(perm_string that)
 
 bool PEUnary::is_wellformed(set<perm_string> s)
 {
-	// only "not" is translated
-    // TODO: check if sub-expression is well-formed?
-	return (op_ == 'N' || op_ == '!');
+  // only "not" is translated
+  return (op_ == 'N' || op_ == '!') && expr_->is_wellformed(s);
 }
 
 PExpr* PEUnary::to_wellformed(set<perm_string> s)
