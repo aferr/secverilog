@@ -530,9 +530,9 @@ void PEBinary::dumpz3(ostream&out) const
     out << " ";
     right_->dumpz3(out);
     out << ")";
+    return;
   }
-  
-  throw "No support for given binary operator";
+  throw("No support for given binary operator: ");
       // out << "(" << *left_ << ")";
       // switch (op_) {
       // 	  case 'E':
