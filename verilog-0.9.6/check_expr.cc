@@ -90,6 +90,12 @@ SecType* PEIdent::typecheckName(ostream&out, map<perm_string, SecType*>&varsToTy
   if (find != varsToType.end()) {
     SecType* tau = (*find).second;
     //TODO handle full paths properly
+    for (list<index_component_t>::const_iterator idx_it = path().back().index.begin() ; idx_it != path().back().index.end(); idx_it ++) {
+      if (idx_it->sel != index_component_t::SEL_NONE) {
+	tau = tau->apply_index(idx_it->msb);
+	tau = tau->apply_index(idx_it->lsb);
+      }
+    }
     index_component_t index = path().back().index.front();
     if (index.sel == index_component_t::SEL_BIT) {
       tau = tau->apply_index(index.msb);

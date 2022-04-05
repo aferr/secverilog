@@ -279,8 +279,22 @@ PExpr* PEIdent::next_cycle_transform(ostream&out, TypeEnv&env) {
 	    peek_tail_name(path()).str());
     return this;
   }
-  if(bt->isSeqType()){
-    return new PEIdent(nextify_perm_string(peek_tail_name(path())));
+  if(bt->isSeqType()) {
+    name_component_t topName = path().back();
+    perm_string nextName = nextify_perm_string(topName.name);
+    name_component_t* newTopName = new name_component_t(nextName);
+    newTopName->index = topName.index;
+    pform_name_t newPath;
+    list<name_component_t>::const_iterator stop = path().end();
+    --stop;
+    for (list<name_component_t>::const_iterator it = path().begin(); it != stop; ++it) {
+      newPath.push_back(*it);
+    }
+    newPath.push_back(*newTopName);
+    if (debug_typecheck) {
+      cout << "Nextify " << path() << " to " << newPath << endl;
+    }
+    return new PEIdent(newPath);
   }
   return this;
 }
