@@ -110,6 +110,7 @@ class PGenerate : public LineInfo, public LexicalScope {
       bool elaborate(Design*des, NetScope*container) const;
 
       void dump(ostream&out, unsigned indent) const;
+      void next_cycle_transform(ostream&out, TypeEnv env);
       void typecheck(ostream&out, TypeEnv env, map<perm_string,Module*> modules);
 
     private:

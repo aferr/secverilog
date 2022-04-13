@@ -113,11 +113,15 @@ SecType* PEIdent::typecheckIdx(ostream&out, map<perm_string, SecType*>&varsToTyp
        idxit != path_.back().index.end(); idxit++) {
     if (idxit->msb != NULL) {
       SecType *tmsb = idxit->msb->typecheck(out, varsToType);
-      result = new JoinType(result, tmsb);
+      if (tmsb != ConstType::BOT) {
+	result = new JoinType(result, tmsb);
+      }
     }
     if (idxit->lsb != NULL) {
       SecType *tlsb = idxit->msb->typecheck(out, varsToType);
-      result = new JoinType(result, tlsb);
+      if (tlsb != ConstType::BOT) {
+	result = new JoinType(result, tlsb);
+      }
     }
   }
   return result;

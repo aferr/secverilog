@@ -122,6 +122,12 @@ void Module::next_cycle_transform(ostream&out, TypeEnv&env) {
        cur != env.seqVars.end(); cur++) {
     behaviors.push_back(gen_assign_next_block(*cur));
   }
+  // transform the code in the generate blocks too
+  typedef list<PGenerate*>::const_iterator genscheme_iter_t;
+  for (genscheme_iter_t cur = generate_schemes.begin();
+       cur != generate_schemes.end(); cur++) {
+    (*cur)->next_cycle_transform(out, env);
+  }
 
 }
 
@@ -299,7 +305,14 @@ PExpr* PEIdent::next_cycle_transform(ostream&out, TypeEnv&env) {
   return this;
 }
 
-
+void PGenerate::next_cycle_transform(ostream&out, TypeEnv env) {
+  for (list<PProcess*>::const_iterator behav = behaviors.begin();
+       behav != behaviors.end(); behav++) {
+    if(debug_typecheck) 
+      fprintf(stderr, "NextCycleTransform:: %s\n", typeid(*behav).name());
+    (*behav)->next_cycle_transform(out, env);
+  }  
+}
 // PCallTask
 // PCase
 // PCAssign
