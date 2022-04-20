@@ -460,10 +460,24 @@ bool MeetType::hasExpr(perm_string str)
 //---------------------------------------------
 // QuantType
 //---------------------------------------------
-QuantType::QuantType(perm_string _index_var, QuantExpr *_expr)
+QuantType::QuantType(perm_string index_var, SecType *type)
 {
-  index_var = _index_var;
-  //  def_expr = _expr->accept(new IndexSwapInVisitor(_index_var));
+  _index_var = index_var;
+  _name = lex_strings.make("TODO");
+  _sectype = type;
+}
+
+void QuantType::collect_dep_expr(set<perm_string>& m) {
+  bool remove_quantvar = m.find(_index_var) == m.end();
+  _sectype->collect_dep_expr(m);
+  if (remove_quantvar) {
+    std::set<perm_string>::iterator it = m.find(_index_var);
+    if (it != m.end()) {
+      m.erase(it);
+      it = m.find(nextify_perm_string(_index_var));
+      m.erase(it);
+    }
+  }
 }
 
 Hypothesis* Hypothesis::subst(map<perm_string, perm_string> m)

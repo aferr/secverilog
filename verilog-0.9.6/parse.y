@@ -232,8 +232,6 @@ static PECallFunction*make_call_function(perm_string tn, PExpr*arg1, PExpr*arg2)
       list<index_component_t> *dimensions;
       
       SecType*sectype;
-      IQuantExpr*iqetype;
-      LQuantExpr*lqetype;  
       BaseType*basetype;
 };
 
@@ -386,11 +384,10 @@ static PECallFunction*make_call_function(perm_string tn, PExpr*arg1, PExpr*arg2)
 %type <specpath> specify_edge_path specify_edge_path_decl
 
 
-%type <iqetype> iqe
-%type <lqetype> lqe
 %type <sectype> sec_label
 %type <sectype> sec_label_comp
 %type <perm_strings> iden_list
+%type <text> sec_iden
 %type <basetype> base_type
 
 %token K_TAND
@@ -543,12 +540,16 @@ sec_label_comp
     {
       $$ = new MeetType ($1, $3);
     }
-  | '|' IDENTIFIER '|' lqe
+  | '|' IDENTIFIER '|' sec_label_comp
     {
       perm_string index = lex_strings.make($2);
       SecType* type = new QuantType(index, $4);
       $$ = type;
     }
+  | '(' sec_label_comp ')'
+  {
+    $$ = $2;
+  }
   | // use default label Low
     { 
       SecType* type = ConstType::BOT;
@@ -556,53 +557,24 @@ sec_label_comp
     } 
   ;
 
-lqe
-  : IDENTIFIER iqe
-    {
-      perm_string ident = lex_strings.make($1);
-      LQuantExpr* l = new LQEDep(ident, $2);
-      $$ = l;
-    }
-  | IDENTIFIER
-    {
-      perm_string ident = lex_strings.make($1);
-      $$ = new LQEConst(ident);
-    };
-;
-
-iqe
-  : '(' iqe ')'
-  {
-    $$ = $2;
-  }
-  | number
-  {
-    IQuantExpr* v = new IQENum($1);
-    $$ = v;
-  }
-  | IDENTIFIER
-  {
-    IQuantExpr* v = new IQEVar(lex_strings.make($1));
-    $$ = v;
-  }
-;
 iden_list
-  : IDENTIFIER
-  { list<perm_string> *tmp = new list<perm_string>;
-    tmp->push_back(lex_strings.make($1));
-    $$ = tmp;
-    delete[]$1;
+  : sec_iden
+  {
+    $$ = list_from_identifier($1);
   }
-  | iden_list ',' IDENTIFIER
-   {
-     list<perm_string>*tmp = $1;
-     tmp->push_back(lex_strings.make($3));
-     $$ = tmp;
-     delete[]$3;
-   };
+  | iden_list ',' sec_iden
+  {
+    $$ = list_from_identifier($1, $3);
+  };
 ;
 
-  
+
+sec_iden:
+  IDENTIFIER
+  {
+    $$ = $1;
+  };
+
 base_type
   : K_seq
     {

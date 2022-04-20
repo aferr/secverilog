@@ -53,6 +53,7 @@ class PExpr : public LineInfo {
       virtual SecType* typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const = 0;
       virtual PExpr* next_cycle_transform(ostream&out, TypeEnv&env);
       virtual void collect_idens(set<perm_string>&s) const { return; };
+      virtual void collect_index_exprs(set<perm_string>&s, map<perm_string, SecType*>&varsToType) { return; };
         // This method tests whether the expression contains any
         // references to automatically allocated variables.
       virtual bool has_aa_term(Design*des, NetScope*scope) const;
@@ -397,7 +398,7 @@ class PEIdent : public PExpr {
       virtual SecType* typecheckIdx(ostream&out, map<perm_string, SecType*>&varsToType) const;      
       virtual SecType* typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const;
       virtual void collect_idens(set<perm_string>&s) const;      
-
+      virtual void collect_index_exprs(set<perm_string>&s, map<perm_string, SecType*>&varsToType);
       virtual BaseType* check_base_type(ostream&out, map<perm_string, BaseType*>&varsToBase);
 
       virtual bool has_aa_term(Design*des, NetScope*scope) const;

@@ -158,6 +158,13 @@ bool PProcess::collect_dep_invariants(ostream&out, TypeEnv&env, Predicate&pred) 
   return statement_->collect_dep_invariants(out, env, pred);
 }
 
+void PProcess::collect_index_exprs(set<perm_string>&exprs, map<perm_string, SecType*>&env) {
+  if(statement_ == NULL) return;
+  if(debug_typecheck) 
+    fprintf(stderr, "collect_index_exprs:: %s\n", typeid(*statement_).name());
+  statement_->collect_index_exprs(exprs, env);
+}
+
 Statement* Statement::next_cycle_transform(ostream&out, TypeEnv&env) {
   return this;
 }
@@ -166,9 +173,18 @@ bool Statement::collect_dep_invariants(ostream&out, TypeEnv&env, Predicate&pred)
   return false;
 }
 
+void Statement::collect_index_exprs(set<perm_string>& exprs, map<perm_string, SecType*>&env) {
+  return;
+}
+
 Statement* PEventStatement::next_cycle_transform(ostream&out, TypeEnv&env) {
   statement_ = statement_->next_cycle_transform(out,env);
   return this;
+}
+
+void PEventStatement::collect_index_exprs(set<perm_string>& exprs, map<perm_string, SecType*>&env) {
+  if (debug_typecheck) fprintf(stderr, "collect_index_exprs:: %s\n", typeid(*statement_).name());  
+  statement_->collect_index_exprs(exprs, env);
 }
 
 bool PEventStatement::collect_dep_invariants(ostream&out, TypeEnv&env, Predicate&pred) {
@@ -183,6 +199,14 @@ Statement* PBlock::next_cycle_transform(ostream&out, TypeEnv&env) {
     list_[i]=list_[i]->next_cycle_transform(out, env);
   }
   return this;
+}
+
+void PBlock::collect_index_exprs(set<perm_string>& exprs, map<perm_string, SecType*>&env) {
+  for(uint i=0; i<list_.count(); i++) {
+    if(debug_typecheck) 
+      fprintf(stderr, "collect_index_exprs:: %s\n", typeid(list_[i]).name());
+    list_[i]->collect_index_exprs(exprs, env);
+  }
 }
 
 bool PBlock::collect_dep_invariants(ostream&out, TypeEnv&env, Predicate&pred) {
@@ -201,6 +225,17 @@ Statement* PCondit::next_cycle_transform(ostream&out, TypeEnv&env) {
   if(else_ != NULL)
     else_ = else_->next_cycle_transform(out, env);
   return this;
+}
+
+void PCondit::collect_index_exprs(set<perm_string>& exprs, map<perm_string, SecType*>&env) {
+  if (debug_typecheck) fprintf(stderr, "collect_index_exprs on if\n");
+  if (if_ != NULL) {
+    if_->collect_index_exprs(exprs, env);
+  }
+  if(else_ != NULL) {
+    else_->collect_index_exprs(exprs, env);
+  }
+  expr_->collect_index_exprs(exprs, env);
 }
 
 bool PCondit::collect_dep_invariants(ostream&out, TypeEnv&env, Predicate&pred) {
@@ -223,6 +258,15 @@ bool PCondit::collect_dep_invariants(ostream&out, TypeEnv&env, Predicate&pred) {
   return result;
 }
 
+void PCAssign::collect_index_exprs(set<perm_string>& exprs, map<perm_string, SecType*>&env) {
+  if (debug_typecheck) fprintf(stderr, "skipping collect_index_exprs on pcassign\n");  
+}
+
+bool PCAssign::collect_dep_invariants(ostream&out, TypeEnv&env, Predicate&pred) {
+  if (debug_typecheck) fprintf(stderr, "skipping collect_dep_invariants on pcassign\n");
+  return false;
+}
+
 // This is the only rule where something actually happens. Only the left 
 // hand-side of the assignment is transformed.
 Statement* PAssignNB::next_cycle_transform(ostream&out, TypeEnv&env) {
@@ -231,7 +275,14 @@ Statement* PAssignNB::next_cycle_transform(ostream&out, TypeEnv&env) {
   return this;
 }
 
+void PAssign_::collect_index_exprs(set<perm_string>& exprs, map<perm_string, SecType*>&env) {
+  if (debug_typecheck) fprintf(stderr, "collect_index_exprs on passign\n");
+  rval()->collect_index_exprs(exprs, env);
+  lval()->collect_index_exprs(exprs, env);
+}
+
 bool PAssign_::collect_dep_invariants(ostream&out, TypeEnv&env, Predicate&pred) {
+  if (debug_typecheck) fprintf(stderr, "collect_dep_invariants on passign\n");  
   PEIdent* rident = dynamic_cast<PEIdent*>(rval());
   bool isNextAssign = false;
   if (rident != NULL) {
@@ -267,6 +318,7 @@ bool PAssign_::collect_dep_invariants(ostream&out, TypeEnv&env, Predicate&pred) 
     return false;
   }
 }
+
 
 Statement* PCAssign::next_cycle_transform(ostream&out, TypeEnv&env) {
   lval_ = lval_->next_cycle_transform(out, env);
@@ -455,19 +507,35 @@ void Module::dumpExprDefs(ostream&out, set<perm_string>exprs) const {
 }
 /**
  * Collect all expressions that  appears in dependent types.
+ * Need to also collect all identifiers that appear in
+ * index expressions of quantified types.
  */
 void Module::CollectDepExprs(ostream&out, TypeEnv & env) const {
+  set<perm_string> exprs;
   for (std::map<perm_string, SecType*>::iterator iter =
 	 env.varsToType.begin(); iter != env.varsToType.end(); iter++) {
     SecType* st = iter->second;
-    set<perm_string> exprs;
     st->collect_dep_expr(exprs);
-    for (std::set<perm_string>::iterator expr = exprs.begin();
-	 expr != exprs.end(); expr++) {
-      env.dep_exprs.insert(*expr);
-    }
   }
 
+  for (list<PProcess*>::const_iterator behav = behaviors.begin();
+       behav != behaviors.end(); behav++) {
+    (*behav)->collect_index_exprs(exprs, env.varsToType);
+  }
+  for (list<PGate*>::const_iterator gate = gates_.begin();
+       gate != gates_.end(); gate++) {
+    PGAssign* pgassign = dynamic_cast<PGAssign*>(*gate);
+    if (pgassign != NULL) {
+      pgassign->collect_index_exprs(exprs, env.varsToType);
+    }
+  }
+  
+  for (std::set<perm_string>::iterator expr = exprs.begin();
+       expr != exprs.end(); expr++) {
+    env.dep_exprs.insert(*expr);
+  }
+  
+					   
   // check write labels, skipped for most hardware designs
   if (check_write)
     env.dep_exprs.insert(perm_string::literal("WriteLabel"));
@@ -491,6 +559,14 @@ void Module::CollectDepInvariants(ostream&out, TypeEnv & env) const {
     Predicate emptyPred;
     (*behav)->collect_dep_invariants(invs, env, emptyPred);
   }
+  for (list<PGate*>::const_iterator gate = gates_.begin();
+       gate != gates_.end(); gate++) {
+    PGAssign* pgassign = dynamic_cast<PGAssign*>(*gate);
+    if (pgassign != NULL) {
+      pgassign->collect_dep_invariants(invs, env);
+    }
+  }
+  
   set<perm_string> newDeps;
   std::set_difference(env.dep_exprs.begin(), env.dep_exprs.end(),
 		      oldDeps.begin(), oldDeps.end(), std::inserter(newDeps, newDeps.end()));
@@ -558,7 +634,7 @@ void Module::typecheck(ostream&out, TypeEnv& env,
   CollectDepExprs(out, env);
   if(debug_typecheck) fprintf(stderr, "outputting type families\n");
   output_type_families(out, depfun);
-
+  if(debug_typecheck) fprintf(stderr, "collecting dependent invariants\n");
   CollectDepInvariants(out, env);
   // remove an invariant if some variable does not show up
   if(debug_typecheck) fprintf(stderr, "optimizing invariants\n");
@@ -797,6 +873,35 @@ void typecheck_assignment(ostream& out, PExpr* lhs, PExpr* rhs, TypeEnv* env,
   } else {
     ternary->translate(lhs)->typecheck(out, *env, precond);
   }
+}
+
+void PGAssign::collect_index_exprs(set<perm_string>& exprs, map<perm_string, SecType*>&env) {
+  pin(0)->collect_index_exprs(exprs, env);
+  pin(1)->collect_index_exprs(exprs, env);
+}
+
+bool PGAssign::collect_dep_invariants(ostream&out, TypeEnv&env) {
+  if (debug_typecheck) fprintf(stderr, "collect_dep_invariants on pcassign\n");
+  PExpr* l = pin(0);
+  PEIdent* lval = dynamic_cast<PEIdent*>(l);
+  PExpr* rval = pin(1);
+  if (!l) {
+    throw "Assigning to non identifier in gate";
+  }
+  if (env.dep_exprs.find(lval->get_name()) != env.dep_exprs.end()) {    
+    out << "(assert ";
+    out << "(= ";
+    lval->dumpz3(out);
+    out << " ";
+    rval->dumpz3(out);
+    out << ")";
+    out << ")" << endl;
+    //also collect rhs variables in the dep_exprs to define them in z3 file
+    rval->collect_idens(env.dep_exprs);
+    return true;
+  } else {
+    return false;
+  }  
 }
 
 /**

@@ -68,7 +68,8 @@ class SecType {
       virtual void collect_dep_expr(set<perm_string>& m) {};
       virtual bool hasExpr(perm_string str) {return false;};
       virtual SecType* freshVars(unsigned int lineno, map<perm_string, perm_string>& m) {return this;};
-      virtual SecType* apply_index(PExpr *e) { return this; }
+      virtual SecType* apply_index(PExpr* index_val) { return this; }      
+      virtual SecType* apply_index(perm_string index_var, perm_string index_val) { return this; }
     //  BasicType& operator= (const BasicType&);
 };
 
@@ -141,6 +142,18 @@ class IndexType : public SecType {
       }
       bool equals(SecType* st);
 
+      SecType* apply_index(perm_string index_var, perm_string index_val) {
+	list<perm_string>* nexprs = new list<perm_string>();
+        for (list<perm_string>::iterator it = exprs_.begin(); it != exprs_.end(); it ++) {
+	  if (index_var == *it) {
+	    nexprs->push_back(index_val);
+	  } else {
+	    nexprs->push_back(*it);
+	  }
+	}
+	const list<perm_string>* cexprs = nexprs;
+	return new IndexType(name_, *cexprs);
+      }
     public:
 	// Manipulate the types.
       void set_type(const perm_string name , list<perm_string>&exprs);
@@ -234,19 +247,46 @@ class MeetType : public SecType {
 class QuantType : public SecType {
 
  public:
-  QuantType(perm_string index_var, QuantExpr *e);
+  QuantType(perm_string index_var, SecType *st);
   ~QuantType();
 
+  void collect_dep_expr(set<perm_string>& m);
   void dump(ostream&o) {
-    o << "(fun_" << name.str() << " " << index_expr_trans << ")";
+    _sectype->dump(o);
+  }
+
+  SecType* apply_index(PExpr* index_val) {
+    //for now only support identifiers and numbers as index_values, if it's anything else, throw an error
+    PEIdent* index_id = dynamic_cast<PEIdent*>(index_val);
+    perm_string index_str;
+    if (!index_id) {
+      PENumber* index_num = dynamic_cast<PENumber*>(index_val);
+      if (!index_num) {
+	throw "Quantified types cannot be used with complex index expressions";
+      } else {
+	stringstream ss;
+	ss << *index_num;
+	const std::string* tmp = new string(ss.str());
+	index_str = perm_string::literal(tmp->c_str());	
+      }
+    } else {
+      //TODO throw error if this itself is indexed
+      index_component_t index_idx = index_id->path().back().index.front();
+      if (index_idx.sel != index_component_t::SEL_NONE) {
+	throw "Index expression must not contain an index";
+      }
+      index_str = peek_tail_name(index_id->path());
+    }
+    SecType* replacedType = _sectype->apply_index(_index_var, index_str);
+    SecType* result = new QuantType(_index_var, replacedType);
+    return result;
   }
 
  private:
-  perm_string index_var;
-  QuantExpr *def_expr;
-  QuantExpr *index_expr_trans;
-  PExpr *index_expr;
-  perm_string name;
+  perm_string _index_var;
+  SecType *_sectype;
+  PExpr *_index_expr;
+  perm_string _name;
   
 };
 

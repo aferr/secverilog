@@ -89,13 +89,10 @@ SecType* PEIdent::typecheckName(ostream&out, map<perm_string, SecType*>&varsToTy
   map<perm_string,SecType*>::const_iterator find = varsToType.find(name);
   if (find != varsToType.end()) {
     SecType* tau = (*find).second;
-    //TODO handle full paths properly
-    for (list<index_component_t>::const_iterator idx_it = path().back().index.begin() ; idx_it != path().back().index.end(); idx_it ++) {
-      if (idx_it->sel != index_component_t::SEL_NONE) {
-	tau = tau->apply_index(idx_it->msb);
-	tau = tau->apply_index(idx_it->lsb);
-      }
-    }
+    //If this is indexed (e.g., v[x]), they type may also be quantified by index (e.g., {|i| F i} )
+    //If this selects more than one component (i.e., is not SEL_BIT) then ignore (likely will lead to
+    //an error during z3 checking with Quantified types
+    //TODO replace more than just the first index component (nested index types works on nested indexes)
     index_component_t index = path().back().index.front();
     if (index.sel == index_component_t::SEL_BIT) {
       tau = tau->apply_index(index.msb);
@@ -134,6 +131,12 @@ SecType* PEIdent::typecheck(ostream&out, map<perm_string, SecType*>&varsToType) 
   SecType* namelbl = typecheckName(out, varsToType);
   SecType* idxlbl = typecheckIdx(out, varsToType);
   return new JoinType(namelbl, idxlbl);
+}
+
+void PEIdent::collect_index_exprs(set<perm_string>&s, map<perm_string, SecType*>&varsToType) {
+  stringstream ss;
+  SecType* appliedType = typecheckName(ss, varsToType);
+  appliedType->collect_dep_expr(s);
 }
 
 void PEIdent::collect_idens(set<perm_string>&s) const

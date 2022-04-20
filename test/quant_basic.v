@@ -1,12 +1,16 @@
 module quant_basic();
 
 
+   wire zero;
+
+   assign zero = 0;   
+   
    //-----------------------------------------------------------------------------
    // Ignore non-index
    //-----------------------------------------------------------------------------
    wire [1:0] {L} a;
 
-   wire [1:0] {|i| LH 0} b;
+   wire [1:0] {|i| LH zero} b;
 
 
    //should pass
@@ -40,17 +44,27 @@ module quant_basic();
 
    wire       g;
 
+   wire       g2;
 
+   wire       {H} g3;
+   
+   assign g2 = 1;
+   assign g3 = 0;
+   
    //should fail
    assign e[0] = f[g];
-
+   //should fail
+   assign e[0] = f[g2];
+   //should fail b/c L(g3) = H
+   assign e[0] = f[g3];
+   
 
    //-----------------------------------------------------------------------------
    // Quantifying over indexing expression (2)
    //-----------------------------------------------------------------------------
    wire [1:0] {L} h;
 
-   wire [1:0] {|i| LH 0} i;
+   wire [1:0] {|i| LH zero} i;
 
    wire       j;
 
@@ -73,6 +87,9 @@ module quant_basic();
    //should pass
    assign k[1] = l[1];
 
+   //should pass
+   assign k[g2] = l[g2];
+   
 
    //-----------------------------------------------------------------------------
    // Quantified Join Types (1)
@@ -106,6 +123,7 @@ module quant_basic();
 
    //should pass
    assign p[1] = q[1] + r[1];
+
 
 
 endmodule
