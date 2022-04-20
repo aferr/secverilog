@@ -881,12 +881,13 @@ void PGAssign::collect_index_exprs(set<perm_string>& exprs, map<perm_string, Sec
 }
 
 bool PGAssign::collect_dep_invariants(ostream&out, TypeEnv&env) {
-  if (debug_typecheck) fprintf(stderr, "collect_dep_invariants on pcassign\n");
+  if (debug_typecheck) fprintf(stderr, "collect_dep_invariants on pgassign\n");
   PExpr* l = pin(0);
   PEIdent* lval = dynamic_cast<PEIdent*>(l);
   PExpr* rval = pin(1);
-  if (!l) {
-    throw "Assigning to non identifier in gate";
+  if (!lval) {
+    cerr << "Skipping assign to non identifier in gate" << endl;
+    return false;
   }
   if (env.dep_exprs.find(lval->get_name()) != env.dep_exprs.end()) {    
     out << "(assert ";
