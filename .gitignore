@@ -1,6 +1,8 @@
 *\.o
 *\.out
 *\.z3
+bin/*
 .svn
 .git
 *~
+verilog-0.9.6/conf.done
