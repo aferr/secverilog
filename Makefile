@@ -8,7 +8,7 @@ INSTALLDIR?=$(mkfile_dir)
 build: $(VDIR)/conf.done
 	@$(MAKE) -C $(VDIR)
 
-$(VIDIR)/configure:
+$(VDIR)/configure:
 	@cd $(VDIR) && autoconf
 
 $(VDIR)/conf.done: $(VDIR)/configure
