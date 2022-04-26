@@ -14,7 +14,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Install Z3
-    - uses: pavpanchekha/setup-z3@1.2.2
+      uses: pavpanchekha/setup-z3@1.2.2
     - name: make
       run: make
     - name: make test
