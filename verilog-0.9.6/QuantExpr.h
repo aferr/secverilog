@@ -1,3 +1,5 @@
+#ifndef __QuantExpr_H
+#define __QuantExpr_H
 #include <stdio.h>
 #include "verinum.h"
 #include "StringHeap.h"
@@ -7,6 +9,7 @@ class BQuantExpr;
 //-----------------------------------------------------------------------------
 // Abstract Quantified Label Expressions
 //-----------------------------------------------------------------------------
+
 class QuantExpr {
   public:
     virtual void dump(ostream&o) = 0;
@@ -227,3 +230,4 @@ class QESubVisitor {
     virtual QuantExpr* visit(LQEConst* e);
     virtual QuantExpr* visit(LQETernary* e);
 };
+#endif

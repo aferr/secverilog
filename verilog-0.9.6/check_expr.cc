@@ -24,13 +24,18 @@
  */
 # include  "PExpr.h"
 # include  "sectypes.h"
-# include  "pform_types.h"
+# include  "basetypes.h"
 
 SecType* PEBinary::typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const
 {
 	SecType* ty1 = left_->typecheck(out, varsToType);
 	SecType* ty2 = right_->typecheck(out, varsToType);
 	return new JoinType(ty1, ty2);
+}
+void PEBinary::collect_idens(set<perm_string>&s) const
+{
+  left_->collect_idens(s);
+  right_->collect_idens(s);
 }
 
 SecType* PECallFunction::typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const
@@ -39,7 +44,10 @@ SecType* PECallFunction::typecheck(ostream&out, map<perm_string, SecType*>&varsT
 	cout << "PECallFunction is ignored" << endl;
 	return ConstType::BOT;
 }
-
+void PECallFunction::collect_idens(set<perm_string>&s) const
+{
+  return;
+}
 SecType* PEConcat::typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const
 {
 	SecType* last = ConstType::BOT;
@@ -51,48 +59,117 @@ SecType* PEConcat::typecheck(ostream&out, map<perm_string, SecType*>&varsToType)
     }
     return last;
 }
+void PEConcat::collect_idens(set<perm_string>&s) const
+{
+  if (repeat_!= NULL) { repeat_->collect_idens(s); }
+  for (unsigned idx = 0 ;  idx < parms_.count() ;  idx += 1) {
+    parms_[idx]->collect_idens(s);
+  }    
+}
 
 SecType* PEEvent::typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const
 {
 	throw "PEEvent";
 }
-
+void PEEvent::collect_idens(set<perm_string>&s) const
+{
+  throw "PEEvent";
+}
 // float constants have label Low
 SecType* PEFNumber::typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const
 {
 	return ConstType::BOT;
 }
+void PEFNumber::collect_idens(set<perm_string>&s) const
+{
+  return;
+}
+SecType* PEIdent::typecheckName(ostream&out, map<perm_string, SecType*>&varsToType) const {
+  perm_string name = peek_tail_name(path_);
+  map<perm_string,SecType*>::const_iterator find = varsToType.find(name);
+  if (find != varsToType.end()) {
+    SecType* tau = (*find).second;
+    //If this is indexed (e.g., v[x]), they type may also be quantified by index (e.g., {|i| F i} )
+    //If this selects more than one component (i.e., is not SEL_BIT) then ignore (likely will lead to
+    //an error during z3 checking with Quantified types
+    //TODO replace more than just the first index component (nested index types works on nested indexes)
+    index_component_t index = path().back().index.front();
+    if (index.sel == index_component_t::SEL_BIT) {
+      tau = tau->apply_index(index.msb);
+    }
+    return tau;
+  } else {
+    cerr <<  "Unbounded var name: " << name.str() << endl;
+    return ConstType::TOP;
+  }
+}
+
+SecType* PEIdent::typecheckIdx(ostream&out, map<perm_string, SecType*>&varsToType) const {
+  SecType* result = ConstType::BOT;
+  for (std::list<index_component_t>::const_iterator idxit = path_.back().index.begin();
+       idxit != path_.back().index.end(); idxit++) {
+    if (idxit->msb != NULL) {
+      SecType *tmsb = idxit->msb->typecheck(out, varsToType);
+      if (tmsb != ConstType::BOT) {
+	result = new JoinType(result, tmsb);
+      }
+    }
+    if (idxit->lsb != NULL) {
+      SecType *tlsb = idxit->msb->typecheck(out, varsToType);
+      if (tlsb != ConstType::BOT) {
+	result = new JoinType(result, tlsb);
+      }
+    }
+  }
+  return result;
+}
 
 SecType* PEIdent::typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const
 {
-	perm_string name = peek_tail_name(path_);
-	map<perm_string,SecType*>::const_iterator find = varsToType.find(name);
-	if (find != varsToType.end()) {
-        SecType* tau = (*find).second;
-        index_component_t index = path().back().index.front();
-        if(index.sel==index_component_t::SEL_BIT) { 
-            tau = tau->apply_index(index.msb);
-        }
-		return tau;
-	}
-	else {
-		cout <<  "Unbounded var name: " << name.str() << endl;
-		return ConstType::TOP;
-	}
+  //idents are like: varname[bit select]
+  //need to join index label with name label
+  SecType* namelbl = typecheckName(out, varsToType);
+  SecType* idxlbl = typecheckIdx(out, varsToType);
+  return new JoinType(namelbl, idxlbl);
 }
 
+void PEIdent::collect_index_exprs(set<perm_string>&s, map<perm_string, SecType*>&varsToType) {
+  stringstream ss;
+  SecType* appliedType = typecheckName(ss, varsToType);
+  appliedType->collect_dep_expr(s);
+}
+
+void PEIdent::collect_idens(set<perm_string>&s) const
+{
+  s.insert(peek_tail_name(path_));
+  for (std::list<index_component_t>::const_iterator idxit = path_.back().index.begin();
+	 idxit != path_.back().index.end(); idxit++) {
+   if (idxit->msb != NULL) {
+     idxit->msb->collect_idens(s);
+   }
+   if (idxit->lsb != NULL) {
+     idxit->lsb->collect_idens(s);
+   }
+  }
+}
 // integer constants have label Low
 SecType* PENumber::typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const
 {
 	return ConstType::BOT;
 }
-
+void PENumber::collect_idens(set<perm_string>&s) const
+{
+  return;
+}
 // string constants have label Low
 SecType* PEString::typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const
 {
 	return ConstType::BOT;
 }
-
+void PEString::collect_idens(set<perm_string>&s) const
+{
+  return;
+}
 SecType* PETernary::typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const
 {
 //	SecType* lexp = expr_->typecheck(out, varsToType);
@@ -102,8 +179,62 @@ SecType* PETernary::typecheck(ostream&out, map<perm_string, SecType*>&varsToType
 //	SecType* ret = new JoinType(lexp, rhs->simplify());
 	throw "All PETernary expressions should have been translated already.\n";
 }
+void PETernary::collect_idens(set<perm_string>&s) const
+{
+
+  expr_->collect_idens(s);
+  tru_->collect_idens(s);
+  fal_->collect_idens(s);
+}
 
 SecType* PEUnary::typecheck(ostream&out, map<perm_string, SecType*>&varsToType) const
 {
 	return expr_->typecheck(out, varsToType);
+}
+void PEUnary::collect_idens(set<perm_string>&s) const
+{
+  expr_->collect_idens(s);
+}
+SecType* PEDeclassified::typecheck(ostream&out,
+        map<perm_string, SecType*>&varsToType) const
+{
+    return this->type;
+}
+void PEDeclassified::collect_idens(set<perm_string>&s) const
+{
+  ex->collect_idens(s);
+}
+
+//-----------------------------------------------------------------------------
+// Check Base Types
+//-----------------------------------------------------------------------------
+BaseType* PEConcat::check_base_type(ostream&out,
+        map<perm_string, BaseType*>&varsToBase){
+
+    // Default to combinational. Sequential if anything is sequential.
+    // Not sure that this actually makes sense...
+    //
+    // How about: can be all sequential or all combinational but not a mix.
+    //
+	BaseType* returnType;
+	if (repeat_!=NULL) {
+		returnType = repeat_->check_base_type(out, varsToBase);
+	} else if ( parms_.count() > 0 ){
+        returnType = parms_[0]->check_base_type(out, varsToBase);
+    }
+    assert(returnType);
+    for (unsigned idx = 0 ;  idx < parms_.count() ;  idx += 1) {
+        //TODO define equality correctly and then just check it here.
+        if(parms_[idx]->check_base_type(out, varsToBase)->isSeqType() !=
+                returnType->isSeqType()){
+            cout << "PEConcat found with multiple base types (com/seq)" << endl;
+            assert(false);
+        }
+    }
+    return returnType;
+}
+
+BaseType* PEIdent::check_base_type(ostream&out,
+        map<perm_string, BaseType*>&varsToBase) {
+    return varsToBase[peek_tail_name(path())];
 }

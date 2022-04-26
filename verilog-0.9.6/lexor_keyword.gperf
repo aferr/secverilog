@@ -43,10 +43,12 @@ cell,			GN_KEYWORDS_1364_2001_CONFIG,	K_cell
 cmos,			GN_KEYWORDS_1364_1995,		K_cmos
 config,			GN_KEYWORDS_1364_2001_CONFIG,	K_config
 continuous,		GN_KEYWORDS_VAMS_2_3,		K_continuous
+com,           GN_KEYWORDS_1364_1995,       K_com
 cos,			GN_KEYWORDS_VAMS_2_3,		K_cos
 cosh,			GN_KEYWORDS_VAMS_2_3,		K_cosh
 ddt_nature,		GN_KEYWORDS_VAMS_2_3,		K_ddt_nature
 deassign,		GN_KEYWORDS_1364_1995,		K_deassign
+declassify,		GN_KEYWORDS_1364_1995,		K_declassify
 default,		GN_KEYWORDS_1364_1995,		K_default
 defparam,		GN_KEYWORDS_1364_1995,		K_defparam
 design,			GN_KEYWORDS_1364_2001_CONFIG,	K_design
@@ -113,6 +115,7 @@ module,			GN_KEYWORDS_1364_1995,		K_module
 nand,			GN_KEYWORDS_1364_1995,		K_nand
 nature,			GN_KEYWORDS_VAMS_2_3,		K_nature
 negedge,		GN_KEYWORDS_1364_1995,		K_negedge
+next,		    GN_KEYWORDS_1364_1995,		K_next
 nmos,			GN_KEYWORDS_1364_1995,		K_nmos
 nor,			GN_KEYWORDS_1364_1995,		K_nor
 noshowcancelled,	GN_KEYWORDS_1364_2001,		K_noshowcancelled
@@ -145,7 +148,8 @@ rtran,			GN_KEYWORDS_1364_1995,		K_rtran
 rtranif0,		GN_KEYWORDS_1364_1995,		K_rtranif0
 rtranif1,		GN_KEYWORDS_1364_1995,		K_rtranif1
 scalared,		GN_KEYWORDS_1364_1995,		K_scalared
-showcancelled,		GN_KEYWORDS_1364_2001,		K_showcancelled
+showcancelled,	GN_KEYWORDS_1364_2001,      K_showcancelled
+seq,            GN_KEYWORDS_1364_1995,      K_seq
 signed,			GN_KEYWORDS_1364_2001,		K_signed
 sin,			GN_KEYWORDS_VAMS_2_3,		K_sin
 sinh,			GN_KEYWORDS_VAMS_2_3,		K_sinh

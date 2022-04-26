@@ -5,7 +5,7 @@ use Getopt::Std;
 use strict vars;
 
 my $z3home =""; # specify z3 home directory
-my $iveriloghome = ""; # specify iverilog home directory
+my $iveriloghome = "/home/drew/volume/secverilog/bin/"; # specify iverilog home directory
 my $z3option = "smt2";
 my $secoption = "";
 
@@ -38,7 +38,6 @@ if (not getopts("F:l:z")) {
 if ($opt_F) { $secoption .= "-F $opt_F "; }
 if ($opt_l) { $secoption .= "-l $opt_l "; }
 if ($opt_z) { $secoption .= "-z "; }
-
 # my @files = <*>;
 my @files = ();
 foreach (@ARGV)
@@ -73,35 +72,19 @@ foreach my $file (@files) {
     my $isassertion = 0;
     $counter = 0;
 
-    while (<FILE>) {
-	
-      if (m/^\(push\)/) {
-        $assertion = "";
-        $isassertion = 1;
-      }
-      elsif (m/^\(check-sat\)/) {
-        push(@assertions, $assertion);
-        $isassertion = 0;
-      }
-      elsif ($isassertion) {
-        $assertion = $_;
-      }
-    }
-    
-    close (FILE);
-    
     # find "unsat" assertions, and output the corrensponding comment in constraint source file
     my $errors = "";
+    my $prevLine = "";
     for(split /^/, $str) {
       if (/^sat/) {
-        $assert = @assertions[$counter];
-        $errors .= $assert;
-	$fail_counter ++;
-        $counter ++;
+	  $errors .= $prevLine;
+	  $fail_counter ++;
+	  $counter ++;
       }
       elsif (/^unsat/) {
-        $counter ++;
+	  $counter ++;
       }
+      $prevLine = $_;
     }
     if ($errors eq "") {
       print_ok();
@@ -114,4 +97,4 @@ foreach my $file (@files) {
 }
 
 print "Total: $fail_counter assertions failed\n";
-
+exit $fail_counter;

@@ -214,6 +214,11 @@ void PEConcat::dump(ostream&out) const
       if (repeat_) out << "}";
 }
 
+void PEConcat::dumpz3(ostream&out) const
+{
+  throw "Cannot dump concat to z3 constraints";
+}
+
 void PECallFunction::dump(ostream &out) const
 {
       out << path_ << "(";
@@ -226,6 +231,11 @@ void PECallFunction::dump(ostream &out) const
 	    }
       }
       out << ")";
+}
+
+void PECallFunction::dumpz3(ostream&out) const
+{
+  throw "Cannot dump function call to z3 constraints";
 }
 
 void PEEvent::dump(ostream&out) const
@@ -247,9 +257,19 @@ void PEEvent::dump(ostream&out) const
 
 }
 
+void PEEvent::dumpz3(ostream&out) const
+{
+  throw "Cannot dump event to z3 constraints";
+}
+
 void PEFNumber::dump(ostream &out) const
 {
       out << value();
+}
+
+void PEFNumber::dumpz3(ostream &out) const
+{
+  return dump(out);
 }
 
 void PENumber::dump(ostream&out) const
@@ -257,9 +277,26 @@ void PENumber::dump(ostream&out) const
       out << value();
 }
 
+void PENumber::dumpz3(ostream&out) const
+{
+  return dump(out);
+}
+
 void PEIdent::dump(ostream&out) const
 {
-      out << path_;
+      out << path();
+}
+
+void PEIdent::dumpz3(ostream&out) const
+{
+  return dump(out);
+}
+
+void PEIdent::dumpEq(ostream&out, int val) const
+{
+  out << "(= ";
+  dumpz3(out);
+  out << " " << val << ")";
 }
 
 void PEString::dump(ostream&out) const
@@ -267,9 +304,30 @@ void PEString::dump(ostream&out) const
       out << "\"" << text_ << "\"";
 }
 
+void PEString::dumpz3(ostream&out) const
+{
+  return dump(out);
+}
+
 void PETernary::dump(ostream&out) const
 {
       out << "(" << *expr_ << ")?(" << *tru_ << "):(" << *fal_ << ")";
+}
+
+void PETernary::dumpz3(ostream&out) const
+{
+  out << "(ite ";
+  PEIdent* exident = dynamic_cast<PEIdent*>(expr_);
+  if (exident) {
+    exident->dumpEq(out, 1);
+  } else {
+    expr_->dumpz3(out);
+  }
+  out << " ";
+  tru_->dumpz3(out);
+  out << " ";
+  fal_->dumpz3(out);
+  out << " )";
 }
 
 void PEUnary::dump(ostream&out) const
@@ -287,11 +345,40 @@ void PEUnary::dump(ostream&out) const
       }
       out << "(" << *expr_ << ")";
 }
+void PEUnary::dumpz3(ostream&out) const
+{
+
+  PEIdent* exident = dynamic_cast<PEIdent*>(expr_);
+  bool doEq = false;
+  out << "(";
+    switch (op_) {
+    case 'm':
+      out << "abs";
+      break;
+    case '!':      
+    case 'N':
+      out << "not";
+      doEq = true;
+      break;
+
+    default:
+      out << op_;
+      break;
+    }
+    out << " ";
+    if (exident && doEq){
+      exident->dumpEq(out, 1);
+    } else {
+      expr_->dumpz3(out);
+    }
+    out << ")";
+}
 
 void PEBinary::dump(ostream&out) const
 {
 	/* Handle some special cases, where the operators are written
 	   in function notation. */
+      //fprintf(stderr, "op:%c\n", op_);
       if (op_ == 'm') {
 	    out << "min(" << *left_ << "," << *right_ << ")";
 	    return;
@@ -313,7 +400,13 @@ void PEBinary::dump(ostream&out) const
     	return;
       }
       if (op_ == 'L') {
-    	out << "<= "<< "(" << *left_ << ") (" << *right_ << ")";
+    	//out << "<= "<< "(" << *left_ << ") (" << *right_ << ")";
+    	out << "<= "<< *left_ << " " << *right_;
+    	return;
+      }
+      if (op_ == 'G') {
+    	//out << "<= "<< "(" << *left_ << ") (" << *right_ << ")";
+    	out << ">= "<< *left_ << " " << *right_;
     	return;
       }
       if (op_ == 'n') {
@@ -347,65 +440,124 @@ void PEBinary::dump(ostream&out) const
       }
       out << "(" << *right_ << ")";
 }
-
 void PEBinary::dumpz3(ostream&out) const
 {
-	/* Handle some special cases, where the operators are written
-	   in function notation. */
-      if (op_ == 'm') {
-	    out << "min(" << *left_ << "," << *right_ << ")";
-	    return;
-      }
-      if (op_ == 'M') {
-	    out << "min(" << *left_ << "," << *right_ << ")";
-	    return;
-      }
-      if (op_ == 'e') {
-  	    out << "= " << *left_ << " " << *right_ ;
-  	    return;
-      }
-      if (op_ == 'o') {
-    	out << "or " << *left_ << " " << *right_ ;
-    	return;
-      }
-      if (op_ == 'a') {
-    	out << "and " << *left_ << " " << *right_ ;
-    	return;
-      }
-      if (op_ == 'L') {
-    	out << "<= " << *left_ << " " << *right_ ;
-    	return;
-      }
-      if (op_ == 'n') {
-    	out << "not( = " << *left_ << " " << *right_ << ")";
-    	return;
-      }
-
-      out << "(" << *left_ << ")";
-      switch (op_) {
-	  case 'E':
-	    out << "===";
-	    break;
-	  case 'l':
-	    out << "<<";
-	    break;
-	  case 'N':
-	    out << "!==";
-	    break;
-	  case 'p':
-	    out << "**";
-	    break;
-	  case 'R':
-	    out << ">>>";
-	    break;
-	  case 'r':
-	    out << ">>";
-	    break;
-	  default:
-	    out << op_;
-	    break;
-      }
-      out << "(" << *right_ << ")";
+  PEIdent* liden = dynamic_cast<PEIdent*>(left_);
+  PEIdent* riden = dynamic_cast<PEIdent*>(right_);    
+  if (op_ == 'm') {
+    out << "(min" ;
+    left_->dumpz3(out);
+    out << " ";
+    right_->dumpz3(out);
+    out << ")";
+    return;
+  }
+  if (op_ == 'M') {
+    out << "(max" ;
+    left_->dumpz3(out);
+    out << " ";
+    right_->dumpz3(out);
+    out << ")";
+    return;
+  }
+  if (op_ == 'e') {
+    out << "(= ";
+    left_->dumpz3(out);
+    out << " ";
+    right_->dumpz3(out);
+    out << ")";
+    return;
+  }
+  if (op_ == 'o') {
+    out << "(or " ;
+    if (liden) {
+      liden->dumpEq(out, 1);
+    } else {
+      left_->dumpz3(out);
+    }
+    out << " ";
+    if (riden) {
+      riden->dumpEq(out, 1);
+    } else {
+      right_->dumpz3(out);
+    }
+    out << ")";
+    return;
+  }
+  if (op_ == 'a') {
+    out << "(and " ;
+    if (liden) {
+      liden->dumpEq(out, 1);
+    } else {
+      left_->dumpz3(out);
+    }
+    out << " ";
+    if (riden) {
+      riden->dumpEq(out, 1);
+    } else {
+      right_->dumpz3(out);
+    }
+    out << ")";
+    return;
+  }
+  if (op_ == 'L') {
+    out << "(<= ";
+    left_->dumpz3(out);
+    out << " ";
+    right_->dumpz3(out);
+    out << ")";
+    return;
+  }
+  if (op_ == 'G') {
+    out << "(>= ";
+    left_->dumpz3(out);
+    out << " ";
+    right_->dumpz3(out);
+    out << ")";
+    return;
+  }
+  if (op_ == 'n') {
+    out << "(not (= ";
+    left_->dumpz3(out);
+    out << " ";
+    right_->dumpz3(out);
+    out << "))";
+    return;
+  }
+  if ((op_ == '>') || (op_ == '<')) {
+    out << "(" << op_ << " ";
+    left_->dumpz3(out);
+    out << " ";
+    right_->dumpz3(out);
+    out << ")";
+    return;
+  }
+  throw("No support for given binary operator: ");
+      // out << "(" << *left_ << ")";
+      // switch (op_) {
+      // 	  case 'E':
+      // 	    out << "===";
+      // 	    break;
+      // 	  case 'l':
+      // 	    out << "<<";
+      // 	    break;
+      // 	  case 'N':
+      // 	    out << "!==";
+      // 	    break;
+      // 	  case 'p':
+      // 	    out << "**";
+      // 	    break;
+      // 	  case 'R':
+      // 	    out << ">>>";
+      // 	    break;
+      // 	  case 'r':
+      // 	    out << ">>";
+      // 	    break;
+      // 	  default:
+      // 	    out << op_;
+      // 	    break;
+      // }
+      // out << "(" << *right_ << ")";
 }
 
 

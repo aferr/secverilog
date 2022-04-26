@@ -27,9 +27,11 @@
 # include  "Statement.h"
 # include  "PSpec.h"
 # include  "sectypes.h"
+# include  "QuantExpr.h"
 # include  <stack>
 # include  <cstring>
 # include  <sstream>
+# include <typeinfo>
 
 class PSpecPath;
 
@@ -46,10 +48,13 @@ static struct {
       NetNet::PortType port_type;
       ivl_variable_type_t var_type;
       SecType*sectype;
+      BaseType*basetype;
       bool sign_flag;
       svector<PExpr*>* range;
 } port_declaration_context = {NetNet::NONE, NetNet::NOT_A_PORT,
-                              IVL_VT_NO_TYPE, new ConstType(), false, 0};
+                              IVL_VT_NO_TYPE, new ConstType(),
+			      
+                              new BaseType(), false, 0};
 
 /* The task and function rules need to briefly hold the pointer to the
    task/function that is currently in progress. */
@@ -227,9 +232,7 @@ static PECallFunction*make_call_function(perm_string tn, PExpr*arg1, PExpr*arg2)
       list<index_component_t> *dimensions;
       
       SecType*sectype;
-      IQuantExpr*iqetype;
-      BQuantExpr*bqetype;
-      LQuantExpr*lqetype;
+      BaseType*basetype;
 };
 
 %token <text>   IDENTIFIER SYSTEM_IDENTIFIER STRING
@@ -263,6 +266,7 @@ static PECallFunction*make_call_function(perm_string tn, PExpr*arg1, PExpr*arg2)
 %token K_trireg K_vectored K_wait K_wand K_weak0 K_weak1 K_while K_wire
 %token K_wor K_xnor K_xor
 
+
 %token K_Shold K_Snochange K_Speriod K_Srecovery K_Ssetup K_Ssetuphold
 %token K_Sskew K_Swidth
 
@@ -295,7 +299,12 @@ static PECallFunction*make_call_function(perm_string tn, PExpr*arg1, PExpr*arg2)
 %token K_potential K_pow K_sin K_sinh K_sqrt K_string K_tan K_tanh
 %token K_units
 
+ /* Tokens for Index Quantified Types */
 %token SV_TRUE SV_FALSE SV_BOOL
+/* Tokens used for labelchange */
+%token K_seq K_com K_next
+
+%token K_declassify
 
 %type <flag>    from_exclude
 %type <number>  number
@@ -374,11 +383,12 @@ static PECallFunction*make_call_function(perm_string tn, PExpr*arg1, PExpr*arg2)
 %type <specpath> specify_simple_path specify_simple_path_decl
 %type <specpath> specify_edge_path specify_edge_path_decl
 
+
 %type <sectype> sec_label
 %type <sectype> sec_label_comp
-%type <iqetype> iqe
-%type <bqetype> bqe
-%type <lqetype> lqe
+%type <perm_strings> iden_list
+%type <text> sec_iden
+%type <basetype> base_type
 
 %token K_TAND
 %right '?' ':'
@@ -506,13 +516,22 @@ sec_label_comp
       SecType* type = new ConstType(name);
       $$ = type;
     } 
-  | IDENTIFIER IDENTIFIER
+  | IDENTIFIER iden_list 
     { 
       perm_string name = lex_strings.make($1);
-      perm_string expr = lex_strings.make($2);
-      SecType* type = new IndexType(name, expr);
+      SecType* type = new IndexType(name, *$2);
       $$ = type;
     } 
+  | IDENTIFIER '(' K_next IDENTIFIER ')'
+    {
+      perm_string name = lex_strings.make($1);
+      perm_string expr = lex_strings.make($4);
+      expr = nextify_perm_string(expr);
+      list<perm_string> *tmp = new list<perm_string>;
+      tmp->push_back(expr);
+      SecType* type = new IndexType(name, *tmp);
+      $$ = type;
+    }
   | sec_label_comp K_join sec_label_comp
     {
       $$ = new JoinType ($1, $3);
@@ -521,12 +540,16 @@ sec_label_comp
     {
       $$ = new MeetType ($1, $3);
     }
-  | '|' IDENTIFIER '|' lqe
+  | '|' IDENTIFIER '|' sec_label_comp
     {
       perm_string index = lex_strings.make($2);
       SecType* type = new QuantType(index, $4);
       $$ = type;
     }
+  | '(' sec_label_comp ')'
+  {
+    $$ = $2;
+  }
   | // use default label Low
     { 
       SecType* type = ConstType::BOT;
@@ -534,113 +557,66 @@ sec_label_comp
     } 
   ;
 
-lqe
-  : IDENTIFIER iqe
-    {
-      perm_string ident = lex_strings.make($1);
-      LQuantExpr* l = new LQEDep(ident, $2);
-      $$ = l; 
-    }
-  | IDENTIFIER
-    {
-      perm_string ident = lex_strings.make($1);
-      $$ = new LQEConst(ident);
-    }
-  | bqe '?' lqe ':' lqe
-    {
-      $$ = new LQETernary( $1, $3, $5);
-    }
-  ;
-
-iqe
-  : '(' iqe ')'
-    {
-        $$ = $2;
-    }
-  | number
-    {
-      IQuantExpr* v = new IQENum($1);
-      $$ = v;
-    }
-  | IDENTIFIER
-    {
-        IQuantExpr* v = new IQEVar(lex_strings.make($1));
-        $$ = v;
-    }
-  | iqe '+' iqe
-    {
-        perm_string sym = perm_string::literal("+");
-        IQuantExpr* v = new IQEBinary($1, $3, sym);
-        $$ = v;
-    }
-  | iqe '-' iqe
-    {
-        perm_string sym = perm_string::literal("-");
-        IQuantExpr* v = new IQEBinary($1, $3, sym);
-        $$ = v;
-    }
-  | bqe '?' iqe ':' iqe
-    {
-        IQuantExpr *v = new IQETernary($1, $3, $5);
-        $$ = v;
-    }
-  ;
-
-bqe
-  : '(' bqe ')'
-    {
-      $$ = $2;
-    }
-  | SV_TRUE
-    {
-        BQuantExpr* v = new BQETrue();
-        $$ = v;
-    }
-  | SV_FALSE
-     {
-         BQuantExpr* v = new BQEFalse();
-         $$ = v;
-     }
-  | SV_BOOL iqe
-    {
-        BQuantExpr* v = new BQEFromIQE($2);
-        $$ = v;
-    }
-  | bqe '&' bqe
-    {
-        perm_string sym = perm_string::literal("and");
-        BQuantExpr *v = new BQEBinary($1, $3, sym); 
-        $$ = v;
-    }
-  | bqe '|' bqe
-    {
-        perm_string sym = perm_string::literal("or");
-        BQuantExpr *v = new BQEBinary($1, $3, sym);
-        $$ = v;
-    }
-  | iqe K_EQ iqe
-    {
-        BQuantExpr *v = new BQEEq($1, $3);
-        $$ = v;
-    }
+iden_list
+  : sec_iden
+  {
+    $$ = list_from_identifier($1);
+  }
+  | iden_list ',' sec_iden
+  {
+    $$ = list_from_identifier($1, $3);
+  };
 ;
 
+
+sec_iden:
+  IDENTIFIER
+  {
+    $$ = $1;
+  };
+
+base_type
+  : K_seq
+    {
+        BaseType* btype = new SeqType;
+        $$ = btype;
+    }
+  | K_com
+    {
+        BaseType* btype = new ComType;
+        $$ = btype;
+    }
+  | // use default base type of com
+    {
+        BaseType* btype = new ComType;
+        $$ = btype;
+    }
+  ; 
+  
   /* The block_item_decl is used in function definitions, task
      definitions, module definitions and named blocks. Wherever a new
      scope is entered, the source may declare new registers and
      integers. This rule matches those declarations. The containing
      rule has presumably set up the scope. */
 
-//TODO range set
 block_item_decl
 	: attribute_list_opt K_reg
           primitive_type_opt signed_opt range
+          base_type
           sec_label
           register_variable_list ';'
 		{ ivl_variable_type_t dtype = $3;
 		  if (dtype == IVL_VT_NO_TYPE)
 			dtype = IVL_VT_LOGIC;
-		  pform_set_net_range_type($7, $5, $4, dtype, $6);
+          SecType*st = $7;
+          BaseType*bt = $6;
+          list<perm_string>* nexted_names = nextify_perm_strings($8);
+		  pform_set_net_range_type($8, $5, $4, dtype, st, bt);
+          // Generate extra declaration for the nextified signal
+          if($6->isSeqType()){
+              BaseType*nt = new NextType();
+		      pform_set_net_range_type(nexted_names, $5, $4, dtype, st, nt);
+           }
 		  if ($1) delete $1;
 		}
 
@@ -649,12 +625,22 @@ block_item_decl
 
 	| attribute_list_opt K_reg
           primitive_type_opt signed_opt
+          base_type
           sec_label
           register_variable_list ';'
 		{ ivl_variable_type_t dtype = $3;
 		  if (dtype == IVL_VT_NO_TYPE)
 			dtype = IVL_VT_LOGIC;
-		  pform_set_net_range_type($6, 0, $4, dtype, $5);
+          SecType*st = $6;
+          BaseType*bt = $5;
+          assert(st);
+          list<perm_string>* nexted_names = nextify_perm_strings($7);
+		  pform_set_net_range_type($7, 0, $4, dtype, st, bt);
+          // Generate extra declaration for the nextified signal.
+          if(bt->isSeqType()){
+              BaseType*nt = new NextType();
+              pform_set_net_range_type(nexted_names, 0, $4, dtype, st, nt);
+          }
 		  if ($1) delete $1;
 		}
 
@@ -662,13 +648,21 @@ block_item_decl
      trappings of a general variable declaration. All of that is
      implicit in the "integer" of the declaration. */
 
-	| attribute_list_opt K_integer sec_label register_variable_list ';'
-		{ pform_set_reg_integer_type($4, $3);
+	| attribute_list_opt K_integer base_type sec_label register_variable_list ';'
+		{
+          SecType*st = $4;
+          BaseType*bt = $3;
+          assert(st);
+          pform_set_reg_integer_type($5, st, bt);
 		  if ($1) delete $1;
 		}
 
-	| attribute_list_opt K_time sec_label register_variable_list ';'
-		{ pform_set_reg_time_type($4, $3);
+	| attribute_list_opt K_time base_type sec_label register_variable_list ';'
+		{   
+            SecType*st = $4;
+            BaseType*bt = $3;
+            assert(st);
+            pform_set_reg_time_type($5, st, bt);
 		}
 
   /* real declarations are fairly simple as there is no range of
@@ -1098,6 +1092,7 @@ event_expression_list
 	;
 
 event_expression
+
 	: K_posedge expression
 		{ PEEvent*tmp = new PEEvent(PEEvent::POSEDGE, $2);
 		  FILE_NAME(tmp, @1);
@@ -1135,6 +1130,11 @@ branch_probe_expression
 expression
 	: expr_primary
 		{ $$ = $1; }
+    | K_declassify '(' expression ',' sec_label_comp')'
+        { PEDeclassified*tmp = new PEDeclassified($3,$5);
+          FILE_NAME(tmp, @2);
+          $$ = tmp;
+        }
 	| '+' expr_primary %prec UNARY_PREC
 		{ $$ = $2; }
 	| '-' expr_primary %prec UNARY_PREC
@@ -1449,6 +1449,15 @@ expr_primary
 		  $$ = tmp;
 		  delete[]$1;
 		}
+    | K_next IDENTIFIER
+        {
+            pform_name_t* ident = new pform_name_t;
+            perm_string nexted_name = nextify_perm_string(lex_strings.make($2));
+            ident->push_back(name_component_t(nexted_name));
+            delete[]$2;
+            PEIdent*tmp = new PEIdent(*ident);
+            $$ = tmp;
+        }   
 
   /* The hierarchy_identifier rule matches simple identifiers as well as
      indexed arrays and part selects */
@@ -2011,6 +2020,7 @@ list_of_port_declarations
 					port_declaration_context.port_type,
 					port_declaration_context.port_net_type,
                     port_declaration_context.sectype,
+                    port_declaration_context.basetype,
 					port_declaration_context.sign_flag,
 					port_declaration_context.range, 0);
 		  delete[]$3;
@@ -2028,103 +2038,117 @@ list_of_port_declarations
 		}
         ;
 
-//TODO range set
 port_declaration
   : attribute_list_opt
-    K_input net_type_opt signed_opt range_opt sec_label IDENTIFIER
+    K_input net_type_opt signed_opt range_opt base_type sec_label IDENTIFIER
       { Module::port_t*ptmp;
-	perm_string name = lex_strings.make($7);
+	perm_string name = lex_strings.make($8);
 	ptmp = pform_module_port_reference(name, @2.text,
 					   @2.first_line);
 	pform_module_define_port(@2, name, NetNet::PINPUT,
-				 $3, $6, $4, $5, $1);
+				 $3, $7, $6, $4, $5, $1);
 	port_declaration_context.port_type = NetNet::PINPUT;
 	port_declaration_context.port_net_type = $3;
-    port_declaration_context.sectype = $6;
+    SecType*st = $7;
+    BaseType*bt = $6;
+    port_declaration_context.sectype = st;
+    port_declaration_context.basetype= bt;
 	port_declaration_context.sign_flag = $4;
 	delete port_declaration_context.range;
 	port_declaration_context.range = $5;
-	delete $1;
-	delete[]$7;
+	// delete $1;
+	//delete[]$8;
 	$$ = ptmp;
       }
-    //TODO range set
   | attribute_list_opt
-    K_inout  net_type_opt signed_opt range_opt sec_label IDENTIFIER
+    K_inout  net_type_opt signed_opt range_opt base_type sec_label IDENTIFIER
       { Module::port_t*ptmp;
-	perm_string name = lex_strings.make($7);
+	perm_string name = lex_strings.make($8);
 	ptmp = pform_module_port_reference(name, @2.text,
 					   @2.first_line);
 	pform_module_define_port(@2, name, NetNet::PINOUT,
-				 $3, $6, $4, $5, $1);
+				 $3, $7, $6, $4, $5, $1);
 	port_declaration_context.port_type = NetNet::PINOUT;
 	port_declaration_context.port_net_type = $3;
-	port_declaration_context.sectype = $6;
+    SecType*st = $7;
+    BaseType*bt = $6;
+	port_declaration_context.sectype = st;
+	port_declaration_context.basetype= bt;
 	port_declaration_context.sign_flag = $4;
 	delete port_declaration_context.range;
 	port_declaration_context.range = $5;
-	delete $1;
-	delete[]$7;
+	// delete $1;
+	// delete[]$8;
 	$$ = ptmp;
       }
-    //TODO range set
   | attribute_list_opt
-    K_output net_type_opt signed_opt range_opt sec_label IDENTIFIER
+    K_output net_type_opt signed_opt range_opt base_type sec_label IDENTIFIER
       { Module::port_t*ptmp;
-	perm_string name = lex_strings.make($7);
+	perm_string name = lex_strings.make($8);
 	ptmp = pform_module_port_reference(name, @2.text,
 					   @2.first_line);
 	pform_module_define_port(@2, name, NetNet::POUTPUT,
-				 $3, $6, $4, $5, $1);
+				 $3, $7, $6, $4, $5, $1);
+	// pform_module_define_port(@2, nextify_perm_string(name), NetNet::POUTPUT,
+	// 			 $3, $7, $4, $5, $1);
 	port_declaration_context.port_type = NetNet::POUTPUT;
 	port_declaration_context.port_net_type = $3;
-	port_declaration_context.sectype = $6;
+    SecType*st = $7;
+    BaseType*bt = $6;
+    port_declaration_context.sectype = st;
+    port_declaration_context.basetype= bt;
 	port_declaration_context.sign_flag = $4;
 	delete port_declaration_context.range;
 	port_declaration_context.range = $5;
-	delete $1;
-	delete[]$7;
+	// delete $1;
+	//delete[]$7; not sure what this was supposed to delete
+    // memory management is for actual grown-ups with actual code.
 	$$ = ptmp;
       }
-    //TODO range set
   | attribute_list_opt
-    K_output var_type signed_opt range_opt sec_label IDENTIFIER
+    K_output var_type signed_opt range_opt base_type sec_label IDENTIFIER
       { Module::port_t*ptmp;
-	perm_string name = lex_strings.make($7);
+	perm_string name = lex_strings.make($8);
 	ptmp = pform_module_port_reference(name, @2.text,
 					   @2.first_line);
 	pform_module_define_port(@2, name, NetNet::POUTPUT,
-				 $3, $6, $4, $5, $1);
+				 $3, $7, $6, $4, $5, $1);
 	port_declaration_context.port_type = NetNet::POUTPUT;
 	port_declaration_context.port_net_type = $3;
-	port_declaration_context.sectype = $6;
+    SecType*st = $7;
+    BaseType*bt = $6;
+    port_declaration_context.sectype = st;
+    port_declaration_context.basetype= bt;
 	port_declaration_context.sign_flag = $4;
 	delete port_declaration_context.range;
 	port_declaration_context.range = $5;
-	delete $1;
-	delete[]$7;
+	// delete $1;
+	// delete[]$8;
 	$$ = ptmp;
       }
-    //TODO range set
   | attribute_list_opt
-    K_output var_type signed_opt range_opt sec_label IDENTIFIER '=' expression
+    K_output var_type signed_opt range_opt base_type sec_label IDENTIFIER '=' expression
       { Module::port_t*ptmp;
-	perm_string name = lex_strings.make($7);
+	perm_string name = lex_strings.make($8);
 	ptmp = pform_module_port_reference(name, @2.text,
 					   @2.first_line);
 	pform_module_define_port(@2, name, NetNet::POUTPUT,
-				 $3, $6, $4, $5, $1);
+				 $3, $7, $6, $4, $5, $1);
 	port_declaration_context.port_type = NetNet::POUTPUT;
 	port_declaration_context.port_net_type = $3;
-	port_declaration_context.sectype = $6;
+    SecType*st = $7;
+    BaseType*bt = $6;
+    assert(st);
+    port_declaration_context.sectype = st;
+    port_declaration_context.basetype = bt;
 	port_declaration_context.sign_flag = $4;
 	delete port_declaration_context.range;
 	port_declaration_context.range = $5;
 
-	pform_make_reginit(@7, name, $9);
+	pform_make_reginit(@8, name, $10);
 
-	delete $1;
-	delete[]$7;
+	// delete $1;
+	// delete[]$8;
 	$$ = ptmp;
       }
   ;
@@ -2208,7 +2232,7 @@ module  : attribute_list_opt module_start IDENTIFIER
 		  }
 		  pform_endmodule($3, in_celldefine, ucd);
 		  delete[]$3;
-		}
+        }
 
 	;
 
@@ -2245,46 +2269,64 @@ module_item
      primitive type, an optional vector range and signed flag. This
      also includes an optional delay set. The values are then applied
      to a list of names. If the primitive type is not specified, then
-     resort to the default type LOGIC. */
+     resort to the default type LOGIC.
+   */
 
 	: attribute_list_opt net_type
           primitive_type_opt signed_opt range_opt
           delay3_opt
+          base_type
           sec_label net_variable_list ';'
 
-		{ ivl_variable_type_t dtype = $3;
+		{ 
+          ivl_variable_type_t dtype = $3;
 		  if (dtype == IVL_VT_NO_TYPE)
-		      dtype = IVL_VT_LOGIC;
-          if ($5!=0) {
-             $7->set_range((*$5)[1],(*$5)[0]);
-          }
-		  pform_makewire(@2, $5, $4, $8, $2,
-            NetNet::NOT_A_PORT, dtype, $7, $1);
+			dtype = IVL_VT_LOGIC;
+          SecType*st = $8;
+          BaseType*bt = $7;
+          assert(st);
+          list<perm_string>* nexted_list = nextify_perm_strings($9);
+		  pform_makewire(@2, $5, $4, $9, $2,
+				 NetNet::NOT_A_PORT, dtype, st, bt, $1);
+          if($7->isSeqType()){
+              BaseType*nt = new NextType();
+              pform_makewire(@2, $5, $4, nexted_list, $2,
+		    	 NetNet::NOT_A_PORT, dtype, st, nt, $1);
+          }   
 		  if ($6 != 0) {
-			    yyerror(@6, "sorry: net delays not supported.");
-			    delete $6;
+			yyerror(@6, "sorry: net delays not supported.");
+			// delete $6;
 		  }
-		  if ($1) delete $1;
+		  // if ($1) delete $1;
 		}
 
   /* Very similar to the rule above, but this takes a list of
      net_decl_assigns, which are <name> = <expr> assignment
      declarations. */
 
-    //TODO range set
 	| attribute_list_opt net_type
           primitive_type_opt signed_opt range_opt
-          delay3_opt sec_label net_decl_assigns ';'
+          delay3_opt base_type sec_label net_decl_assigns ';'
 
 		{ ivl_variable_type_t dtype = $3;
 		  if (dtype == IVL_VT_NO_TYPE)
 			dtype = IVL_VT_LOGIC;
+          SecType*st = $8;
+          BaseType*bt = $7;
+          assert(st);
+          list<perm_string>* nexted_list = nextify_net_decl_names($9);
 		  pform_makewire(@2, $5, $4, $6,
-				 str_strength, $8, $2, dtype, $7);
+				 str_strength, $9, $2, dtype, st, bt);
+          if(bt->isSeqType()){
+            //TODO this is untested
+            BaseType*nt = new NextType();
+            pform_makewire(@2, $5, $4, nexted_list, $2,
+		      NetNet::NOT_A_PORT, dtype, st, nt, $1);
+          }
 		  if ($1) {
 			yyerror(@2, "sorry: Attributes not supported "
 				"on net declaration assignments.");
-			delete $1;
+			// delete $1;
 		  }
 		}
 
@@ -2293,73 +2335,127 @@ module_item
 
 	| attribute_list_opt net_type
           primitive_type_opt signed_opt
-          drive_strength sec_label net_decl_assigns ';'
+          drive_strength base_type sec_label net_decl_assigns ';'
 
 		{ ivl_variable_type_t dtype = $3;
 		  if (dtype == IVL_VT_NO_TYPE)
 			dtype = IVL_VT_LOGIC;
-		  pform_makewire(@2, 0, $4, 0, $5, $7, $2, dtype, $6);
+          SecType*st = $7;
+          BaseType*bt = $6;
+          assert(st);
+          list<perm_string>* nexted_list = nextify_net_decl_names($8);
+		  pform_makewire(@2, 0, $4, 0, $5, $8, $2, dtype, st, bt);
+          if(bt->isSeqType()){
+            //TODO this is untested
+            BaseType*nt = new NextType();
+		    pform_makewire(@2, 0, $4, 0, $5, nexted_list, $2, dtype, st, nt);
+          }
 		  if ($1) {
 			yyerror(@2, "sorry: Attributes not supported "
 				"on net declaration assignments.");
-			delete $1;
+			// delete $1;
 		  }
 		}
 
-    //TODO range set
-	| K_trireg charge_strength_opt range_opt delay3_opt sec_label list_of_identifiers ';'
-		{ yyerror(@1, "sorry: trireg nets not supported.");
+	| K_trireg charge_strength_opt range_opt delay3_opt base_type sec_label list_of_identifiers ';'
+		{ 
+          yyerror(@1, "sorry: trireg nets not supported.");
 		  delete $3;
 		  delete $4;
 		}
 
-    //TODO range set
-	| port_type signed_opt range_opt delay3_opt sec_label list_of_identifiers ';'
-		{ pform_set_port_type(@1, $6, $3, $2, $1, $5);
+	| port_type signed_opt range_opt delay3_opt base_type sec_label list_of_identifiers ';'
+		{
+            SecType*st = $6;
+            BaseType*bt = $5;
+            assert(st);
+            list<perm_string>* nexted_list = nextify_perm_strings($7);
+            pform_set_port_type(@1, $7, $3, $2, $1, st, bt);
+            if(bt->isSeqType()){
+                //TODO untested
+                BaseType*nt = new NextType();
+                pform_set_port_type(@1, nexted_list, $3, $2, $1, st, nt);
+            }
 		}
 
   /* The next two rules handle Verilog 2001 statements of the form:
        input wire signed [h:l] <list>;
      This creates the wire and sets the port type all at once. */
 
-    //TODO range set
-	| port_type net_type signed_opt range_opt sec_label list_of_identifiers ';'
-		{ pform_makewire(@1, $4, $3, $6, $2, $1, IVL_VT_NO_TYPE, $5, 0,
+	| port_type net_type signed_opt range_opt base_type sec_label list_of_identifiers ';'
+		{
+            SecType*st = $6;
+            BaseType*bt = $5;
+            assert(st);
+            list<perm_string>* nexted_names = nextify_perm_strings($7);
+            pform_makewire(@1, $4, $3, $7, $2, $1, IVL_VT_NO_TYPE, st, bt, 0,
 		                 SR_BOTH);
+            if(bt->isSeqType()){
+                BaseType*nt = new NextType();
+                pform_makewire(@1, $4, $3, nexted_names, $2, $1, IVL_VT_NO_TYPE, st, nt, 0,
+		                 SR_BOTH);
+            }
 		}
 
-    //TODO range set
-	| K_output var_type signed_opt range_opt sec_label list_of_port_identifiers ';'
-		{ list<pair<perm_string,PExpr*> >::const_iterator pp;
+	| K_output var_type signed_opt range_opt base_type sec_label list_of_port_identifiers ';'
+		{ 
+          SecType*st = $6;
+          BaseType*bt = $5;
+          assert(st);
+          list<pair<perm_string,PExpr*> >::const_iterator pp;
 		  list<perm_string>*tmp = new list<perm_string>;
-		  for (pp = $6->begin(); pp != $6->end(); pp++) {
+		  for (pp = $7->begin(); pp != $7->end(); pp++) {
 			tmp->push_back((*pp).first);
 		  }
+          list<perm_string>* nexted_names = nextify_perm_strings(tmp);
 		  pform_makewire(@1, $4, $3, tmp, $2, NetNet::POUTPUT,
-		                 IVL_VT_NO_TYPE, $5, 0, SR_BOTH);
-		  for (pp = $6->begin(); pp != $6->end(); pp++) {
+		                 IVL_VT_NO_TYPE, st, bt, 0, SR_BOTH);
+          if(bt->isSeqType()){
+              BaseType*nt = new NextType();
+		      pform_makewire(@1, $4, $3, nexted_names, $2, NetNet::POUTPUT,
+		                 IVL_VT_NO_TYPE, st, nt, 0, SR_BOTH);
+          }
+		  for (pp = $7->begin(); pp != $7->end(); pp++) {
 			if ((*pp).second) {
 			      pform_make_reginit(@1, (*pp).first, (*pp).second);
 			}
 		  }
-		  delete $6;
+		  // delete $7;
 		}
 
   /* var_type declaration (reg variables) cannot be input or output,
      because the port declaration implies an external driver, which
      cannot be attached to a reg. These rules catch that error early. */
 
-    //TODO range set
-	| K_input var_type signed_opt range_opt sec_label list_of_identifiers ';'
-		{ pform_makewire(@1, $4, $3, $6, $2, NetNet::PINPUT,
-				 IVL_VT_NO_TYPE, $5, 0);
+	| K_input var_type signed_opt range_opt base_type sec_label list_of_identifiers ';'
+		{ 
+          SecType*st = $6;
+          BaseType*bt = $5;
+          assert(st);
+          list<perm_string>* nexted_names = nextify_perm_strings($7);
+          pform_makewire(@1, $4, $3, $7, $2, NetNet::PINPUT,
+				 IVL_VT_NO_TYPE, st, bt, 0);
+          if(bt->isSeqType()){
+              BaseType*nt = new NextType();
+              pform_makewire(@1, $4, $3, nexted_names, $2, NetNet::PINPUT,
+				 IVL_VT_NO_TYPE, st, nt, 0);
+          }
 		  yyerror(@2, "error: reg variables cannot be inputs.");
 		}
 
-    //TODO range set
-	| K_inout var_type signed_opt range_opt sec_label list_of_identifiers ';'
-		{ pform_makewire(@1, $4, $3, $6, $2, NetNet::PINOUT,
-				 IVL_VT_NO_TYPE, $5, 0);
+	| K_inout var_type signed_opt range_opt base_type sec_label list_of_identifiers ';'
+		{
+          SecType*st = $6;
+          BaseType*bt = $5;
+          assert(st);
+          pform_makewire(@1, $4, $3, $7, $2, NetNet::PINOUT,
+				 IVL_VT_NO_TYPE, st, bt, 0);
+          list<perm_string>* nexted_names = nextify_perm_strings($7);
+          if(bt->isSeqType()){
+            BaseType*nt = new NextType();
+            pform_makewire(@1, $4, $3, nexted_names, $2, NetNet::PINOUT,
+				 IVL_VT_NO_TYPE, st, nt, 0);
+          }
 		  yyerror(@2, "error: reg variables cannot be inouts.");
 		}
 
@@ -2480,12 +2576,14 @@ module_item
   /* Always and initial items are behavioral processes. */
 
   | attribute_list_opt K_always statement
-      { PProcess*tmp = pform_make_behavior(IVL_PR_ALWAYS, $3, $1);
-	FILE_NAME(tmp, @2);
+      {
+        PProcess*tmp = pform_make_behavior(IVL_PR_ALWAYS, $3, $1);
+	    FILE_NAME(tmp, @2);
       }
   | attribute_list_opt K_initial statement
-      { PProcess*tmp = pform_make_behavior(IVL_PR_INITIAL, $3, $1);
-	FILE_NAME(tmp, @2);
+      { 
+        PProcess*tmp = pform_make_behavior(IVL_PR_INITIAL, $3, $1);
+	    FILE_NAME(tmp, @2);
       }
 
   | attribute_list_opt K_analog analog_statement
@@ -3274,6 +3372,8 @@ register_variable
       { perm_string ident_name = lex_strings.make($1);
 	pform_makewire(@1, ident_name, NetNet::REG,
 		       NetNet::NOT_A_PORT, IVL_VT_NO_TYPE, 0);
+	pform_makewire(@1, nextify_perm_string(ident_name), NetNet::REG,
+		       NetNet::NOT_A_PORT, IVL_VT_NO_TYPE, 0);
 	if ($2 != 0) {
 	      index_component_t index;
 	      if ($2->size() > 1) {
@@ -3290,7 +3390,10 @@ register_variable
       { perm_string ident_name = lex_strings.make($1);
 	pform_makewire(@1, ident_name, NetNet::REG,
 		       NetNet::NOT_A_PORT, IVL_VT_NO_TYPE, 0);
+	pform_makewire(@1, nextify_perm_string(ident_name), NetNet::REG,
+		       NetNet::NOT_A_PORT, IVL_VT_NO_TYPE, 0);
 	pform_make_reginit(@1, ident_name, $3);
+	pform_make_reginit(@1, nextify_perm_string(ident_name), $3);
 	$$ = $1;
       }
   ;
@@ -3311,6 +3414,8 @@ register_variable_list
 	;
 
 real_variable
+  //TODO add base types if needed, but these are probably not 
+  //synthesizable
   : IDENTIFIER dimensions_opt
       { perm_string name = lex_strings.make($1);
         pform_makewire(@1, name, NetNet::REG, NetNet::NOT_A_PORT, IVL_VT_REAL, 0);
@@ -3353,6 +3458,8 @@ net_variable
   : IDENTIFIER dimensions_opt
       { perm_string name = lex_strings.make($1);
 	pform_makewire(@1, name, NetNet::IMPLICIT,
+		       NetNet::NOT_A_PORT, IVL_VT_NO_TYPE, 0);
+	pform_makewire(@1, nextify_perm_string(name), NetNet::IMPLICIT,
 		       NetNet::NOT_A_PORT, IVL_VT_NO_TYPE, 0);
 	if ($2 != 0) {
 	      index_component_t index;
@@ -4666,31 +4773,40 @@ udp_output_sym
      makes for these ports are scoped within the UDP, so there is no
      hierarchy involved. */
 udp_port_decl
-  : K_input sec_label list_of_identifiers ';'
-      { $$ = pform_make_udp_input_ports($3); }
-  | K_output sec_label IDENTIFIER ';'
-      { perm_string pname = lex_strings.make($3);
-	PWire*pp = new PWire(pname, NetNet::IMPLICIT, NetNet::POUTPUT, $2, IVL_VT_LOGIC);
-	svector<PWire*>*tmp = new svector<PWire*>(1);
-	(*tmp)[0] = pp;
-	$$ = tmp;
-	delete[]$3;
-      }
-  | K_reg sec_label IDENTIFIER ';'
-      { perm_string pname = lex_strings.make($3);
-	PWire*pp = new PWire(pname, NetNet::REG, NetNet::PIMPLICIT, $2, IVL_VT_LOGIC);
-	svector<PWire*>*tmp = new svector<PWire*>(1);
-	(*tmp)[0] = pp;
-	$$ = tmp;
-	delete[]$3;
-      }
-  | K_reg K_output sec_label IDENTIFIER ';'
+  : K_input base_type sec_label list_of_identifiers ';'
+      { $$ = pform_make_udp_input_ports($4); }
+  | K_output base_type sec_label IDENTIFIER ';'
       { perm_string pname = lex_strings.make($4);
-	PWire*pp = new PWire(pname, NetNet::REG, NetNet::POUTPUT, $3, IVL_VT_LOGIC);
+    SecType*st = $3;
+    BaseType*bt = $2;
+    assert(st);
+	PWire*pp = new PWire(pname, NetNet::IMPLICIT, NetNet::POUTPUT, st, bt, IVL_VT_LOGIC);
 	svector<PWire*>*tmp = new svector<PWire*>(1);
 	(*tmp)[0] = pp;
 	$$ = tmp;
-	delete[]$4;
+	// delete[]$4;
+      }
+  | K_reg base_type sec_label IDENTIFIER ';'
+      { perm_string pname = lex_strings.make($4);
+    SecType*st = $3;
+    BaseType*bt = $2;
+    assert(st);
+	PWire*pp = new PWire(pname, NetNet::REG, NetNet::PIMPLICIT, st, bt, IVL_VT_LOGIC);
+	svector<PWire*>*tmp = new svector<PWire*>(1);
+	(*tmp)[0] = pp;
+	$$ = tmp;
+	// delete[]$4;
+      }
+  | K_reg K_output base_type sec_label IDENTIFIER ';'
+      { perm_string pname = lex_strings.make($5);
+    SecType*st = $4;
+    BaseType*bt = $3;
+    assert(st);
+	PWire*pp = new PWire(pname, NetNet::REG, NetNet::POUTPUT, st, bt, IVL_VT_LOGIC);
+	svector<PWire*>*tmp = new svector<PWire*>(1);
+	(*tmp)[0] = pp;
+	$$ = tmp;
+	// delete[]$5;
       }
     ;
 

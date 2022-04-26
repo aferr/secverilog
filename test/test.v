@@ -6,9 +6,9 @@ input [15:0] data;  // 16-bit data
 
 output reg [15:0] out;
 
-reg [1:0] cur_state;
+reg [1:0] seq cur_state;
 reg [1:0] next_state;
-reg [15:0] cur_timer;
+reg [15:0] seq cur_timer;
 reg [15:0] next_timer;
 
 initial begin  // initialization

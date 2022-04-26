@@ -31,6 +31,7 @@ class PExpr;
 class PUdp;
 class Module;
 class TypeEnv;
+class SecType;
 struct Predicate;
 
 /*
@@ -121,6 +122,8 @@ class PGAssign  : public PGate {
       virtual void elaborate(Design*des, NetScope*scope) const;
       virtual bool elaborate_sig(Design*des, NetScope*scope) const;
       void typecheck(ostream&out, TypeEnv& env, Predicate pred) const;
+      void collect_index_exprs(set<perm_string>&exprs, map<perm_string, SecType*>&env); 
+      bool collect_dep_invariants(ostream&out, TypeEnv&env);
 
     private:
 };

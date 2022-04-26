@@ -34,10 +34,11 @@
 # include  <set>
 # include  <string>
 # include  "StringHeap.h"
-# include "PExpr.h"
+# include  "basetypes.h"
+# include  "QuantExpr.h"
 # include <sstream>
-# include <stdio.h>
-# include "QuantExpr.h"
+# include <fstream>
+# include <cstdlib>
 
 class SecType;
 class ConstType;
@@ -46,55 +47,29 @@ class JoinType;
 class IndexType;
 struct TypeEnv;
 
-void CalculateQuantBounds(SecType *st, TypeEnv* env);
-
-struct QBound{
-    long lower;
-    long upper;
-    perm_string qvar;
-    QBound(long u, long l, perm_string v) :
-        lower(l), upper(u), qvar(v) {}
-};
-
-struct QBounds{
-    set<QBound*> bounds;
-};
-
-
-
 class SecType {
 
 	// Manipulate the types.
     public:
+      // BaseType*base_type;
+      // void setBaseType(BaseType*b) { base_type = b;}
+      // BaseType* getBaseType() { assert(base_type); return base_type; }
+
       virtual void dump(ostream&o) {}
       virtual bool hasBottom() {return false;}
       virtual bool isBottom() {return false;}
       virtual bool hasTop() {return false;}
-      virtual bool isTop() {return false;};
+      virtual bool isTop() {return false;}
       virtual SecType* simplify() {return this;}
       virtual bool equals(SecType* st) {return false;}
       virtual SecType* subst(perm_string e1, perm_string e2) {return this;};
       virtual SecType* subst(map<perm_string, perm_string> m) {return this;};
+      virtual SecType* next_cycle(TypeEnv*env){ return this; }
       virtual void collect_dep_expr(set<perm_string>& m) {};
-      virtual void collect_bound_exprs(set<perm_string>* m) {};
       virtual bool hasExpr(perm_string str) {return false;};
       virtual SecType* freshVars(unsigned int lineno, map<perm_string, perm_string>& m) {return this;};
-      virtual SecType* apply_index(PExpr *e) { return this; }
-      // Upper and lower bounds for quantification. NULL unless has_bounds()
-      
-      virtual void set_range(PExpr* u, PExpr* l) {}
-      perm_string index_var;
-
-      virtual bool has_bounds() { return false; }
-      virtual void get_bounds(QBounds* b){}
-      virtual void insert_bound(QBound* b){}
-
-     
-      //Apply a copy of this type with n as the name for the functiond def. 
-      virtual void give_name(perm_string s){}
-      virtual bool has_defs() { return false; }
-      virtual const char * func_def_string() { return ""; }
-    
+      virtual SecType* apply_index(PExpr* index_val) { return this; }      
+      virtual SecType* apply_index(perm_string index_var, perm_string index_val) { return this; }
     //  BasicType& operator= (const BasicType&);
 };
 
@@ -131,165 +106,6 @@ private:
 	perm_string name;
 };
 
-//-----------------------------------------------------------------------------
-// QuantType
-//-----------------------------------------------------------------------------
-// This type is applied to arrays and acts as a mapping from array elements to 
-// types. Syntactically, it specifies an index variable and an expression 
-// (possibly) containing that index variable and that evaluates to a type.
-
-class QuantType : public SecType {
-  public:
-    QuantType(perm_string index_var, QuantExpr *e);
-    ~QuantType();
-    // Set upper/lower_bound from the associated array. This is meant to be
-    // called by the parent during type checking. This makes it easier to avoid 
-    // re-writing the ranges of the array. This will likely require a virtual 
-    // set_range in SecType that does nothing and is only overwritten in this 
-    // class.
-    void set_range(PExpr* u, PExpr* l){
-        PENumber* pu = dynamic_cast<PENumber*>(u);
-        PENumber* pl = dynamic_cast<PENumber*>(l);
-        if( pu == NULL || pl == NULL){
-            fprintf(stderr, "error, only constant array bound declarations"
-                    " are currently allowed\n");
-            exit(1);
-        } else {
-            unsigned long vu = pu->value().as_ulong();
-            unsigned long vl = pl->value().as_ulong();
-            if(vu >= vl){ upper = vu; lower = vl; }
-            else {upper = vl; lower = vu; }
-        }
-    }
-
-    virtual bool has_bounds() {
-      return (bound!=NULL && bound->bounds.size()>0);
-    }
-
-    virtual void get_bounds(QBounds *b){
-      if(!has_bounds()) return;
-      set<QBound*>::iterator i = bound->bounds.begin();
-      for(; i!=(bound->bounds.end()); i++){
-        b->bounds.insert(*i);
-      }
-    }
-
-    virtual void insert_bound(QBound *b){
-        bound->bounds.insert(b);
-    }
-
-    virtual bool has_defs(){return true;}
-
-    void dump(ostream&o){
-        o << "(fun_" << name.str() << " " << index_expr_trans << ")";
-    }
-
-
-  public:
-    // Apply the expression that's used to index the quantified type. This 
-    // translates the PExpr into QuantExprs that can be translated 
-    // into Z3. Then, it creates a deep-copy of this type where the 
-    // index_expr_trans 
-    // is replaced with that type. This stores the indexing PExpr so that its 
-    // bounds can be set in the context of the module where they can be 
-    // computed from the range of any PWires in the subtree of that PExpr.
-    SecType* apply_index(PExpr* e);
-    SecType* apply_index(PENumber* e);
-    SecType* apply_index(PEIdent* e);
-
-    bool equals(SecType* st);
- 
-    void give_name(perm_string s){
-      name = s;
-    }
-    
-    const char * func_def_string(){ 
-        if( func_def==""){
-            std::stringstream b;
-            b << "    (= ( fun_" << name.str() << " x)("
-              << def_expr << "))";
-            const char * body = b.str().c_str();
-
-            std::stringstream ss;
-            ss.str("");
-            ss <<   "(declare-fun fun_" << name.str() << " (Int) Label)" <<
-            endl << "(assert (forall ((x Int))" <<
-            endl << body <<
-            endl << "))";
-            func_def = ss.str().c_str(); 
-        }
-        return func_def.c_str();
-    }
-
-    void collect_bound_exprs(set<perm_string>* m);
-
- 
-  private:
-    // Index var to be replaced with indexing expression
-    // perm_string index_var;
-    QuantExpr *def_expr;
-    QuantExpr *index_expr_trans;
-    PExpr *index_expr;
-    QBounds* bound;
-    // Name for declared function.
-    perm_string name;
-    std::string func_def;
-
-    QuantType * deep_copy(){
-        QuantType *t = new QuantType(index_var, def_expr);
-        t->lower = lower;
-        t->upper = upper;
-        t->index_var = index_var;
-        t->def_expr = def_expr;
-        t->index_expr = index_expr;
-        t->index_expr_trans = index_expr_trans;
-        return t;
-    }
-    int upper, lower;
-
-    class IndexSwapInVisitor : public QESubVisitor {
-        public: 
-        IndexSwapInVisitor(perm_string i) : index_var(i) {};
-        virtual QuantExpr* visit(IQEVar* e){
-            return (e->name == index_var) ? (QuantExpr*) (new IQEIndex()) : 
-                (QuantExpr*) e;
-        }
-        perm_string index_var;
-    };
-    
-    class IndexSwapOutVisitor : public QESubVisitor {
-        public: 
-        IndexSwapOutVisitor(QuantExpr* e) : expr(e) {};
-        virtual QuantExpr* visit(IQEIndex* e){
-            return expr;
-        }
-        QuantExpr* expr;
-    };
-
-    class ExprCollector : public QEVisitor {
-        public:
-        void* visit(IQEVar* e){
-            set<perm_string> *s = new set<perm_string>();
-            s->insert(e->name);
-            return s;
-        }
-        void* default_val(){
-            return new set<perm_string>();
-        }
-        void* reduce(void* a, void* b){
-            set<perm_string> *sa = static_cast<set<perm_string>*>(a);
-            set<perm_string> *sb = static_cast<set<perm_string>*>(b);
-            for(set<perm_string>::iterator it=sa->begin(); it!=sa->end(); it++){
-                sb->insert(*it);
-            }
-            return b;
-        }
-    };
-
-  //These methods are for development only
-  private:
-
-};
 /* type variables */
 class VarType : public SecType {
 
@@ -314,21 +130,38 @@ class VarType : public SecType {
 class IndexType : public SecType {
 
     public:
-	  IndexType(perm_string name, perm_string expr);
+	  IndexType(perm_string name, const list<perm_string>&exprs);
       ~IndexType();
       IndexType& operator= (const IndexType&);
       void dump(ostream&o) {
-      	o << "(" << name_ << " " << expr_ << ")";
+      	o << "(" << name_ << " ";
+	for (list<perm_string>::iterator it = exprs_.begin(); it != exprs_.end(); ++it){
+	  o << *it << " ";
+	}
+	o << ")";
       }
       bool equals(SecType* st);
 
+      SecType* apply_index(perm_string index_var, perm_string index_val) {
+	list<perm_string>* nexprs = new list<perm_string>();
+        for (list<perm_string>::iterator it = exprs_.begin(); it != exprs_.end(); it ++) {
+	  if (index_var == *it) {
+	    nexprs->push_back(index_val);
+	  } else {
+	    nexprs->push_back(*it);
+	  }
+	}
+	const list<perm_string>* cexprs = nexprs;
+	return new IndexType(name_, *cexprs);
+      }
     public:
 	// Manipulate the types.
-      void set_type(const perm_string name , perm_string expr);
+      void set_type(const perm_string name , list<perm_string>&exprs);
       perm_string get_name() const;
-      perm_string get_expr() const;
+      list<perm_string> get_exprs() const;
       SecType* subst(perm_string e1, perm_string e2);
       SecType* subst(map<perm_string, perm_string> m);
+      virtual SecType* next_cycle(TypeEnv*env);
       void collect_dep_expr(set<perm_string>& m);
       SecType* freshVars(unsigned int lineno, map<perm_string, perm_string>& m);
       bool hasExpr(perm_string str);
@@ -339,7 +172,7 @@ class IndexType : public SecType {
 
     private:
       perm_string name_;
-      perm_string expr_;
+      list<perm_string> exprs_;
 };
 
 /* a CompType can be a join/meet of CompTypes */
@@ -367,43 +200,14 @@ class JoinType : public SecType {
       bool equals(SecType* st);
       SecType* subst(perm_string e1, perm_string e2);
       SecType* subst(map<perm_string, perm_string> m);
+      virtual SecType* next_cycle(TypeEnv*env);
       void collect_dep_expr(set<perm_string>& m);
       SecType* freshVars(unsigned int lineno, map<perm_string, perm_string>& m);
       bool hasExpr(perm_string str);
 
-      bool has_defs(){ return comp1_->has_defs() || comp2_->has_defs(); }
-
-
-      const char * func_def_string(){ 
-          if(func_def == ""){
-            std::stringstream ss;
-            ss.str("");
-            ss << comp1_->func_def_string() << endl;
-            ss << comp2_->func_def_string();
-            func_def = ss.str(); 
-          }
-          return func_def.c_str();
-      }
-
-
-      virtual void get_bounds(QBounds *b){
-        comp1_->get_bounds(b);
-        comp2_->get_bounds(b);
-      }
-      void collect_bound_exprs(set<perm_string>* m){
-          comp1_->collect_bound_exprs(m);
-          comp1_->collect_bound_exprs(m);
-      }
-      virtual void insert_bound(QBound *b){
-          comp1_->insert_bound(b);
-          comp2_->insert_bound(b);
-      }
-
-  
     private:
 	  SecType* comp1_;
 	  SecType* comp2_;
-      std::string func_def;
 };
 
 class MeetType : public SecType {
@@ -430,41 +234,60 @@ class MeetType : public SecType {
       bool equals(SecType* st);
       SecType* subst(perm_string e1, perm_string e2);
       SecType* subst(map<perm_string, perm_string> m);
+      virtual SecType* next_cycle(TypeEnv*env);
       void collect_dep_expr(set<perm_string>& m);
       SecType* freshVars(unsigned int lineno, map<perm_string, perm_string>& m);
       bool hasExpr(perm_string str);
 
-      bool has_defs(){ return comp1_->has_defs() || comp2_->has_defs(); }
-
-      virtual void get_bounds(QBounds *b){
-        comp1_->get_bounds(b);
-        comp2_->get_bounds(b);
-      }
-      
-      virtual void insert_bound(QBound *b){
-          comp1_->insert_bound(b);
-          comp2_->insert_bound(b);
-      }
-      void collect_bound_exprs(set<perm_string>* m){
-          comp1_->collect_bound_exprs(m);
-          comp1_->collect_bound_exprs(m);
-      }
-
-      const char * func_def_string(){ 
-          if(func_def == ""){
-            std::stringstream ss;
-            ss.str("");
-            ss << comp1_->func_def_string() << endl;
-            ss << comp2_->func_def_string();
-            func_def = ss.str(); 
-          }
-          return func_def.c_str();
-      }
-
     private:
 	  SecType* comp1_;
 	  SecType* comp2_;
-      std::string func_def;
+};
+
+class QuantType : public SecType {
+
+ public:
+  QuantType(perm_string index_var, SecType *st);
+  ~QuantType();
+
+  void collect_dep_expr(set<perm_string>& m);
+  void dump(ostream&o) {
+    _sectype->dump(o);
+  }
+
+  SecType* apply_index(PExpr* index_val) {
+    //for now only support identifiers and numbers as index_values, if it's anything else, throw an error
+    PEIdent* index_id = dynamic_cast<PEIdent*>(index_val);
+    perm_string index_str;
+    if (!index_id) {
+      PENumber* index_num = dynamic_cast<PENumber*>(index_val);
+      if (!index_num) {
+	throw "Quantified types cannot be used with complex index expressions";
+      } else {
+	stringstream ss;
+	ss << *index_num;
+	const std::string* tmp = new string(ss.str());
+	index_str = perm_string::literal(tmp->c_str());	
+      }
+    } else {
+      //TODO throw error if this itself is indexed
+      index_component_t index_idx = index_id->path().back().index.front();
+      if (index_idx.sel != index_component_t::SEL_NONE) {
+	throw "Index expression must not contain an index";
+      }
+      index_str = peek_tail_name(index_id->path());
+    }
+    SecType* replacedType = _sectype->apply_index(_index_var, index_str);
+    SecType* result = new QuantType(_index_var, replacedType);
+    return result;
+  }
+
+ private:
+  perm_string _index_var;
+  SecType *_sectype;
+  PExpr *_index_expr;
+  perm_string _name;
+  
 };
 
 /**
@@ -523,14 +346,18 @@ struct Invariant {
 
 struct TypeEnv {
 	map<perm_string, SecType*> varsToType;
+    map<perm_string, BaseType*> varsToBase;
 	SecType* pc;
     set<perm_string> dep_exprs; // a list of expressions where a dependent type may depend on
     set<perm_string> aliveVars;
+    set<perm_string> seqVars;
     Invariant* invariants;
     Module* module;
 
-	TypeEnv(map<perm_string, SecType*>& m, SecType* pclabel, Module* modu) {
+	TypeEnv(map<perm_string, SecType*>& m, map<perm_string, BaseType*>& b,
+            SecType* pclabel, Module* modu) {
 		varsToType = m;
+        varsToBase = b;
 		pc = pclabel;
 		module = modu;
 		invariants = new Invariant();
@@ -542,47 +369,19 @@ struct TypeEnv {
 
     TypeEnv& operator= (const TypeEnv&);
 };
-//-----------------------------------------------------------------------------
-// Quantified  Type Constraints
-//-----------------------------------------------------------------------------
-struct QFuncDefs{
-    set<SecType*> defs;
-};
 
-inline ostream& operator << (ostream &o, QBound& b){
-    o << "(>= "<<b.qvar<<" "<<b.lower<<")(<= "<<b.qvar<<" "<<b.upper<<")";
-    return o;
-}
 
 struct Constraint {
 	SecType* left;
 	SecType* right;
 	Predicate* pred;
 	Invariant* invariant;
-    QFuncDefs* def;
-    QBounds* bound;
 
-	Constraint(SecType* lhs, SecType* rhs, Invariant* inv, Predicate* p,
-      TypeEnv* env) {
-		left = lhs;
-		right = rhs;
+	Constraint(SecType* l, SecType* r, Invariant* inv, Predicate* p) {
+		left = l;
+		right = r;
 		pred = p;
 		invariant = inv;
-    def = new QFuncDefs();
-    bound = new QBounds();
-
-    if(lhs->has_defs()){
-        def->defs.insert(lhs);
-    }
-    if(rhs->has_defs()){
-        def->defs.insert(rhs);
-    }
-    
-    CalculateQuantBounds(lhs, env);
-    CalculateQuantBounds(rhs, env);
-    lhs->get_bounds(bound);
-    rhs->get_bounds(bound);
-    
 	}
 };
 
@@ -597,15 +396,19 @@ inline ostream& operator << (ostream&o, Predicate& pred)
 {
 	set<Hypothesis*> l = pred.hypotheses;
 	set<Hypothesis*>::iterator i = l.begin();
+	if (l.size() > 1) {
+	  o << "(and ";
+	}
 	if (i != l.end()) {
-		o << "(";
 		(*i)->bexpr_->dumpz3(o);
-		o << ")";
 		i++;
 	}
 	for (; i != l.end() ; i++) {
-		o << " ("; (*i)->bexpr_->dumpz3(o); o << ")";
+	  (*i)->bexpr_->dumpz3(o);
 	}
+	if (l.size() > 1) {
+	  o << ") ";
+	}	
 	return o;
 }
 
@@ -625,79 +428,23 @@ inline ostream& operator << (ostream&o, Invariant& invs)
 	return o;
 }
 
-inline const char* constraint_inner(Constraint&c)
-{
-  std::stringstream o;
-  o.str("");
-    
-  bool hashypo = c.pred != NULL && c.pred->hypotheses.size() != 0;
-    bool hasinv = c.invariant != NULL && c.invariant->invariants.size() != 0;
- 
-    if (hashypo || hasinv)
-        o << "(and ";
-    if (hashypo)
-        o << (*c.pred) << " ";
-    if (hasinv)
-        o << (*c.invariant);
-    o << " (leq " << *(c.right->simplify()) << "  "
-                    << *(c.left->simplify()) << ")";
- 
-  return o.str().c_str();
-}
- 
 inline ostream& operator << (ostream&o, Constraint&c)
 {
- 
-  bool hashypo = c.pred != NULL && c.pred->hypotheses.size() != 0;
-  bool hasinv = c.invariant != NULL && c.invariant->invariants.size() != 0;
-  bool hasbounds = c.bound != NULL && c.bound->bounds.size() != 0;
-  bool hasdefs = c.def != NULL && c.def->defs.size() != 0;
- 
-  if(hasdefs){
-    // Define any functions needed
-    set<SecType*> defs = c.def->defs;
-    set<SecType*>::iterator i = defs.begin();
-    for(; i!=defs.end(); i++){
-      o << (*i)->func_def_string() << endl;
-    }
-  }
- 
-  // Should simplify before this is reached to try to prevent quantification
-  if(hasbounds){
-    // Quantify over the range of the left and right
-    set<QBound*> bounds = c.bound->bounds;
-    set<QBound*>::iterator i = bounds.begin();
-    // Give quantified variable names
-    o << "(assert (not (forall (";
-    for(; i != bounds.end(); i++){
-      o << "(" << (*i)->qvar<< " Int)";
-    }
-    o << ")" << endl;
- 
-    // Give range implications
-    i = bounds.begin();
-    o << "    (implies (and ";
-    for(; i!=bounds.end(); i++) o << (*(*i));
-    o << ")"<< endl <<
-         "        " << constraint_inner(c) << endl <<
-         "    )" << endl <<
-         ")))";
- 
-  } else {
-    o << "(assert ";
-    if (hashypo || hasinv)
-      o << "(and ";
-    if (hashypo)
-      o << (*c.pred) << " ";
-    if (hasinv)
-      o << (*c.invariant);
-    o << " (not(leq " << *(c.right->simplify()) << "  "
-            << *(c.left->simplify()) << ")))";
-    if (hashypo || hasinv)
-      o << ")";
-  }
-  
-  return o;
+	o << "(assert ";
+	bool hashypo = c.pred != NULL && c.pred->hypotheses.size() != 0;
+	bool hasinv = c.invariant != NULL && c.invariant->invariants.size() != 0;;
+
+	if (hashypo || hasinv)
+		o << "(and ";
+	if (hashypo)
+		o << (*c.pred) << " ";
+	if (hasinv)
+		o << (*c.invariant);
+	o << " (not(leq " << *(c.right->simplify()) << "  "
+					<< *(c.left->simplify()) << ")))";
+	if (hashypo || hasinv)
+		o << ")";
+    return o;
 }
 
 #endif

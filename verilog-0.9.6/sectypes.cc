@@ -25,21 +25,19 @@
  */
 # include  <string>
 # include  <sstream>
-# include  <stdio.h>
 # include  "PExpr.h"
 # include  "sectypes.h"
 
 extern StringHeap lex_strings;
+extern perm_string nextify_perm_string(perm_string s);
 
-//----------------------------------------------------------------------------
-// ConstType
-//----------------------------------------------------------------------------
 ConstType* ConstType::TOP = new ConstType(lex_strings.make("HIGH"));
 ConstType* ConstType::BOT = new ConstType(lex_strings.make("LOW"));
 
 ConstType::ConstType()
 {
 	name = lex_strings.make("LOW");
+    // setBaseType(new ComType());
 }
 
 ConstType::ConstType(perm_string n)
@@ -72,9 +70,7 @@ SecType* ConstType::freshVars(unsigned int lineno, map<perm_string, perm_string>
 	return this;
 }
 
-//----------------------------------------------------------------------------a
-// VarType
-//-----------------------------------------------------------------------------
+/* type variables */
 
 VarType::VarType(perm_string varname)
 {
@@ -125,88 +121,15 @@ bool VarType::hasExpr(perm_string str)
 	return varname_ == str;
 }
 
-//-----------------------------------------------------------------------------
-// QuantType
-//-----------------------------------------------------------------------------
-// Universally quantified types.
-QuantType::QuantType(perm_string _index_var, QuantExpr *_expr) 
-{
-    index_var = _index_var;
-    bound = new QBounds();
-    def_expr = _expr->accept(new IndexSwapInVisitor(_index_var));
-}
+list<perm_string> rllist(1, perm_string::literal("ReadLabel"));
+list<perm_string> wllist(1, perm_string::literal("WriteLabel"));
+IndexType* IndexType::RL = new IndexType(perm_string::literal("Par"), rllist);
+IndexType* IndexType::WL = new IndexType(perm_string::literal("Par"), wllist);
 
-bool QuantType::equals(SecType *st){
-  QuantType* at = dynamic_cast<QuantType*>(st);
-  if(at != NULL){
-    // Deep equality check the expression assuming the index is the same.
-    // return expr.equals(at->expr);
-  }
-  return false;
-}
-
-void QuantType::collect_bound_exprs(set<perm_string>* m)
-{
-    void* s_ = index_expr_trans ->accept(new ExprCollector());
-    set<perm_string> s = *(static_cast<set<perm_string>*>(s_));
-    for(set<perm_string>::iterator it=s.begin(); it!=s.end(); it++){
-        m->insert(*it);
-    }
-}
-
-
-SecType * QuantType::apply_index(PExpr* e){
-   // Dunamic typecasting is poor OO-Design. Instead, call a function of PExpr 
-   // that returns a QuantExpr.
-   // For now only handle integers and identifiers.
-
-   // QuantType* ret = deep_copy();
-   // ret->index_expr = PExpr;
-   // ret->index_expr_trans = PExpr->quantTranslation();   
-   // return ret;
-
-
-   PENumber *n = dynamic_cast<PENumber*>(e);
-   if(n != NULL){
-       return apply_index(n);
-   } 
-
-   PEIdent *i = dynamic_cast<PEIdent*>(e);
-   if(i != NULL){
-       return apply_index(i);
-   }
-
-   fprintf(stderr, "currently unsupported indexing expression\n");
-   index_expr_trans = new IQEIndex();
-   return this;
-}
-
-SecType * QuantType::apply_index(PENumber *n){
-    IQENum *v = new IQENum(n->value().as_ulong());
-    index_expr_trans = v;
-    return this;
-    // return new QuantType(index_var,
-    //         expr->accept(new IndexSwapOutVisitor(v)));
-}
-
-SecType * QuantType::apply_index(PEIdent *n){
-   perm_string varname = n->path().front().name;
-   index_expr_trans = new IQEVar(varname);
-   return this; 
-}
-
-
-//-----------------------------------------------------------------------------
-// IndexType
-//-----------------------------------------------------------------------------
-
-IndexType* IndexType::RL = new IndexType(perm_string::literal("Par"), perm_string::literal("ReadLabel"));
-IndexType* IndexType::WL = new IndexType(perm_string::literal("Par"), perm_string::literal("WriteLabel"));
-
-IndexType::IndexType(perm_string name, perm_string expr)
+IndexType::IndexType(perm_string name, const list<perm_string>&exprs)
 {
 	name_ = name;
-	expr_ = expr;
+	exprs_ = exprs;
 }
 
 IndexType::~IndexType()
@@ -215,14 +138,14 @@ IndexType::~IndexType()
 
 IndexType& IndexType::operator= (const IndexType& t)
 {
-	IndexType* ret =  new IndexType(t.name_, t.expr_);
+	IndexType* ret = new IndexType(t.name_, t.exprs_);
 	return *ret;
 }
 
-void IndexType::set_type(const perm_string name , perm_string expr)
+void IndexType::set_type(const perm_string name , list<perm_string>&exprs)
 {
 	name_ = name;
-	expr_ = expr;
+	exprs_ = exprs;
 }
 
 perm_string IndexType::get_name() const
@@ -230,88 +153,106 @@ perm_string IndexType::get_name() const
 	return name_;
 }
 
-perm_string IndexType::get_expr() const
+list<perm_string> IndexType::get_exprs() const
 {
-	return expr_;
+	return exprs_;
 }
 
 SecType* IndexType::subst(perm_string e1, perm_string e2)
 {
-	if (expr_ == e1)
-		return new IndexType(name_, e2);
-	else
-		return this;
+  list<perm_string> *substlist = new list<perm_string>;
+  for (list<perm_string>::iterator it = exprs_.begin(); it != exprs_.end(); ++it){
+    if (*it == e1) {
+      substlist->push_back(e2);
+    } else {
+      substlist->push_back(*it);
+    }
+  }
+  return new IndexType(name_, *substlist);
 }
 
 SecType* IndexType::subst(map<perm_string, perm_string> m)
 {
-	map<perm_string, perm_string>::iterator ite = m.find(expr_);
-	if (ite != m.end())
-		return subst((*ite).first, (*ite).second);
-	else
-		return this;
+  list<perm_string> *substlist = new list<perm_string>;
+  for (list<perm_string>::iterator it = exprs_.begin(); it != exprs_.end(); ++it){
+    map<perm_string, perm_string>::iterator ite = m.find(*it);    
+    if (ite != m.end()) {
+      substlist->push_back(ite->second);
+    } else {
+      substlist->push_back(*it);
+    }
+  }
+  return new IndexType(name_, *substlist); 
+}
+
+SecType* IndexType::next_cycle(TypeEnv*env)
+{
+  list<perm_string> *nextlist = new list<perm_string>;
+  for (list<perm_string>::iterator it = exprs_.begin(); it != exprs_.end(); ++it){
+    BaseType* fv_base = env->varsToBase[*it];
+    if (fv_base->isSeqType()) {
+      nextlist->push_back(nextify_perm_string(*it));
+    } else {
+      nextlist->push_back(*it);
+    }
+  }
+    return new IndexType(name_, *nextlist);
 }
 
 bool IndexType::equals(SecType* st)
 {
 	IndexType* it = dynamic_cast<IndexType*>(st);
 	if (it!=NULL) {
-		return name_ == it->name_ && expr_ == it->expr_;
+		return name_ == it->name_ && exprs_ == it->exprs_;
 	}
 	return false;
 }
 
+bool isConstStr(perm_string s)
+{
+  const char* chars = s.str();
+  int i=0;
+  while (chars[i] != '\0') {
+    if (chars[i] < '0' || chars[i] > '9') {
+      return false;
+    }
+    i++;
+  }
+  return true;
+}
+
 void IndexType::collect_dep_expr(set<perm_string>& m)
 {
-	// expr_ might be replaced with a constant in a substitution. In this case, do not return expr_
-	const char* chars = expr_.str();
-	int i=0;
-	bool succ = true;
-	while (chars[i] != '\0') {
-		if (chars[i] < '0' || chars[i] > '9') {
-			succ = false;
-			break;
-		}
-		i++;
-	}
-	if (!succ)
-		m.insert(expr_);
+  for (list<perm_string>::iterator it = exprs_.begin(); it != exprs_.end(); ++it){
+    perm_string ex = *it;
+    if (!isConstStr(ex)) {      
+      m.insert(ex);
+      // If this is a seqtype and so is its free variable, the next-cycle 
+      // value of the label is the dependand      
+      m.insert(nextify_perm_string(ex));
+    }
+  }
 }
 
 SecType* IndexType::freshVars(unsigned int lineno, map<perm_string, perm_string>& m)
 {
+  list<perm_string> *substlist = new list<perm_string>;
+  for (list<perm_string>::iterator it = exprs_.begin(); it != exprs_.end(); ++it){
 	stringstream ss;
-	ss << expr_ << lineno;
-    const std::string* tmp = new string(ss.str());
+	ss << *it << lineno;
+	const std::string* tmp = new string(ss.str());
 	perm_string newexpr = perm_string::literal(tmp->c_str());
-	m[expr_] = newexpr;
-	return new IndexType(name_, newexpr);
+	m[*it] = newexpr;
+	substlist->push_back(newexpr);
+  }
+  return new IndexType(name_, *substlist);
 }
 
 bool IndexType::hasExpr(perm_string str)
 {
-	return expr_ == str;
+  return (std::find(exprs_.begin(), exprs_.end(), str) != exprs_.end());
 }
 
-// Unclear if the below segments are needed after a merge:
-// CNF& CNF::append(const CNF& cnf)
-// {
-// 	CNF* ret = new CNF();
-// 	ret->cnf_type_.insert(ret->cnf_type_.begin(), cnf_type_.begin(), cnf_type_.end());
-// 	ret->cnf_type_.insert(ret->cnf_type_.begin(), cnf.cnf_type_.begin(), cnf.cnf_type_.end());
-// 	return *ret;
-// }
-// 
-// CNF& CNF::operator= (const CNF& cnf)
-// {
-// 	CNF* ret = new CNF();
-// 	ret->cnf_type_.insert(ret->cnf_type_.begin(), cnf.cnf_type_.begin(), cnf.cnf_type_.end());
-// 	return *ret;
-// }
-
-//-----------------------------------------------------------------------------
-// JoinType
-//-----------------------------------------------------------------------------
 JoinType::JoinType(SecType* ty1, SecType* ty2)
 {
 	comp1_ = ty1;
@@ -348,6 +289,16 @@ SecType* JoinType::subst(map<perm_string, perm_string> m)
 	SecType* comp2new = comp2_->subst(m);
 	if (comp1_ != comp1new || comp2_ != comp2new) {
 		return new JoinType(comp1_->subst(m), comp2_->subst(m));
+	} else
+		return this;
+}
+
+SecType* JoinType::next_cycle(TypeEnv*env)
+{
+	SecType* comp1new = comp1_->next_cycle(env);
+	SecType* comp2new = comp2_->next_cycle(env);
+	if (comp1_ != comp1new || comp2_ != comp2new) {
+		return new JoinType(comp1_->next_cycle(env), comp2_->next_cycle(env));
 	} else
 		return this;
 }
@@ -404,9 +355,6 @@ bool JoinType::hasExpr(perm_string str)
 	return comp1_->hasExpr(str) || comp2_->hasExpr(str);
 }
 
-//-----------------------------------------------------------------------------
-// MeetType
-//-----------------------------------------------------------------------------
 MeetType::MeetType(SecType* ty1, SecType* ty2)
 {
 	comp1_ = ty1;
@@ -443,6 +391,16 @@ SecType* MeetType::subst(map<perm_string, perm_string> m)
 	SecType* comp2new = comp2_->subst(m);
 	if (comp1_ != comp1new || comp2_ != comp2new)
 		return new MeetType(comp1_->subst(m), comp2_->subst(m));
+	else
+		return this;
+}
+
+SecType* MeetType::next_cycle(TypeEnv*env)
+{
+	SecType* comp1new = comp1_->next_cycle(env);
+	SecType* comp2new = comp2_->next_cycle(env);
+	if (comp1_ != comp1new || comp2_ != comp2new)
+		return new MeetType(comp1_->next_cycle(env), comp2_->next_cycle(env));
 	else
 		return this;
 }
@@ -497,6 +455,29 @@ SecType* MeetType::freshVars(unsigned int lineno, map<perm_string, perm_string>&
 bool MeetType::hasExpr(perm_string str)
 {
 	return comp1_->hasExpr(str) || comp2_->hasExpr(str);
+}
+
+//---------------------------------------------
+// QuantType
+//---------------------------------------------
+QuantType::QuantType(perm_string index_var, SecType *type)
+{
+  _index_var = index_var;
+  _name = lex_strings.make("TODO");
+  _sectype = type;
+}
+
+void QuantType::collect_dep_expr(set<perm_string>& m) {
+  bool remove_quantvar = m.find(_index_var) == m.end();
+  _sectype->collect_dep_expr(m);
+  if (remove_quantvar) {
+    std::set<perm_string>::iterator it = m.find(_index_var);
+    if (it != m.end()) {
+      m.erase(it);
+      it = m.find(nextify_perm_string(_index_var));
+      m.erase(it);
+    }
+  }
 }
 
 Hypothesis* Hypothesis::subst(map<perm_string, perm_string> m)

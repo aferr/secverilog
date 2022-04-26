@@ -33,6 +33,7 @@
 # include  "verinum.h"
 # include  "discipline.h"
 # include  "sectypes.h"
+# include  "QuantExpr.h"
 # include  <iostream>
 # include  <string>
 # include  <list>
@@ -154,6 +155,7 @@ extern void pform_module_define_port(const struct vlltype&li,
 				     NetNet::PortType,
 				     NetNet::Type type,
 				     SecType* st,
+				     BaseType* bt,
 				     bool signed_flag,
 				     svector<PExpr*>*range,
 				     svector<named_pexpr_t*>*attr);
@@ -224,7 +226,7 @@ extern void pform_makewire(const struct vlltype&li, perm_string name,
 			   NetNet::PortType pt,
 			   ivl_variable_type_t,
 			   svector<named_pexpr_t*>*attr,
-			   SecType* st=new ConstType());
+			   SecType* st=new ConstType(), BaseType* bt = new BaseType());
 
 /* This form handles simple declarations */
 extern void pform_makewire(const struct vlltype&li,
@@ -245,6 +247,7 @@ extern void pform_makewire(const struct vlltype&li,
 			   NetNet::PortType,
 			   ivl_variable_type_t,
 			   SecType* st,
+			   BaseType* bt,
 			   svector<named_pexpr_t*>*attr,
 			   PWSRType rt = SR_NET);
 
@@ -257,7 +260,19 @@ extern void pform_makewire(const struct vlltype&li,
 			   net_decl_assign_t*assign_list,
 			   NetNet::Type type,
 			   ivl_variable_type_t,
-			   SecType* st);
+			   SecType* st,
+               BaseType* bt);
+
+extern void pform_makewire(const struct vlltype&li,
+			   svector<PExpr*>*range,
+			   bool signed_flag,
+			   svector<PExpr*>*delay,
+			   str_pair_t str,
+               list<perm_string>* names, 
+			   NetNet::Type type,
+			   ivl_variable_type_t,
+			   SecType* st,
+               BaseType* bt);
 
 extern void pform_make_reginit(const struct vlltype&li,
 			       perm_string name, PExpr*expr);
@@ -270,9 +285,10 @@ extern void pform_set_port_type(const struct vlltype&li,
 				svector<PExpr*>*range,
 				bool signed_flag,
 				NetNet::PortType,
-				SecType* st);
+				SecType* st,
+                BaseType*bt);
 extern void pform_set_port_type(perm_string nm, NetNet::PortType pt, SecType* st,
-				const char*file, unsigned lineno);
+				BaseType*bt, const char*file, unsigned lineno);
 
 extern void pform_set_net_range(list<perm_string>*names,
 				svector<PExpr*>*,
@@ -284,12 +300,13 @@ extern void pform_set_net_range_type(list<perm_string>*names,
 				bool signed_flag,
 				ivl_variable_type_t,
 				SecType*,
+                BaseType*,
 				PWSRType rt = SR_NET);
 extern void pform_set_reg_idx(perm_string name, PExpr*l, PExpr*r);
 extern void pform_set_reg_integer(list<perm_string>*names);
-extern void pform_set_reg_integer_type(list<perm_string>*names, SecType*st);
+extern void pform_set_reg_integer_type(list<perm_string>*names, SecType*st, BaseType*bt);
 extern void pform_set_reg_time(list<perm_string>*names);
-extern void pform_set_reg_time_type(list<perm_string>*names, SecType*st);
+extern void pform_set_reg_time_type(list<perm_string>*names, SecType*st, BaseType*bt);
 
   /* pform_set_attrib and pform_set_type_attrib exist to support the
      $attribute syntax, which can only set string values to

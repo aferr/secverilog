@@ -70,5 +70,10 @@ extern unsigned long based_size;
 extern bool in_celldefine;
 enum UCDriveType { UCD_NONE, UCD_PULL0, UCD_PULL1 };
 extern UCDriveType uc_drive;
+named_pexpr_t* nextify_named_pexpr(named_pexpr_t*n);
+svector<named_pexpr_t*>* nextify_named_pexpr_list(svector<named_pexpr_t*>*l);
+list<perm_string>* nextify_perm_strings(list<perm_string>*l);
+list<perm_string>* nextify_net_decl_names(net_decl_assign_t*nda);
+perm_string nextify_perm_string(perm_string s);
 
 #endif

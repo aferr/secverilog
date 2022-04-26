@@ -152,8 +152,12 @@ class Module : public PScope, public LineInfo {
 
       bool elaborate_sig(Design*, NetScope*scope) const;
 
-      void typecheck(ostream&out, TypeEnv& env, map<perm_string,Module*> modules, char* depfun) const;
+      void typecheck(ostream&out, TypeEnv& env, map<perm_string,Module*> modules, char* depfun);
+      void next_cycle_transform(ostream&out, TypeEnv& env);
+      void dumpExprDefs(ostream&out, set<perm_string>exprs) const;
       void CollectDepExprs(ostream&out, TypeEnv & env) const;
+      void CollectDepInvariants(ostream&out, TypeEnv & env) const;
+      PProcess* gen_assign_next_block(perm_string);
 
     private:
       list<PGate*> gates_;

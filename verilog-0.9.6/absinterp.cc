@@ -78,16 +78,28 @@ void PCase::absintp(Predicate& pred, TypeEnv& env, unsigned idx) const
 /**
  * Set up a predicate for branches, if the condition is simple.
  */
-void PCondit::absintp(Predicate& pred, TypeEnv& env, bool istrue) const
+void PCondit::absintp(Predicate& pred, TypeEnv& env, bool istrue, bool useAllExprs) const
 {
-	if (istrue && if_) {
-		if (expr_->is_wellformed(env.dep_exprs))
-			pred.hypotheses.insert(new Hypothesis(expr_->to_wellformed(env.dep_exprs)));
-	}
-	else if (else_) {
-		if (expr_->is_neg_wellformed(env.dep_exprs))
-			pred.hypotheses.insert(new Hypothesis(new PEUnary('N', expr_->neg_to_wellformed(env.dep_exprs))));
-	}
+  //If the condition is just a variable, set it up as equal to 1 or 0
+  PEIdent* condvar = dynamic_cast<PEIdent*>(expr_);
+  if (istrue && if_) {
+    if (useAllExprs || expr_->is_wellformed(env.dep_exprs)) {
+      if (condvar != NULL) {
+	pred.hypotheses.insert(new Hypothesis((useAllExprs) ? expr_ : expr_->to_wellformed(env.dep_exprs), new PENumber(new verinum((uint64_t)1, 32))));	
+      } else {
+	pred.hypotheses.insert(new Hypothesis((useAllExprs) ? expr_ : expr_->to_wellformed(env.dep_exprs)));
+      }
+    }
+  }
+  else if (!istrue && else_) {
+    if (useAllExprs || expr_->is_neg_wellformed(env.dep_exprs)) {
+      if (condvar != NULL) {
+	pred.hypotheses.insert(new Hypothesis((useAllExprs) ? expr_ : expr_->neg_to_wellformed(env.dep_exprs), new PENumber(new verinum((uint64_t)0, 32))));	
+      } else {
+	pred.hypotheses.insert(new Hypothesis(new PEUnary('N', (useAllExprs) ? expr_ : expr_->neg_to_wellformed(env.dep_exprs))));
+      }
+    }
+  }
 }
 
 /**

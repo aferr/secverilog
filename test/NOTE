@@ -1,0 +1,14 @@
+Make a copy of secverilog.cp, named secverilog. Configure $z3home and
+$iverilog in this copy the folders of Z3 and iverilog binaries, if
+they are not in the PATH variable.
+
+Use the following commands to verify the examples contained in this
+folder. The expected results are contained in files "*.expected".
+
+./secverilog -F deptype-example.fun -z deptype-example.v
+
+./secverilog -F diamond.fun -z diamond.v
+
+./secverilog -F oneway.fun -l oneway.lattice -z oneway.v
+
+./secverilog -F diamond.fun -z mux.v

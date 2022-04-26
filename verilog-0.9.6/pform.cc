@@ -1016,10 +1016,10 @@ void pform_make_udp(perm_string name, bool synchronous_flag,
       svector<PWire*> pins(parms->size() + 1);
 
 	/* Make the PWire for the output port. */
-      cerr << "Unchecked code in pform_make_udp pform.cc" << endl;
+      //      cerr << "Unchecked code in pform_make_udp pform.cc" << endl;
       pins[0] = new PWire(out_name,
 			  synchronous_flag? NetNet::REG : NetNet::WIRE,
-			  NetNet::POUTPUT, new ConstType(), IVL_VT_LOGIC);
+			  NetNet::POUTPUT, new ConstType(), new BaseType(), IVL_VT_LOGIC);
       FILE_NAME(pins[0], file, lineno);
 
 	/* Make the PWire objects for the input ports. */
@@ -1030,7 +1030,7 @@ void pform_make_udp(perm_string name, bool synchronous_flag,
 		   ;  idx += 1, cur++) {
 	      assert(idx < pins.count());
 	      pins[idx] = new PWire(*cur, NetNet::WIRE,
-				    NetNet::PINPUT, new ConstType(), IVL_VT_LOGIC);
+				    NetNet::PINPUT, new ConstType(), new BaseType(), IVL_VT_LOGIC);
 	      FILE_NAME(pins[idx], file, lineno);
 	}
 	assert(idx == pins.count());
@@ -1096,6 +1096,7 @@ static void pform_set_net_range(perm_string name,
 				bool signed_flag,
 				ivl_variable_type_t dt,
 				SecType* st,
+				BaseType* bt,
 				PWSRType rt)
 {
       PWire*cur = pform_get_wire_in_scope(name);
@@ -1121,6 +1122,7 @@ static void pform_set_net_range(perm_string name,
 	    cur->set_data_type(dt);
 
       cur->set_sec_type(st);
+      cur->set_base_type(bt);
 }
 
 void pform_set_net_range(list<perm_string>*names,
@@ -1129,7 +1131,8 @@ void pform_set_net_range(list<perm_string>*names,
 			 ivl_variable_type_t dt,
 			 PWSRType rt)
 {
-	pform_set_net_range_type(names, range, signed_flag, dt, new ConstType(), rt);
+	pform_set_net_range_type(names, range, signed_flag, dt,
+            new ConstType(), new BaseType(), rt);
 }
 
 void pform_set_net_range_type(list<perm_string>*names,
@@ -1137,20 +1140,27 @@ void pform_set_net_range_type(list<perm_string>*names,
 			 bool signed_flag,
 			 ivl_variable_type_t dt,
 			 SecType* st,
+			 BaseType* bt,
 			 PWSRType rt)
 {
-      assert((range == 0) || (range->count() == 2));
-
+      bool good_cond = ((range == 0) || (range->count() == 2));
       for (list<perm_string>::iterator cur = names->begin()
 		 ; cur != names->end()
 		 ; cur ++ ) {
 	    perm_string txt = *cur;
-	    pform_set_net_range(txt, range, signed_flag, dt, st, rt);
-      }
 
+        if(debug_typecheck && !good_cond)
+                fprintf(stderr, "net %s\n", txt.str());
+	    pform_set_net_range(txt, range, signed_flag, dt, st, bt, rt);
+      }
+      assert(good_cond);
+
+      // Not free anymore :)
+      /*
       delete names;
       if (range)
 	    delete range;
+        */
 }
 
 /*
@@ -1478,6 +1488,7 @@ void pform_module_define_port(const struct vlltype&li,
 			      NetNet::PortType port_type,
 			      NetNet::Type type,
 			      SecType* sec_type,
+			      BaseType* base_type,
 			      bool signed_flag,
 			      svector<PExpr*>*range,
 			      svector<named_pexpr_t*>*attr)
@@ -1492,8 +1503,7 @@ void pform_module_define_port(const struct vlltype&li,
 	    return;
       }
 
-
-      cur = new PWire(name, type, port_type, sec_type, IVL_VT_LOGIC);
+      cur = new PWire(name, type, port_type, sec_type, base_type, IVL_VT_LOGIC);
       FILE_NAME(cur, li);
 
       cur->set_signed(signed_flag);
@@ -1550,7 +1560,7 @@ void pform_makewire(const vlltype&li, perm_string name,
 		    NetNet::Type type, NetNet::PortType pt,
 		    ivl_variable_type_t dt,
 		    svector<named_pexpr_t*>*attr,
-		    SecType* st)
+		    SecType* st, BaseType* bt)
 {
       PWire*cur = pform_get_wire_in_scope(name);
 
@@ -1572,7 +1582,7 @@ void pform_makewire(const vlltype&li, perm_string name,
       bool new_wire_flag = false;
       if (! cur) {
 	    new_wire_flag = true;
-	    cur = new PWire(name, type, pt, st, dt);
+	    cur = new PWire(name, type, pt, st, bt, dt);
 	    FILE_NAME(cur, li.text, li.first_line);
       }
 
@@ -1623,7 +1633,8 @@ void pform_makewire(const vlltype&li,
 		    svector<named_pexpr_t*>*attr,
 		    PWSRType rt)
 {
-	pform_makewire(li, range, signed_flag, names, type, pt, dt, new ConstType(), attr, rt);
+	pform_makewire(li, range, signed_flag, names, type, pt, dt,
+            new ConstType(), new BaseType(), attr, rt);
 }
 
 void pform_makewire(const vlltype&li,
@@ -1633,7 +1644,7 @@ void pform_makewire(const vlltype&li,
 		    NetNet::Type type,
 		    NetNet::PortType pt,
 		    ivl_variable_type_t dt,
-		    SecType* st,
+		    SecType* st, BaseType* bt,
 		    svector<named_pexpr_t*>*attr,
 		    PWSRType rt)
 {
@@ -1641,10 +1652,11 @@ void pform_makewire(const vlltype&li,
 		 ; cur != names->end()
 		 ; cur ++ ) {
 	    perm_string txt = *cur;
-	    pform_makewire(li, txt, type, pt, dt, attr, st);
+	    pform_makewire(li, txt, type, pt, dt, attr, st, bt);
+
 	    /* This has already been done for real variables. */
 	    if (dt != IVL_VT_REAL) {
-		  pform_set_net_range(txt, range, signed_flag, dt, st, rt);
+		  pform_set_net_range(txt, range, signed_flag, dt, st, bt, rt);
 	    }
       }
 
@@ -1664,7 +1676,7 @@ void pform_makewire(const vlltype&li,
 		    net_decl_assign_t*decls,
 		    NetNet::Type type,
 		    ivl_variable_type_t dt,
-		    SecType* st)
+		    SecType* st, BaseType* bt)
 {
       net_decl_assign_t*first = decls->next;
       decls->next = 0;
@@ -1672,11 +1684,11 @@ void pform_makewire(const vlltype&li,
       while (first) {
 	    net_decl_assign_t*next = first->next;
 
-	    pform_makewire(li, first->name, type, NetNet::NOT_A_PORT, dt, 0, st);
+	    pform_makewire(li, first->name, type, NetNet::NOT_A_PORT, dt, 0, st, bt);
 	    /* This has already been done for real variables. */
 	    if (dt != IVL_VT_REAL) {
-		  pform_set_net_range(first->name, range, signed_flag, dt, st,
-		                      SR_NET);
+		  pform_set_net_range(first->name, range, signed_flag, dt,
+                  st, bt, SR_NET);
 	    }
 
 	    PWire*cur = pform_get_wire_in_scope(first->name);
@@ -1693,17 +1705,45 @@ void pform_makewire(const vlltype&li,
       }
 }
 
-void pform_set_port_type(perm_string name, NetNet::PortType pt, SecType* st,
+void pform_makewire(const vlltype&li,
+		    svector<PExpr*>*range,
+		    bool signed_flag,
+		    svector<PExpr*>*delay,
+		    str_pair_t str,
+		    list<perm_string>*decls,
+		    NetNet::Type type,
+		    ivl_variable_type_t dt,
+		    SecType* st, BaseType* bt)
+{
+      typedef list<perm_string>::const_iterator sitr_t;
+     
+      for(sitr_t cur = decls->begin(); cur!= decls->end(); cur++){
+	    pform_makewire(li, *cur, type, NetNet::NOT_A_PORT, dt, 0, st, bt);
+	    /* This has already been done for real variables. */
+	    if (dt != IVL_VT_REAL) {
+		  pform_set_net_range(*cur, range, signed_flag, dt,
+                  st, bt, SR_NET);
+	    }
+
+      }
+}
+
+
+
+void pform_set_port_type(perm_string name, NetNet::PortType pt, SecType* st, BaseType* bt,
 			 const char*file, unsigned lineno)
 {
       PWire*cur = pform_get_wire_in_scope(name);
       if (cur == 0) {
-	    cur = new PWire(name, NetNet::IMPLICIT, NetNet::PIMPLICIT, st, IVL_VT_NO_TYPE);
+	    // cur = new PWire(name, NetNet::IMPLICIT, NetNet::PIMPLICIT, st, IVL_VT_NO_TYPE);
+        cur = new PWire(name, NetNet::IMPLICIT, NetNet::PIMPLICIT, st,
+                bt, IVL_VT_NO_TYPE);
 	    FILE_NAME(cur, file, lineno);
 	    pform_put_wire_in_scope(name, cur);
       }
 
       cur->set_sec_type(st);
+      cur->set_base_type(bt);
 
       switch (cur->get_port_type()) {
 	  case NetNet::PIMPLICIT:
@@ -1778,7 +1818,7 @@ svector<PWire*>*pform_make_task_ports(NetNet::PortType pt,
 {
       assert(names);
       svector<PWire*>*res = new svector<PWire*>(0);
-      cerr << "Unchecked code pform_make_task_ports pform.cc" << endl;
+      //      cerr << "Unchecked code pform_make_task_ports pform.cc" << endl;
       for (list<perm_string>::iterator cur = names->begin()
 		 ; cur != names->end() ; cur ++ ) {
 
@@ -1790,7 +1830,8 @@ svector<PWire*>*pform_make_task_ports(NetNet::PortType pt,
 	    if (curw) {
 		  curw->set_port_type(pt);
 	    } else {
-		  curw = new PWire(name, NetNet::IMPLICIT_REG, pt, new ConstType(), vtype);
+		  curw = new PWire(name, NetNet::IMPLICIT_REG, pt,
+                  new ConstType(), new BaseType(), vtype);
 		  FILE_NAME(curw, file, lineno);
 		  pform_put_wire_in_scope(name, curw);
 	    }
@@ -1965,6 +2006,18 @@ void pform_set_localparam(const struct vlltype&loc,
       assert(expr);
       Module::param_expr_t&parm = pform_get_cur_scope()->localparams[name];
       FILE_NAME(&parm, loc);
+      if(debug_typecheck){
+          cerr << "adding localparam " << name;
+        if(dynamic_cast<PScope*>(scope)) {
+            PScope* ps = dynamic_cast<PScope*>(scope);
+              cerr << "to pscope " << ps->pscope_name().str() << endl;
+        } else {
+            fprintf(stderr, "checking localparams for a non-pscope lexscope\n");
+        }
+
+          cerr << "to pscope " << pform_get_cur_scope() << endl;
+          //cerr << "sanity check " << pform_get_cur_scope()->localparams[name] << endl;
+      }
 
       parm.expr = expr;
 
@@ -2079,15 +2132,16 @@ void pform_set_port_type(const struct vlltype&li,
 			 svector<PExpr*>*range,
 			 bool signed_flag,
 			 NetNet::PortType pt,
-			 SecType* st)
+			 SecType* st,
+             BaseType* bt)
 {
       for (list<perm_string>::iterator cur = names->begin()
 		 ; cur != names->end()
 		 ; cur ++ ) {
 	    perm_string txt = *cur;
-	    pform_set_port_type(txt, pt, st, li.text, li.first_line);
+	    pform_set_port_type(txt, pt, st, bt, li.text, li.first_line);
 	    pform_set_net_range(txt, range, signed_flag, IVL_VT_NO_TYPE, st,
-	                        SR_PORT);
+	                        bt, SR_PORT);
       }
 
       delete names;
@@ -2095,12 +2149,12 @@ void pform_set_port_type(const struct vlltype&li,
 	    delete range;
 }
 
-static void pform_set_reg_integer(perm_string name, SecType* st)
+static void pform_set_reg_integer(perm_string name, SecType* st, BaseType*bt)
 {
       PWire*cur = pform_get_wire_in_scope(name);
       if (cur == 0) {
 	    cur = new PWire(name, NetNet::INTEGER,
-			    NetNet::NOT_A_PORT, st,
+			    NetNet::NOT_A_PORT, st, bt,
 			    IVL_VT_LOGIC);
 	    cur->set_signed(true);
 	    pform_put_wire_in_scope(name, cur);
@@ -2117,29 +2171,30 @@ static void pform_set_reg_integer(perm_string name, SecType* st)
 		     SR_NET, false);
       cur->set_signed(true);
       cur->set_sec_type(st);
+      cur->set_base_type(bt);
 }
 
 void pform_set_reg_integer(list<perm_string>*names)
 {
-	pform_set_reg_integer_type(names, new ConstType());
+	pform_set_reg_integer_type(names, new ConstType(), new BaseType());
 }
 
-void pform_set_reg_integer_type(list<perm_string>*names, SecType* st)
+void pform_set_reg_integer_type(list<perm_string>*names, SecType* st, BaseType*bt)
 {
       for (list<perm_string>::iterator cur = names->begin()
 		 ; cur != names->end()
 		 ; cur ++ ) {
 	    perm_string txt = *cur;
-	    pform_set_reg_integer(txt, st);
+	    pform_set_reg_integer(txt, st, bt);
       }
       delete names;
 }
 
-static void pform_set_reg_time(perm_string name, SecType* st)
+static void pform_set_reg_time(perm_string name, SecType* st, BaseType* bt)
 {
       PWire*cur = pform_get_wire_in_scope(name);
       if (cur == 0) {
-	    cur = new PWire(name, NetNet::REG, NetNet::NOT_A_PORT, st, IVL_VT_LOGIC);
+	    cur = new PWire(name, NetNet::REG, NetNet::NOT_A_PORT, st, bt, IVL_VT_LOGIC);
 	    pform_put_wire_in_scope(name, cur);
       } else {
 	    bool rc = cur->set_wire_type(NetNet::REG);
@@ -2153,20 +2208,21 @@ static void pform_set_reg_time(perm_string name, SecType* st)
 		     new PENumber(new verinum((uint64_t)0, integer_width)),
 		     SR_NET, false);
       cur->set_sec_type(st);
+      cur->set_base_type(bt);
 }
 
 void pform_set_reg_time(list<perm_string>*names)
 {
-	pform_set_reg_time_type(names, new ConstType());
+	pform_set_reg_time_type(names, new ConstType(), new BaseType());
 }
 
-void pform_set_reg_time_type(list<perm_string>*names, SecType* st)
+void pform_set_reg_time_type(list<perm_string>*names, SecType* st, BaseType* bt)
 {
       for (list<perm_string>::iterator cur = names->begin()
 		 ; cur != names->end()
 		 ; cur ++ ) {
 	    perm_string txt = *cur;
-	    pform_set_reg_time(txt, st);
+	    pform_set_reg_time(txt, st, bt);
       }
       delete names;
 }
@@ -2175,7 +2231,7 @@ svector<PWire*>* pform_make_udp_input_ports(list<perm_string>*names)
 {
       svector<PWire*>*out = new svector<PWire*>(names->size());
 
-      cerr << "Unchecked code pform_make_udp_input_ports pform.cc" << endl;
+      //      cerr << "Unchecked code pform_make_udp_input_ports pform.cc" << endl;
       unsigned idx = 0;
       for (list<perm_string>::iterator cur = names->begin()
 		 ; cur != names->end()
@@ -2185,6 +2241,7 @@ svector<PWire*>* pform_make_udp_input_ports(list<perm_string>*names)
 				 NetNet::IMPLICIT,
 				 NetNet::PINPUT,
 				 new ConstType(),
+                 new BaseType(),
 				 IVL_VT_LOGIC);
 	    (*out)[idx] = pp;
 	    idx += 1;

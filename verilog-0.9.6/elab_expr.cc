@@ -1849,7 +1849,7 @@ bool PEIdent::calculate_parts_(Design*des, NetScope*scope,
 			       long&msb, long&lsb, bool&defined) const
 {
       defined = true;
-      const name_component_t&name_tail = path_.back();
+      const name_component_t&name_tail = path().back();
       ivl_assert(*this, !name_tail.index.empty());
 
       const index_component_t&index_tail = name_tail.index.back();
@@ -1916,7 +1916,7 @@ bool PEIdent::calculate_parts_(Design*des, NetScope*scope,
 bool PEIdent::calculate_up_do_width_(Design*des, NetScope*scope,
 				     unsigned long&wid) const
 {
-      const name_component_t&name_tail = path_.back();
+      const name_component_t&name_tail = path().back();
       ivl_assert(*this, !name_tail.index.empty());
 
       const index_component_t&index_tail = name_tail.index.back();
@@ -1955,7 +1955,7 @@ bool PEIdent::calculate_up_do_width_(Design*des, NetScope*scope,
  */
 NetExpr* PEIdent::calculate_up_do_base_(Design*des, NetScope*scope) const
 {
-      const name_component_t&name_tail = path_.back();
+      const name_component_t&name_tail = path().back();
       ivl_assert(*this, !name_tail.index.empty());
 
       const index_component_t&index_tail = name_tail.index.back();
@@ -2018,13 +2018,13 @@ unsigned PEIdent::test_width(Design*des, NetScope*scope,
 
       const NetExpr*ex1, *ex2;
 
-      symbol_search(0, des, scope, path_, net, par, eve, ex1, ex2);
+      symbol_search(0, des, scope, path(), net, par, eve, ex1, ex2);
 
 	// If there is a part/bit select expression, then process it
 	// here. This constrains the results no matter what kind the
 	// name is.
 
-      const name_component_t&name_tail = path_.back();
+      const name_component_t&name_tail = path().back();
       index_component_t::ctype_t use_sel = index_component_t::SEL_NONE;
       if (!name_tail.index.empty()) {
 	    probe_index_expr_width(des, scope, name_tail);
@@ -2143,7 +2143,7 @@ NetExpr* PEIdent::elaborate_expr(Design*des, NetScope*scope,
 
       const NetExpr*ex1, *ex2;
 
-      NetScope*found_in = symbol_search(this, des, scope, path_,
+      NetScope*found_in = symbol_search(this, des, scope, path(),
 					net, par, eve,
 					ex1, ex2);
 
@@ -2169,11 +2169,11 @@ NetExpr* PEIdent::elaborate_expr(Design*des, NetScope*scope,
 	// Hmm... maybe this is a genvar? This is only possible while
 	// processing generate blocks, but then the genvar_tmp will be
 	// set in the scope.
-      if (path_.size() == 1
+      if (path().size() == 1
 	  && scope->genvar_tmp.str()
-	  && strcmp(peek_tail_name(path_), scope->genvar_tmp) == 0) {
+	  && strcmp(peek_tail_name(path()), scope->genvar_tmp) == 0) {
 	    if (debug_elaborate)
-		  cerr << get_fileline() << ": debug: " << path_
+		  cerr << get_fileline() << ": debug: " << path() 
 		       << " is genvar with value " << scope->genvar_tmp_val
 		       << "." << endl;
 	    verinum val (scope->genvar_tmp_val);
@@ -2186,8 +2186,8 @@ NetExpr* PEIdent::elaborate_expr(Design*des, NetScope*scope,
 	// specparam. If we find it, then turn it into a NetEConst
 	// value and return that.
       map<perm_string,NetScope::spec_val_t>::const_iterator specp;
-      perm_string key = peek_tail_name(path_);
-      if (path_.size() == 1 &&
+      perm_string key = peek_tail_name(path());
+      if (path().size() == 1 &&
           ((specp = scope->specparams.find(key)) != scope->specparams.end())) {
 	    NetScope::spec_val_t value = (*specp).second;
 	    NetExpr*tmp = 0;
@@ -2205,23 +2205,23 @@ NetExpr* PEIdent::elaborate_expr(Design*des, NetScope*scope,
 	    tmp->set_line(*this);
 
 	    if (debug_elaborate)
-		  cerr << get_fileline() << ": debug: " << path_
+		  cerr << get_fileline() << ": debug: " << path()
 		       << " is a specparam" << endl;
 	    return tmp;
       }
 
       if (error_implicit==false
 	  && sys_task_arg==false
-	  && path_.size()==1
+	  && path().size()==1
 	  && scope->default_nettype() != NetNet::NONE) {
 	    NetNet::Type nettype = scope->default_nettype();
-	    net = new NetNet(scope, peek_tail_name(path_), nettype, 1);
+	    net = new NetNet(scope, peek_tail_name(path()), nettype, 1);
 	    net->data_type(IVL_VT_LOGIC);
 	    net->set_line(*this);
 	    if (warn_implicit) {
 		  cerr << get_fileline() << ": warning: implicit "
 			"definition of wire " << scope_path(scope)
-		       << "." << peek_tail_name(path_) << "." << endl;
+		       << "." << peek_tail_name(path()) << "." << endl;
 	    }
 	    return elaborate_expr_net(des, scope, net, scope, sys_task_arg);
       }
@@ -2233,7 +2233,7 @@ NetExpr* PEIdent::elaborate_expr(Design*des, NetScope*scope,
       if (! sys_task_arg) {
 	      // I cannot interpret this identifier. Error message.
 	    cerr << get_fileline() << ": error: Unable to bind wire/reg/memory "
-		  "`" << path_ << "' in `" << scope_path(scope) << "'" << endl;
+		  "`" << path() << "' in `" << scope_path(scope) << "'" << endl;
 	    des->errors += 1;
 	    return 0;
       }
@@ -2241,8 +2241,8 @@ NetExpr* PEIdent::elaborate_expr(Design*des, NetScope*scope,
 	// Finally, if this is a scope name, then return that. Look
 	// first to see if this is a name of a local scope. Failing
 	// that, search globally for a hierarchical name.
-      if ((path_.size() == 1)) {
-	    hname_t use_name ( peek_tail_name(path_) );
+      if ((path().size() == 1)) {
+	    hname_t use_name ( peek_tail_name(path()) );
 	    if (NetScope*nsc = scope->child(use_name)) {
 		  NetEScope*tmp = new NetEScope(nsc);
 		  tmp->set_line(*this);
@@ -2256,9 +2256,9 @@ NetExpr* PEIdent::elaborate_expr(Design*des, NetScope*scope,
 	    }
       }
 
-      list<hname_t> spath = eval_scope_path(des, scope, path_);
+      list<hname_t> spath = eval_scope_path(des, scope, path());
 
-      ivl_assert(*this, spath.size() == path_.size());
+      ivl_assert(*this, spath.size() == path().size());
 
 	// Try full hierarchical scope name.
       if (NetScope*nsc = des->find_scope(spath)) {
@@ -2268,7 +2268,7 @@ NetExpr* PEIdent::elaborate_expr(Design*des, NetScope*scope,
 	    if (debug_elaborate)
 		  cerr << get_fileline() << ": debug: Found scope "
 		       << nsc->basename()
-		       << " path=" << path_ << endl;
+		       << " path=" << path() << endl;
 
 	    if (! sys_task_arg) {
 		  cerr << get_fileline() << ": error: Scope name "
@@ -2293,7 +2293,7 @@ NetExpr* PEIdent::elaborate_expr(Design*des, NetScope*scope,
 
 	// I cannot interpret this identifier. Error message.
       cerr << get_fileline() << ": error: Unable to bind wire/reg/memory "
-	    "`" << path_ << "' in `" << scope_path(scope) << "'" << endl;
+	    "`" << path() << "' in `" << scope_path(scope) << "'" << endl;
       des->errors += 1;
       return 0;
 }
@@ -2348,8 +2348,8 @@ NetExpr* PEIdent::elaborate_expr_param_part_(Design*des, NetScope*scope,
 
       if (! parts_defined_flag) {
 	    if (warn_ob_select) {
-		  const index_component_t&psel = path_.back().index.back();
-		  perm_string name = peek_tail_name(path_);
+		  const index_component_t&psel = path().back().index.back();
+		  perm_string name = peek_tail_name(path());
 		  cerr << get_fileline() << ": warning: "
 		          "Undefined part select [" << *(psel.msb) << ":"
 		       << *(psel.lsb) << "] for parameter '" << name
@@ -2369,7 +2369,7 @@ NetExpr* PEIdent::elaborate_expr_param_part_(Design*des, NetScope*scope,
 	// direction matches the part select direction. After that,
 	// we only need the par_lsv.
       if ((msv>lsv && par_msv<par_lsv) || (msv<lsv && par_msv>=par_lsv)) {
-	    perm_string name = peek_tail_name(path_);
+	    perm_string name = peek_tail_name(path());
 	    cerr << get_fileline() << ": error: Part select " << name
 		 << "[" << msv << ":" << lsv << "] is out of order." << endl;
 	    des->errors += 1;
@@ -2389,7 +2389,7 @@ NetExpr* PEIdent::elaborate_expr_param_part_(Design*des, NetScope*scope,
 
       if (warn_ob_select) {
 	    if (base < 0) {
-		  perm_string name = peek_tail_name(path_);
+		  perm_string name = peek_tail_name(path());
 		  cerr << get_fileline() << ": warning: Part select "
 		       << "[" << msv << ":" << lsv << "] is selecting "
 		          "before the parameter " << name << "[";
@@ -2401,7 +2401,7 @@ NetExpr* PEIdent::elaborate_expr_param_part_(Design*des, NetScope*scope,
 	    }
 	    if (par_ex->value().has_len() &&
                 (base+wid > (long)par->expr_width())) {
-		  perm_string name = peek_tail_name(path_);
+		  perm_string name = peek_tail_name(path());
 		  cerr << get_fileline() << ": warning: Part select "
 		       << name << "[" << msv << ":" << lsv << "] is selecting "
 		          "after the parameter " << name << "[" << par_msv
@@ -2482,7 +2482,7 @@ NetExpr* PEIdent::elaborate_expr_param_idx_up_(Design*des, NetScope*scope,
 		  ex = new NetEConst(verinum(verinum::Vx, wid, true));
 		  ex->set_line(*this);
 		  if (warn_ob_select) {
-			perm_string name = peek_tail_name(path_);
+			perm_string name = peek_tail_name(path());
 			cerr << get_fileline() << ": warning: " << name
 			     << "['bx+:" << wid
 			     << "] is always outside vector." << endl;
@@ -2509,7 +2509,7 @@ NetExpr* PEIdent::elaborate_expr_param_idx_up_(Design*des, NetScope*scope,
 		    // Get the parameter values width.
                   long pwid = -1;
                   if (par_ex->has_width()) pwid = par_ex->expr_width()-1;
-                  perm_string name = peek_tail_name(path_);
+                  perm_string name = peek_tail_name(path());
                   warn_param_ob(par_msv, par_lsv, defined, lsv-par_base, wid,
                                 pwid, this, name, true);
 	    }
@@ -2561,7 +2561,7 @@ NetExpr* PEIdent::elaborate_expr_param_idx_do_(Design*des, NetScope*scope,
 		  ex = new NetEConst(verinum(verinum::Vx, wid, true));
 		  ex->set_line(*this);
 		  if (warn_ob_select) {
-			perm_string name = peek_tail_name(path_);
+			perm_string name = peek_tail_name(path());
 			cerr << get_fileline() << ": warning: " << name
 			     << "['bx-:" << wid
 			     << "] is always outside vector." << endl;
@@ -2588,7 +2588,7 @@ NetExpr* PEIdent::elaborate_expr_param_idx_do_(Design*des, NetScope*scope,
 		    // Get the parameter values width.
                   long pwid = -1;
                   if (par_ex->has_width()) pwid = par_ex->expr_width()-1;
-                  perm_string name = peek_tail_name(path_);
+                  perm_string name = peek_tail_name(path());
                   warn_param_ob(par_msv, par_lsv, defined, lsv-par_base, wid,
                                 pwid, this, name, false);
 	    }
@@ -2621,14 +2621,14 @@ NetExpr* PEIdent::elaborate_expr_param_(Design*des,
 					const NetExpr*par_lsb,
 					int expr_wid) const
 {
-      const name_component_t&name_tail = path_.back();
+      const name_component_t&name_tail = path().back();
       index_component_t::ctype_t use_sel = index_component_t::SEL_NONE;
       if (!name_tail.index.empty())
 	    use_sel = name_tail.index.back().sel;
 
       if (par->expr_type() == IVL_VT_REAL &&
           use_sel != index_component_t::SEL_NONE) {
-	    perm_string name = peek_tail_name(path_);
+	    perm_string name = peek_tail_name(path());
 	    cerr << get_fileline() << ": error: "
 	         << "can not select part of real parameter: " << name << endl;
 	    des->errors += 1;
@@ -2689,7 +2689,7 @@ NetExpr* PEIdent::elaborate_expr_param_(Design*des,
 		    // must be 1'bx.
 		  if (! re->value().is_defined()) {
 			if (warn_ob_select) {
-			      perm_string name = peek_tail_name(path_);
+			      perm_string name = peek_tail_name(path());
 			      cerr << get_fileline() << ": warning: "
 				      "Constant undefined bit select ["
 				   << re->value() << "] for parameter '"
@@ -2733,7 +2733,7 @@ NetExpr* PEIdent::elaborate_expr_param_(Design*des,
 			      rb = verinum::V0;
 		  } else {
 			if (warn_ob_select) {
-			      perm_string name = peek_tail_name(path_);
+			      perm_string name = peek_tail_name(path());
 			      cerr << get_fileline() << ": warning: "
 			              "Constant bit select [" << rv.as_long()
 			           << "] is ";
@@ -2778,7 +2778,7 @@ NetExpr* PEIdent::elaborate_expr_param_(Design*des,
 		 NetEConstParam if possible. */
 	    NetEConst*ctmp = dynamic_cast<NetEConst*>(tmp);
 	    if (ctmp != 0) {
-		  perm_string name = peek_tail_name(path_);
+		  perm_string name = peek_tail_name(path());
 		  NetEConstParam*ptmp
 			= new NetEConstParam(found_in, name, ctmp->value());
 
@@ -2795,7 +2795,7 @@ NetExpr* PEIdent::elaborate_expr_param_(Design*des,
 
 	    NetECReal*rtmp = dynamic_cast<NetECReal*>(tmp);
 	    if (rtmp != 0) {
-		  perm_string name = peek_tail_name(path_);
+		  perm_string name = peek_tail_name(path());
 		  NetECRealParam*ptmp
 			= new NetECRealParam(found_in, name, rtmp->value());
 
@@ -2819,7 +2819,7 @@ NetExpr* PEIdent::elaborate_expr_net_word_(Design*des, NetScope*scope,
 					   NetNet*net, NetScope*found_in,
 					   bool sys_task_arg) const
 {
-      const name_component_t&name_tail = path_.back();
+      const name_component_t&name_tail = path().back();
 
       if (name_tail.index.empty() && !sys_task_arg) {
 	    cerr << get_fileline() << ": error: Array " << path()
@@ -2833,7 +2833,7 @@ NetExpr* PEIdent::elaborate_expr_net_word_(Design*des, NetScope*scope,
 	    index_front = name_tail.index.front();
 	    ivl_assert(*this, index_front.sel != index_component_t::SEL_NONE);
 	    if (index_front.sel != index_component_t::SEL_BIT) {
-		  cerr << get_fileline() << ": error: Array " << path_
+		  cerr << get_fileline() << ": error: Array " << path() 
 		       << " cannot be indexed by a range." << endl;
 		  des->errors += 1;
 		  return 0;
@@ -2943,7 +2943,7 @@ NetExpr* PEIdent::elaborate_expr_net_part_(Design*des, NetScope*scope,
 	   defined, then fall back on the tested width. */
       if (!parts_defined_flag) {
 	    if (warn_ob_select) {
-		  const index_component_t&psel = path_.back().index.back();
+		  const index_component_t&psel = path().back().index.back();
 		  cerr << get_fileline() << ": warning: "
 		          "Undefined part select [" << *(psel.msb) << ":"
 		       << *(psel.lsb) << "] for ";
@@ -3205,7 +3205,7 @@ NetExpr* PEIdent::elaborate_expr_net_idx_do_(Design*des, NetScope*scope,
 NetExpr* PEIdent::elaborate_expr_net_bit_(Design*des, NetScope*scope,
 				      NetESignal*net, NetScope*found_in) const
 {
-      const name_component_t&name_tail = path_.back();
+      const name_component_t&name_tail = path().back();
       ivl_assert(*this, !name_tail.index.empty());
 
       const index_component_t&index_tail = name_tail.index.back();
@@ -3313,8 +3313,8 @@ NetExpr* PEIdent::elaborate_expr_net(Design*des, NetScope*scope,
       node->set_line(*this);
 
       index_component_t::ctype_t use_sel = index_component_t::SEL_NONE;
-      if (! path_.back().index.empty())
-	    use_sel = path_.back().index.back().sel;
+      if (! path().back().index.empty())
+	    use_sel = path().back().index.back().sel;
 
       if (net->get_scalar() &&
           use_sel != index_component_t::SEL_NONE) {

@@ -181,6 +181,12 @@ bool synthesis = false;
  */
 bool typecheck_only = false;
 
+/*
+ * skip typechecking since the next_cycle_transform breaks things.
+ * this is an escape hatch until that's fixed.
+ */
+bool skip_typecheck = false;
+
 extern void cprop(Design*des);
 extern void synth(Design*des);
 extern void synth2(Design*des);
@@ -758,7 +764,6 @@ int main(int argc, char*argv[])
       bool help_flag = false;
       bool times_flag = false;
       bool version_flag = false;
-
       const char* net_path = 0;
       const char* pf_path = 0;
       int opt;
@@ -772,8 +777,7 @@ int main(int argc, char*argv[])
       flags["-o"] = strdup("a.out");
       min_typ_max_flag = TYP;
       min_typ_max_warn = 10;
-
-      while ((opt = getopt(argc, argv, "C:f:hN:P:p:Vvz")) != EOF) switch (opt) {
+      while ((opt = getopt(argc, argv, "C:f:hN:P:p:Vvzx")) != EOF) switch (opt) {
 
 	  case 'C':
 	    read_iconfig_file(optarg);
@@ -809,7 +813,10 @@ int main(int argc, char*argv[])
 	  case 'z':
 		typecheck_only = true;
 		break;
-	  default:
+	case 'x':
+	  skip_typecheck = true;
+	  break;
+	default:
 	    flag_errors += 1;
 	    break;
       }
@@ -839,6 +846,7 @@ int main(int argc, char*argv[])
 "\t-P <file>        Write the parsed input to <file>.\n"
 "\t-p <assign>      Set a parameter value.\n"
 "\t-z               Type check only.\n"
+"\t-x               Skip typechecking.\n"	      
 "\t-v               Print progress indications"
 #if defined(HAVE_TIMES)
                                            " and execution times"
@@ -1020,19 +1028,25 @@ int main(int argc, char*argv[])
       }
 
 
-      if (verbose_flag) {
-	    if (times_flag) {
-		  times(cycles+1);
-		  cerr<<" ... done, "
-		      <<cycles_diff(cycles+1, cycles+0)<<" seconds."<<endl;
-	    }
-	    cout << "TYPECHECKING" << endl;
+      if (skip_typecheck) {
+	if (verbose_flag) {
+	  cout << "Skipping Typechecking" << endl;
+	}
+      } else {
+	if (verbose_flag) {
+	  if (times_flag) {
+	    times(cycles+1);
+	    cerr<<" ... done, "
+		<<cycles_diff(cycles+1, cycles+0)<<" seconds."<<endl;
+	  }
+	  cout << "TYPECHECKING" << endl;
+	}      
+	if(debug_typecheck) fprintf(stderr, "about to typecheck\n");
+	typecheck(pform_modules, lattice_file_name, depfun_file_name);
+	if(debug_typecheck) fprintf(stderr, "done with typecheck\n");
       }
-
-      typecheck(pform_modules, lattice_file_name, depfun_file_name);
-
       if (typecheck_only) {
-    	  return 0;
+	return 0;
       }
       else {
       if (verbose_flag) {
