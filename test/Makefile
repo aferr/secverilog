@@ -9,7 +9,7 @@ BENCH_FUN=$(BENCHS:.v=.fun)
 
 
 all: $(BENCH_OUT)
-
+	@echo "All Tests passed!"
 .PRECIOUS: %.z3
 
 %.z3: %.v %.lattice %.fun
