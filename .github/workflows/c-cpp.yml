@@ -20,6 +20,8 @@ jobs:
       run: sudo apt-get install gperf
     - name: make
       run: make
+    - name: debug
+      run: ls verilog-0.9.6
     - name: install
       run: make install
     - name: make test
