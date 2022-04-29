@@ -1,8 +1,8 @@
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 mkfile_dir := $(dir $(mkfile_path))
 
-VDIR=verilog-0.9.6
-TDIR=test
+VDIR=$(mkfile_dir)/verilog-0.9.6
+TDIR=$(mkfile_dir)/test
 INSTALLDIR?=$(mkfile_dir)
 
 build: $(VDIR)/conf.done
