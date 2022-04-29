@@ -19,6 +19,6 @@ jobs:
     - name: Install Deps
       run: sudo apt-get install gperf
     - name: make
-      run: make
+      run: make && make install
     - name: make test
       run: make test
