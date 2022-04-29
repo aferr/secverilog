@@ -19,6 +19,10 @@ jobs:
     - name: Install Deps
       run: sudo apt-get install gperf
     - name: make
-      run: make && make install
+      run: make
+    - name: debug
+      run: ls verilog-0.9.6
+    - name: install
+      run: make install
     - name: make test
       run: make test
