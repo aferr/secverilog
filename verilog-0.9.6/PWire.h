@@ -79,7 +79,8 @@ class PWire : public LineInfo {
       bool get_signed() const;
       bool get_isint() const;
       bool get_scalar() const;
-
+      bool get_isarray() const;
+      
       bool set_data_type(ivl_variable_type_t dt);
       ivl_variable_type_t get_data_type() const;
 

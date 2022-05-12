@@ -171,6 +171,11 @@ bool PWire::get_scalar() const
       return is_scalar_;
 }
 
+bool PWire::get_isarray() const
+{
+  return (lidx_ != 0 || ridx_ != 0);
+}
+
 void PWire::set_range(PExpr*m, PExpr*l, PWSRType type, bool is_scalar)
 {
       switch (type) {

@@ -277,6 +277,9 @@ Statement* PAssignNB::next_cycle_transform(ostream&out, TypeEnv&env) {
 
 void PAssign_::collect_index_exprs(set<perm_string>& exprs, map<perm_string, SecType*>&env) {
   if (debug_typecheck) fprintf(stderr, "collect_index_exprs on passign\n");
+  if (debug_typecheck) {
+    cout << "on " << *rval() << " gets " << *lval() << endl;
+  }
   rval()->collect_index_exprs(exprs, env);
   lval()->collect_index_exprs(exprs, env);
 }
@@ -330,13 +333,12 @@ PExpr* PExpr::next_cycle_transform(ostream&out, TypeEnv&env) { return this; }
 PExpr* PEIdent::next_cycle_transform(ostream&out, TypeEnv&env) {
   
   BaseType*bt = check_base_type(out,env.varsToBase);
-  assert(bt);
-  // if bt is seqtype, make it into next cycle version
   if(bt == NULL) {
     fprintf(stderr, "WARN: null basetype: %s",
 	    peek_tail_name(path()).str());
-    return this;
+    assert(bt);     
   }
+  // if bt is seqtype, make it into next cycle version  
   if(bt->isSeqType()) {
     name_component_t topName = path().back();
     perm_string nextName = nextify_perm_string(topName.name);
@@ -494,14 +496,26 @@ void PWire::typecheck(ostream&out, map<perm_string, SecType*>& varsToType,
 void Module::dumpExprDefs(ostream&out, set<perm_string>exprs) const {
   for (std::set<perm_string>::iterator ite = exprs.begin();
        ite != exprs.end(); ite++) {
-    out << "(declare-fun " << (*ite) << " () Int)" << endl;
     perm_string temp = *ite;
     map<perm_string, PWire*>::const_iterator cur = wires.find(temp);
     if (cur != wires.end()) {
       PWire* def = (*cur).second;
-      out << "(assert (<= 0  " << (*ite) << "))" << endl;
-      out << "(assert (<= " << (*ite) << " "
-	  << (1 << (def->getRange() + 1)) - 1 << "))" << endl;
+      //assume wires are either arrays or ints
+      if (def->get_isarray()) {
+	out << "(declare-fun " << (*ite) << " () (Array Int Int))" << endl;
+	out << "(assert (forall ((x Int)) (<= 0 (select " << (*ite) << " x))))" << endl;
+	out << "(assert (forall ((x Int)) (<= (select " << (*ite) << " x) " <<
+	  (1 << (def->getRange() + 1)) - 1 << ")))" << endl;
+      } else {
+	out << "(declare-fun " << (*ite) << " () Int)" << endl;      
+	out << "(assert (<= 0  " << (*ite) << "))" << endl;
+	out << "(assert (<= " << (*ite) << " "
+	    << (1 << (def->getRange() + 1)) - 1 << "))" << endl;	
+      }
+    } else {
+      // in this case, its probably a genvar, just declare it as an unbound int
+      if (debug_typecheck) { cout << "couldn't find wire for " << temp << endl; }
+      out << "(declare-fun " << temp << " () Int)" << endl;
     }
   }  
 }
@@ -522,6 +536,11 @@ void Module::CollectDepExprs(ostream&out, TypeEnv & env) const {
        behav != behaviors.end(); behav++) {
     (*behav)->collect_index_exprs(exprs, env.varsToType);
   }
+  for (list<PGenerate*>::const_iterator cur = generate_schemes.begin();
+       cur != generate_schemes.end(); cur++) {
+    (*cur)->collect_index_exprs(exprs, env.varsToType);
+  }
+  
   for (list<PGate*>::const_iterator gate = gates_.begin();
        gate != gates_.end(); gate++) {
     PGAssign* pgassign = dynamic_cast<PGAssign*>(*gate);
@@ -1457,6 +1476,16 @@ void PGenerate::typecheck(ostream&out, TypeEnv env,
   for (list<PGenerate*>::const_iterator idx = generate_schemes.begin();
        idx != generate_schemes.end(); idx++) {
     (*idx)->typecheck(out, env, modules);
+  }
+}
+
+void PGenerate::collect_index_exprs(set<perm_string>&exprs, map<perm_string, SecType*>&env) {
+  for (list<PProcess*>::const_iterator idx = behaviors.begin();
+       idx != behaviors.end(); idx++) {
+    if (debug_typecheck) {
+      cout << "collect_index_exprs for behavior: " << (*idx) << endl;
+    }
+    (*idx)->collect_index_exprs(exprs, env);
   }
 }
 

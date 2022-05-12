@@ -25,6 +25,7 @@
 # include  "PScope.h"
 # include  <list>
 # include  <map>
+# include  <set>
 # include  <valarray>
 # include  "pform_types.h"
 
@@ -112,7 +113,7 @@ class PGenerate : public LineInfo, public LexicalScope {
       void dump(ostream&out, unsigned indent) const;
       void next_cycle_transform(ostream&out, TypeEnv env);
       void typecheck(ostream&out, TypeEnv env, map<perm_string,Module*> modules);
-
+      void collect_index_exprs(set<perm_string>&exprs, map<perm_string, SecType*>&env);
     private:
       bool generate_scope_loop_(Design*des, NetScope*container);
       bool generate_scope_condit_(Design*des, NetScope*container, bool else_flag);
