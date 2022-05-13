@@ -76,7 +76,7 @@ foreach my $file (@files) {
     my $errors = "";
     my $prevLine = "";
     for(split /^/, $str) {
-      if (/^sat/) {
+      if (/^sat|^unknown/) {
 	  $errors .= $prevLine;
 	  $fail_counter ++;
 	  $counter ++;

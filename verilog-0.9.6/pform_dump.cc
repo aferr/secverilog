@@ -289,7 +289,25 @@ void PEIdent::dump(ostream&out) const
 
 void PEIdent::dumpz3(ostream&out) const
 {
-  return dump(out);
+  std::list<index_component_t>::const_iterator idxit = path_.back().index.begin();
+  if (idxit != path_.back().index.end()) {
+    //(select name idx)
+    PExpr* msb = idxit->msb;
+    PExpr* lsb = idxit->lsb;
+    if (!msb || lsb) { //just dump normally if its form x[msb:lsb]
+      dump(out);
+    } else {
+      perm_string base_name = peek_tail_name(path_);      
+      out << "(select " << base_name << " ";
+      msb->dump(out);
+      out << ")";
+    }
+  } else {
+    //no index information, just dump it!
+    dump(out);
+  }
+  return;
+
 }
 
 void PEIdent::dumpEq(ostream&out, int val) const

@@ -16,7 +16,7 @@ all: $(BENCH_OUT)
 	@../bin/iverilog -F $*.fun -l $*.lattice -z $*.v
 
 %.out: %.z3 %.expected
-	@diff $*.expected <(z3 -smt2  $< | grep "sat") > $@
+	@diff $*.expected <(z3 -smt2  $< | grep "sat\|unknown") > $@
 
 
 .PHONY: clean

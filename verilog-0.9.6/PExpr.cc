@@ -381,11 +381,15 @@ bool PEIdent::has_aa_term(Design*des, NetScope*scope) const
 
 bool PEIdent::is_wellformed(set<perm_string> s)
 {
-	std::set<perm_string>::iterator ite = s.find(get_name());
-	if (ite != s.end())
-		return true;
-	else
-		return false;
+  perm_string base_name = peek_tail_name(path_);
+  std::set<perm_string>::iterator ite = s.find(base_name);
+  if (ite == s.end()) return false;
+  for (std::list<index_component_t>::const_iterator idxit = path_.back().index.begin();
+       idxit != path_.back().index.end(); idxit++) {
+    if (idxit->msb && !idxit->msb->is_wellformed(s)) return false;
+    if (idxit->lsb && !idxit->lsb->is_wellformed(s)) return false;    
+  }
+  return true;
 }
 
 PExpr* PEIdent::to_wellformed(set<perm_string> s)
