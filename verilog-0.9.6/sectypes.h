@@ -45,6 +45,7 @@ class ConstType;
 class VarType;
 class JoinType;
 class IndexType;
+class PolicyType;
 struct TypeEnv;
 
 class SecType {
@@ -308,6 +309,31 @@ struct Hypothesis {
 
 	bool matches (perm_string name);
 };
+
+class PolicyType : public SecType {
+
+ public:
+  PolicyType(SecType *lower,
+	     perm_string cond_name, const list<perm_string>&static_exprs, const list<perm_string>&dynamic_exprs,
+	     SecType *upper);
+  ~PolicyType();
+
+  SecType* apply_index(perm_string index_var, perm_string index_val) {
+    SecType* nlower = _lower->apply_index(index_var, index_val);
+    SecType* nupper = _upper->apply_index(index_var, index_val);
+    SecType* result = new PolicyType(nlower, _cond_name, _static, _dynamic, nupper);
+    //TODO apply to the condition as well
+    return result;
+  };
+  
+ private:
+  SecType *_lower;
+  perm_string _cond_name;
+  list<perm_string> _static;
+  list<perm_string> _dynamic;
+  SecType *_upper;
+};
+
 
 class HypothesisComparator
 {

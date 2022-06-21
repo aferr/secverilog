@@ -247,6 +247,7 @@ static PECallFunction*make_call_function(perm_string tn, PExpr*arg1, PExpr*arg2)
 %token K_PSTAR K_STARP
 %token K_LOR K_LAND K_NAND K_NOR K_NXOR K_TRIGGER
 %token K_edge_descriptor
+%token K_erase
 %token K_meet
 
  /* The base tokens from 1364-1995. */
@@ -510,12 +511,20 @@ sec_label
     ;
     
 sec_label_comp
-  : IDENTIFIER
+  : K_erase '(' sec_label_comp ';' IDENTIFIER iden_list ';' iden_list ';' sec_label_comp ')'
+    {
+      SecType* l = $3;
+      SecType* r = $10;
+      perm_string name = lex_strings.make($5);
+      SecType* type = new PolicyType(l, name, *$6, *$8, r);
+      $$ = type;
+    }
+  | IDENTIFIER
     { 
       perm_string name = lex_strings.make($1);
       SecType* type = new ConstType(name);
       $$ = type;
-    } 
+    }
   | IDENTIFIER iden_list 
     { 
       perm_string name = lex_strings.make($1);
@@ -558,7 +567,11 @@ sec_label_comp
   ;
 
 iden_list
-  : sec_iden
+  : '(' ')'
+  {
+    $$ = new list<perm_string>;
+  }
+  | sec_iden
   {
     $$ = list_from_identifier($1);
   }
@@ -567,7 +580,6 @@ iden_list
     $$ = list_from_identifier($1, $3);
   };
 ;
-
 
 sec_iden:
   IDENTIFIER

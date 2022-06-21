@@ -70,6 +70,7 @@ endprimitive,		GN_KEYWORDS_1364_1995,		K_endprimitive
 endspecify,		GN_KEYWORDS_1364_1995,		K_endspecify
 endtable,		GN_KEYWORDS_1364_1995,		K_endtable
 endtask,		GN_KEYWORDS_1364_1995,		K_endtask
+erase,                  GN_KEYWORDS_1364_1995,          K_erase
 event,			GN_KEYWORDS_1364_1995,		K_event
 exclude,		GN_KEYWORDS_VAMS_2_3,		K_exclude
 exp,			GN_KEYWORDS_VAMS_2_3,		K_exp

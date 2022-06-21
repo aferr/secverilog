@@ -479,6 +479,20 @@ void QuantType::collect_dep_expr(set<perm_string>& m) {
     }
   }
 }
+//----------------------------------------------
+// Policy Type
+//----------------------------------------------
+
+PolicyType::PolicyType(SecType *lower,
+		       perm_string cond_name, const list<perm_string>&static_exprs, const list<perm_string>&dynamic_exprs,
+		       SecType *upper)
+{
+  _lower = lower;
+  _cond_name = cond_name;
+  _static = static_exprs;
+  _dynamic = dynamic_exprs;
+  _upper = upper;
+}
 
 Hypothesis* Hypothesis::subst(map<perm_string, perm_string> m)
 {
