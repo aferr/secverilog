@@ -466,8 +466,24 @@ inline ostream& operator << (ostream&o, Constraint&c)
 		o << (*c.pred) << " ";
 	if (hasinv)
 		o << (*c.invariant);
-	o << " (not(leq " << *(c.right->simplify()) << "  "
-					<< *(c.left->simplify()) << ")))";
+
+	PolicyType* left_policy = dynamic_cast<PolicyType*>(c.left);
+	PolicyType* right_policy = dynamic_cast<PolicyType*>(c.right);
+	if (left_policy && right_policy) {
+	  //policy to policy check
+	  o << " TODO policy->policy)";
+	} else if (left_policy) {
+	  //policy to other label (elimination)
+	  o << " TODO policy->label)";
+	} else if (right_policy) {
+	  //label to policy (introduction)
+	  o << " TODO label->policy)";
+	} else {
+	  //normal case, no policies
+	  o << " (not(leq " << *(c.right->simplify()) << "  "
+	    << *(c.left->simplify()) << ")))";
+	}
+	
 	if (hashypo || hasinv)
 		o << ")";
     return o;
