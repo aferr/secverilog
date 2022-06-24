@@ -69,6 +69,37 @@ SecType* ConstType::freshVars(unsigned int lineno, map<perm_string, perm_string>
 {
 	return this;
 }
+void SecType::emitFlowsTo(ostream&o, SecType* rhs) {
+  JoinType* right_join = dynamic_cast<JoinType*>(rhs);
+  MeetType* right_meet = dynamic_cast<MeetType*>(rhs);
+  QuantType* right_quant = dynamic_cast<QuantType*>(rhs);
+  PolicyType* right_policy = dynamic_cast<PolicyType*>(rhs);
+  if (right_join) {
+    o << "(or ";
+    emitFlowsTo(o, right_join->getFirst());
+    o << " ";
+    emitFlowsTo(o, right_join->getSecond());
+    o << ")";
+    return;
+  }
+  if (right_meet) {
+    o << "(and ";
+    emitFlowsTo(o, right_join->getFirst());
+    o << " ";
+    emitFlowsTo(o, right_join->getSecond());
+    o << ")";
+    return;    
+  }
+  if (right_quant) {
+    emitFlowsTo(o, right_quant->getInnerType());
+    return;
+  }
+  if (right_policy) {
+    emitFlowsTo(o, right_policy->get_lower());
+    return;
+  }
+  o << "(leq " << *this << " " << *rhs << ")";
+}
 
 /* type variables */
 
@@ -261,6 +292,14 @@ JoinType::JoinType(SecType* ty1, SecType* ty2)
 
 JoinType::~JoinType()
 {
+}
+
+void JoinType::emitFlowsTo(ostream&o, SecType* rhs) {
+  o << "(and ";
+  getFirst()->emitFlowsTo(o, rhs);
+  o << " ";
+  getSecond()->emitFlowsTo(o, rhs);
+  o << ")";
 }
 
 SecType* JoinType::getFirst()
@@ -456,6 +495,13 @@ bool MeetType::hasExpr(perm_string str)
 {
 	return comp1_->hasExpr(str) || comp2_->hasExpr(str);
 }
+void MeetType::emitFlowsTo(ostream&o, SecType* rhs) {
+  o << "(or ";
+  getFirst()->emitFlowsTo(o, rhs);
+  o << " ";
+  getSecond()->emitFlowsTo(o, rhs);
+  o << ")";
+}
 
 //---------------------------------------------
 // QuantType
@@ -493,6 +539,118 @@ PolicyType::PolicyType(SecType *lower,
   _dynamic = dynamic_exprs;
   _upper = upper;
 }
+
+SecType* PolicyType::next_cycle(TypeEnv*env)
+{
+  list<perm_string> *nextlist = new list<perm_string>;
+  for (list<perm_string>::iterator it = _dynamic.begin(); it != _dynamic.end(); ++it){
+    BaseType* fv_base = env->varsToBase[*it];
+    if (fv_base->isSeqType()) {
+      nextlist->push_back(nextify_perm_string(*it));
+    } else {
+      nextlist->push_back(*it);
+    }
+  }
+  return new PolicyType(_lower->next_cycle(env), _cond_name, _static, *nextlist, _upper->next_cycle(env));
+}
+
+bool PolicyType::hasExpr(perm_string str) {
+  return (std::find(_static.begin(), _static.end(), str) != _static.end())
+    || (std::find(_dynamic.begin(), _dynamic.end(), str) != _dynamic.end())
+    || _lower->hasExpr(str) || _upper->hasExpr(str);  
+}
+
+SecType* PolicyType::subst(perm_string e1, perm_string e2) {
+  SecType* nlower = _lower->subst(e1, e2);
+  SecType* nupper = _upper->subst(e1, e2);
+  list<perm_string> *staticlist = new list<perm_string>;
+  for (list<perm_string>::iterator it = _static.begin(); it != _static.end(); ++it){
+    if (*it == e1) {
+      staticlist->push_back(e2);
+    } else {
+      staticlist->push_back(*it);
+    }
+  }
+  list<perm_string> *dynamiclist = new list<perm_string>;
+  for (list<perm_string>::iterator it = _dynamic.begin(); it != _dynamic.end(); ++it){
+    if (*it == e1) {
+      dynamiclist->push_back(e2);
+    } else {
+      dynamiclist->push_back(*it);
+    }
+  }    
+  return new PolicyType(nlower, _cond_name, *staticlist, *dynamiclist, nupper);
+}
+
+SecType* PolicyType::subst(map<perm_string, perm_string> m)
+{
+  SecType* nlower = _lower->subst(m);
+  SecType* nupper = _upper->subst(m);  
+  list<perm_string> *staticlist = new list<perm_string>;
+  for (list<perm_string>::iterator it = _static.begin(); it != _static.end(); ++it){
+    map<perm_string, perm_string>::iterator ite = m.find(*it);    
+    if (ite != m.end()) {
+      staticlist->push_back(ite->second);
+    } else {
+      staticlist->push_back(*it);
+    }
+  }
+  list<perm_string> *dynamiclist = new list<perm_string>;
+  for (list<perm_string>::iterator it = _dynamic.begin(); it != _dynamic.end(); ++it){
+    map<perm_string, perm_string>::iterator ite = m.find(*it);    
+    if (ite != m.end()) {
+      dynamiclist->push_back(ite->second);
+    } else {
+      dynamiclist->push_back(*it);
+    }
+  }
+  return new PolicyType(nlower, _cond_name, *staticlist, *dynamiclist, nupper);
+}
+void PolicyType::collect_dep_expr(set<perm_string>& m)
+{
+  _lower->collect_dep_expr(m);
+  _upper->collect_dep_expr(m);
+  for (list<perm_string>::iterator it = _static.begin(); it != _static.end(); ++it){
+    perm_string ex = *it;
+    if (!isConstStr(ex)) {      
+      m.insert(ex);
+      // If this is a seqtype and so is its free variable, the next-cycle 
+      // value of the label is the dependand      
+      m.insert(nextify_perm_string(ex));
+    }
+  }
+  for (list<perm_string>::iterator it = _dynamic.begin(); it != _dynamic.end(); ++it){
+    perm_string ex = *it;
+    if (!isConstStr(ex)) {      
+      m.insert(ex);
+      // If this is a seqtype and so is its free variable, the next-cycle 
+      // value of the label is the dependand      
+      m.insert(nextify_perm_string(ex));
+    }
+  }  
+}
+void PolicyType::emitFlowsTo(ostream&o, SecType* rhs) {
+  PolicyType* right_policy = dynamic_cast<PolicyType*>(rhs);
+  ConstType* right_const = dynamic_cast<ConstType*>(rhs);
+  VarType* right_var = dynamic_cast<VarType*>(rhs);
+  IndexType* right_index = dynamic_cast<IndexType*>(rhs);
+  if (right_const || right_var || right_index) {
+    get_upper()->emitFlowsTo(o, rhs);
+    return;
+  }
+  if (right_policy) {
+    o << "(and ";
+    get_lower()->emitFlowsTo(o, right_policy->get_lower());
+    o << " ";
+    get_upper()->emitFlowsTo(o, right_policy->get_upper());
+    o << ")"; //TODO the condition implication part
+    return;
+  }
+  //else do super class behavior
+  SecType::emitFlowsTo(o, rhs);
+
+}
+////////////////////////////
 
 Hypothesis* Hypothesis::subst(map<perm_string, perm_string> m)
 {

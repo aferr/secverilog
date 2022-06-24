@@ -44,7 +44,9 @@ class SecType;
 class ConstType;
 class VarType;
 class JoinType;
+class MeetType;
 class IndexType;
+class QuantType;
 class PolicyType;
 struct TypeEnv;
 
@@ -72,6 +74,7 @@ class SecType {
       virtual SecType* apply_index(PExpr* index_val) { return this; }      
       virtual SecType* apply_index(perm_string index_var, perm_string index_val) { return this; }
     //  BasicType& operator= (const BasicType&);
+      virtual void emitFlowsTo(ostream&o, SecType* rhs);
 };
 
 class ConstType : public SecType {
@@ -205,7 +208,7 @@ class JoinType : public SecType {
       void collect_dep_expr(set<perm_string>& m);
       SecType* freshVars(unsigned int lineno, map<perm_string, perm_string>& m);
       bool hasExpr(perm_string str);
-
+      virtual void emitFlowsTo(ostream&o, SecType* rhs);
     private:
 	  SecType* comp1_;
 	  SecType* comp2_;
@@ -239,7 +242,7 @@ class MeetType : public SecType {
       void collect_dep_expr(set<perm_string>& m);
       SecType* freshVars(unsigned int lineno, map<perm_string, perm_string>& m);
       bool hasExpr(perm_string str);
-
+      virtual void emitFlowsTo(ostream&o, SecType* rhs);
     private:
 	  SecType* comp1_;
 	  SecType* comp2_;
@@ -256,6 +259,10 @@ class QuantType : public SecType {
     _sectype->dump(o);
   }
 
+  SecType* getInnerType() {
+    return _sectype;
+  }
+  
   SecType* apply_index(PExpr* index_val) {
     //for now only support identifiers and numbers as index_values, if it's anything else, throw an error
     PEIdent* index_id = dynamic_cast<PEIdent*>(index_val);
@@ -317,7 +324,28 @@ class PolicyType : public SecType {
 	     perm_string cond_name, const list<perm_string>&static_exprs, const list<perm_string>&dynamic_exprs,
 	     SecType *upper);
   ~PolicyType();
-
+  virtual SecType* next_cycle(TypeEnv*env);
+  virtual  bool hasExpr(perm_string str);
+  virtual SecType* subst(perm_string e1, perm_string e2);
+  virtual SecType* subst(map<perm_string, perm_string> m);
+  virtual void collect_dep_expr(set<perm_string>& m);
+  
+  void dump(ostream&o) {
+    o << "(Policy ";
+    _lower->dump(o);
+    o << " (";
+    o << _cond_name << " ";
+    for (list<perm_string>::iterator it = _static.begin(); it != _static.end(); ++it) {
+      o << *it << " ";
+    }
+    for (list<perm_string>::iterator it = _dynamic.begin(); it != _dynamic.end(); ++it) {
+      o << *it << " ";
+    }
+    o << ") ";
+    _upper->dump(o);
+    o << ")";
+  }
+  
   SecType* apply_index(perm_string index_var, perm_string index_val) {
     SecType* nlower = _lower->apply_index(index_var, index_val);
     SecType* nupper = _upper->apply_index(index_var, index_val);
@@ -325,7 +353,15 @@ class PolicyType : public SecType {
     //TODO apply to the condition as well
     return result;
   };
-  
+
+  SecType* get_lower() {
+    return _lower;
+  }
+
+  SecType* get_upper() {
+    return _upper;
+  }
+  virtual void emitFlowsTo(ostream&o, SecType* rhs);  
  private:
   SecType *_lower;
   perm_string _cond_name;
@@ -454,6 +490,7 @@ inline ostream& operator << (ostream&o, Invariant& invs)
 	return o;
 }
 
+
 inline ostream& operator << (ostream&o, Constraint&c)
 {
 	o << "(assert ";
@@ -465,24 +502,11 @@ inline ostream& operator << (ostream&o, Constraint&c)
 	if (hashypo)
 		o << (*c.pred) << " ";
 	if (hasinv)
-		o << (*c.invariant);
+		o << (*c.invariant);	
 
-	PolicyType* left_policy = dynamic_cast<PolicyType*>(c.left);
-	PolicyType* right_policy = dynamic_cast<PolicyType*>(c.right);
-	if (left_policy && right_policy) {
-	  //policy to policy check
-	  o << " TODO policy->policy)";
-	} else if (left_policy) {
-	  //policy to other label (elimination)
-	  o << " TODO policy->label)";
-	} else if (right_policy) {
-	  //label to policy (introduction)
-	  o << " TODO label->policy)";
-	} else {
-	  //normal case, no policies
-	  o << " (not(leq " << *(c.right->simplify()) << "  "
-	    << *(c.left->simplify()) << ")))";
-	}
+	o << " (not ";
+	c.right->simplify()->emitFlowsTo(o, c.left->simplify());
+	o << ") ";
 	
 	if (hashypo || hasinv)
 		o << ")";
