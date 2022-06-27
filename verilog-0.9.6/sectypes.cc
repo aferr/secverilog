@@ -93,9 +93,9 @@ void SecType::emitFlowsTo(ostream&o, SecType* rhs) {
   }
   if (right_meet) {
     o << "(and ";
-    emitFlowsTo(o, right_join->getFirst());
+    emitFlowsTo(o, right_meet->getFirst());
     o << " ";
-    emitFlowsTo(o, right_join->getSecond());
+    emitFlowsTo(o, right_meet->getSecond());
     o << ")";
     return;    
   }
