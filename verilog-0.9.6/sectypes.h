@@ -50,6 +50,8 @@ class QuantType;
 class PolicyType;
 struct TypeEnv;
 
+void dumpZ3Func(ostream& o, perm_string name, list<perm_string> args);
+
 class SecType {
 
 	// Manipulate the types.
@@ -138,11 +140,7 @@ class IndexType : public SecType {
       ~IndexType();
       IndexType& operator= (const IndexType&);
       void dump(ostream&o) {
-      	o << "(" << name_ << " ";
-	for (list<perm_string>::iterator it = exprs_.begin(); it != exprs_.end(); ++it){
-	  o << *it << " ";
-	}
-	o << ")";
+	dumpZ3Func(o, name_, exprs_);
       }
       bool equals(SecType* st);
 
@@ -361,6 +359,25 @@ class PolicyType : public SecType {
   SecType* get_upper() {
     return _upper;
   }
+
+  perm_string get_cond() {
+    return _cond_name;
+  }
+
+  list<perm_string> get_static() {
+    return _static;
+  }
+
+  list<perm_string> get_dynamic() {
+    return _dynamic;
+  }
+  
+  list<perm_string> get_all_args() {
+    list<perm_string> arglist = list<perm_string>(_static);
+    arglist.insert(arglist.end(), _dynamic.begin(), _dynamic.end());
+    return arglist;
+  }
+  
   virtual void emitFlowsTo(ostream&o, SecType* rhs);  
  private:
   SecType *_lower;
@@ -510,6 +527,7 @@ inline ostream& operator << (ostream&o, Constraint&c)
 	
 	if (hashypo || hasinv)
 		o << ")";
+	o << ")";
     return o;
 }
 

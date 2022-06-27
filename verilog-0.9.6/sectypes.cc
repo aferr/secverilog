@@ -31,6 +31,15 @@
 extern StringHeap lex_strings;
 extern perm_string nextify_perm_string(perm_string s);
 
+void dumpZ3Func(ostream& o, perm_string name, list<perm_string> args) {
+  o << "(" << name << " ";
+
+  for (list<perm_string>::iterator it = args.begin(); it != args.end(); ++it){
+    o << *it << " ";
+  }
+  o << ")";  
+}
+
 ConstType* ConstType::TOP = new ConstType(lex_strings.make("HIGH"));
 ConstType* ConstType::BOT = new ConstType(lex_strings.make("LOW"));
 
@@ -640,10 +649,57 @@ void PolicyType::emitFlowsTo(ostream&o, SecType* rhs) {
   }
   if (right_policy) {
     o << "(and ";
+    //lower bound to lower bound
     get_lower()->emitFlowsTo(o, right_policy->get_lower());
     o << " ";
+    //upper bound to upper bound
     get_upper()->emitFlowsTo(o, right_policy->get_upper());
-    o << ")"; //TODO the condition implication part
+    o << " ";
+    //erasure condition must not be true this cycle
+    o << "(not ";
+    list<perm_string> arglist = get_all_args();
+    dumpZ3Func(o, _cond_name, arglist);
+    o << ") ";
+    //erasure condition must be at least as strong
+    //quantify over all possible static variables    
+    o << "(forall (";
+
+    set<perm_string> quantlist = set<perm_string>();
+    list<perm_string> leftlist = list<perm_string>();
+    list<perm_string> rightlist = list<perm_string>();  
+    for (list<perm_string>::iterator it = _static.begin(); it != _static.end(); ++it) {
+      string tmp = it->str();
+      string tmp2 = "quant_" + tmp;
+      perm_string qstr = lex_strings.make(tmp2.c_str());
+      leftlist.push_back(qstr);
+      quantlist.insert(qstr);
+    }
+    list<perm_string> rightstatic = right_policy->get_static();
+    for (list<perm_string>::iterator it = rightstatic.begin(); it != rightstatic.end(); ++it) {
+      string tmp = it->str();
+      string tmp2 = "quant_" + tmp;
+      perm_string qstr = lex_strings.make(tmp2.c_str());
+      rightlist.push_back(qstr);
+      quantlist.insert(qstr);
+    }
+    //dump quantified variable names
+    for (set<perm_string>::iterator it = quantlist.begin(); it != quantlist.end(); ++it) {
+      o << "(" << *it << " Int) ";
+    }
+    //append all (non quantified) dynamic variables
+    for (list<perm_string>::iterator it = _dynamic.begin(); it != _dynamic.end(); ++it) {
+      leftlist.push_back(*it);
+    }
+    list<perm_string> rightdynamic = right_policy->get_dynamic();
+    for (list<perm_string>::iterator it = rightdynamic.begin(); it != rightdynamic.end(); ++it) {
+      rightlist.push_back(*it);
+    }
+    o << ")"; //end quantifier lists   
+    o << "(implies ";
+    dumpZ3Func(o, _cond_name, leftlist);
+    dumpZ3Func(o, right_policy->get_cond(), rightlist);
+    o << "))"; //end implies and forall
+    o << ")"; //end and
     return;
   }
   //else do super class behavior
