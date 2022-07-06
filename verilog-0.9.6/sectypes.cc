@@ -542,6 +542,7 @@ PolicyType::PolicyType(SecType *lower,
 		       perm_string cond_name, const list<perm_string>&static_exprs, const list<perm_string>&dynamic_exprs,
 		       SecType *upper)
 {
+  _isNext = false;  
   _lower = lower;
   _cond_name = cond_name;
   _static = static_exprs;
@@ -560,7 +561,9 @@ SecType* PolicyType::next_cycle(TypeEnv*env)
       nextlist->push_back(*it);
     }
   }
-  return new PolicyType(_lower->next_cycle(env), _cond_name, _static, *nextlist, _upper->next_cycle(env));
+  PolicyType* res = new PolicyType(_lower->next_cycle(env), _cond_name, _static, *nextlist, _upper->next_cycle(env));
+  res->_isNext = true;
+  return res;
 }
 
 bool PolicyType::hasExpr(perm_string str) {
@@ -657,10 +660,13 @@ void PolicyType::emitFlowsTo(ostream&o, SecType* rhs) {
     //upper bound to upper bound
     get_upper()->emitFlowsTo(o, right_policy->get_upper());
     o << " ";
-    o << "(not ";
-    list<perm_string> arglist = get_all_args();
-    dumpZ3Func(o, _cond_name, arglist);
-    o << ") ";
+    //only emit erasure check if target is next cycle
+    if (right_policy->isNextType()) {
+      o << "(not ";
+      list<perm_string> arglist = get_all_args();
+      dumpZ3Func(o, _cond_name, arglist);
+      o << ") ";
+    }
     //erasure condition must be at least as strong
     //quantify over all possible static variables    
     o << "(forall (";

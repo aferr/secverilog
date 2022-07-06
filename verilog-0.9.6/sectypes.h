@@ -352,6 +352,10 @@ class PolicyType : public SecType {
     return result;
   };
 
+  bool isNextType() {
+    return _isNext;
+  }
+  
   SecType* get_lower() {
     return _lower;
   }
@@ -380,6 +384,7 @@ class PolicyType : public SecType {
   
   virtual void emitFlowsTo(ostream&o, SecType* rhs);  
  private:
+  bool _isNext;
   SecType *_lower;
   perm_string _cond_name;
   list<perm_string> _static;
