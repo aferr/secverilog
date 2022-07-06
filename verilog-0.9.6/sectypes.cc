@@ -648,14 +648,15 @@ void PolicyType::emitFlowsTo(ostream&o, SecType* rhs) {
     return;
   }
   if (right_policy) {
-    o << "(and ";
+    o << "(or "; //either simple upperleft <= lowerright, OR complex rule
+    get_upper()->emitFlowsTo(o, right_policy->get_lower());
+    o << " (and ";
     //lower bound to lower bound
     get_lower()->emitFlowsTo(o, right_policy->get_lower());
     o << " ";
     //upper bound to upper bound
     get_upper()->emitFlowsTo(o, right_policy->get_upper());
     o << " ";
-    //erasure condition must not be true this cycle
     o << "(not ";
     list<perm_string> arglist = get_all_args();
     dumpZ3Func(o, _cond_name, arglist);
@@ -699,7 +700,7 @@ void PolicyType::emitFlowsTo(ostream&o, SecType* rhs) {
     dumpZ3Func(o, _cond_name, leftlist);
     dumpZ3Func(o, right_policy->get_cond(), rightlist);
     o << "))"; //end implies and forall
-    o << ")"; //end and
+    o << "))"; //end and AND or
     return;
   }
   //else do super class behavior

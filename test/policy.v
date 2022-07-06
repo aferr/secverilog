@@ -3,7 +3,7 @@ module policy(
 	      input 	  rst,
 	      input 	  invalid,
 	      input [4:0] missId,
-	      input [3:0] newSpecId,
+	      input [4:0] newSpecId,
 	      input 	  newSpecValid,	      
 	      output 	  {H} out
 );
@@ -23,18 +23,26 @@ module policy(
       else dreg_2 <= dreg_2; //should succeed because we don't copy if data was invalid
    end
 
-   assign out = (invalid) ? data_reg : 0;
+   assign out = (invalid) ? data_reg : 0; //success, out is TOP
 
-   reg [4:0] seq {erase(Domain spec;miss invalid, missId; spec;H)} spec;
+   reg       seq {erase(Valid vbit,spec;miss invalid, missId; spec;H)} vbit;   
+   reg [4:0] seq {erase(Valid vbit,spec;miss invalid, missId; spec;H)} spec;
 
-   wire      com {H} inv = (invalid && missId <= spec) ? 1 : 0;   
+   wire      com {erase(Valid vbit,spec; miss invalid, missId; spec;H)} inv = (invalid && missId <= spec) ? 1 : 0;   
+   
    
    always@(posedge clk) begin
-      if (rst)
-	spec <= 0;
-      else if (inv)     
-       	spec <= 0; //should succeed since this resets it to a HIGH label for next cycle
-      else
-	spec <= spec; //should succeed since we've proven it not invalid
+      if (rst) begin
+	 spec <= 0; //success, resetting to known values should always be OK
+         vbit <= 0;
+      end
+      else if (inv) begin
+	 vbit <= 0;    //should succeed since this resets it to a HIGH label for next cycle	 
+       	 spec <= spec; 
+      end
+      else begin
+	 spec <= spec; //should succeed since we've proven it not invalid
+	 vbit <= vbit;
+      end
    end
 endmodule
