@@ -905,7 +905,7 @@ bool PGAssign::collect_dep_invariants(ostream&out, TypeEnv&env) {
   PEIdent* lval = dynamic_cast<PEIdent*>(l);
   PExpr* rval = pin(1);
   if (!lval) {
-    cerr << "Skipping assign to non identifier in gate" << endl;
+    cerr << "Skipping assign to non identifier in gate when collecting dep invariants" << endl;
     return false;
   }
   if (env.dep_exprs.find(lval->get_name()) != env.dep_exprs.end()) {    

@@ -382,7 +382,8 @@ class PolicyType : public SecType {
     return arglist;
   }
   
-  virtual void emitFlowsTo(ostream&o, SecType* rhs);  
+  virtual void emitFlowsTo(ostream&o, SecType* rhs);
+  virtual bool equals(SecType* st);
  private:
   bool _isNext;
   SecType *_lower;

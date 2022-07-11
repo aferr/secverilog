@@ -84,19 +84,19 @@ void SecType::emitFlowsTo(ostream&o, SecType* rhs) {
   QuantType* right_quant = dynamic_cast<QuantType*>(rhs);
   PolicyType* right_policy = dynamic_cast<PolicyType*>(rhs);
   if (right_join) {
-    o << "(or ";
+    o << "(or\n\t";
     emitFlowsTo(o, right_join->getFirst());
     o << " ";
     emitFlowsTo(o, right_join->getSecond());
-    o << ")";
+    o << "\n)";
     return;
   }
   if (right_meet) {
-    o << "(and ";
+    o << "(and\n\t";
     emitFlowsTo(o, right_meet->getFirst());
     o << " ";
     emitFlowsTo(o, right_meet->getSecond());
-    o << ")";
+    o << "\n)";
     return;    
   }
   if (right_quant) {
@@ -295,8 +295,47 @@ bool IndexType::hasExpr(perm_string str)
 
 JoinType::JoinType(SecType* ty1, SecType* ty2)
 {
-	comp1_ = ty1;
-	comp2_ = ty2;
+  SecType* st1 = ty1->simplify();
+  SecType* st2 = ty2->simplify();
+  JoinType* jt1 = dynamic_cast<JoinType*>(st1);
+  JoinType* jt2 = dynamic_cast<JoinType*>(st2);
+  //joining joins
+  if (jt1 && jt2 && jt1->equals(jt2)) {
+    comp1_ = jt1->comp1_;
+    comp2_ = jt1->comp2_;
+  } else if (jt1 && jt2 && jt1->comp1_->equals(jt2->comp1_)) {
+    comp1_ = jt1;
+    comp2_ = jt2->comp2_;      
+  } else if (jt1 && jt2 && jt1->comp1_->equals(jt2->comp2_)) {
+    comp1_ = jt1;
+    comp2_ = jt2->comp1_;
+  } else if (jt1 && jt2 && jt1->comp2_->equals(jt2->comp1_)) {
+    comp1_ = jt1;
+    comp2_ = jt2->comp2_;
+  } else if (jt1 && jt2 && jt1->comp2_->equals(jt2->comp2_)) {
+    comp1_ = jt1;
+    comp2_ = jt2->comp1_;
+  } else if (jt1 && (jt1->comp1_->equals(st2) || jt1->comp2_->equals(st2))) {
+      comp1_ = jt1->comp1_;
+      comp2_ = jt1->comp2_;
+  } else if (jt2 && (jt2->comp1_->equals(st1) || jt2->comp2_->equals(st1))) {
+    comp1_ = jt2->comp1_;
+    comp2_ = jt2->comp2_;
+  } else {
+    //joining meets
+    MeetType* mt1 = dynamic_cast<MeetType*>(st1);
+    MeetType* mt2 = dynamic_cast<MeetType*>(st2);
+    if (mt1 && !mt2 && (mt1->getFirst()->equals(st2) || mt1->getSecond()->equals(st2))) {
+      comp1_ = st2;
+      comp2_ = st2;
+    } else if ( !mt1 && mt2 && (mt2->getFirst()->equals(st1) || mt2->getSecond()->equals(st1))) {
+      comp1_ = st1;
+      comp2_ = st1;
+    } else { //fallback
+      comp1_ = st1;
+      comp2_ = st2;    
+    }
+  }
 }
 
 JoinType::~JoinType()
@@ -304,11 +343,11 @@ JoinType::~JoinType()
 }
 
 void JoinType::emitFlowsTo(ostream&o, SecType* rhs) {
-  o << "(and ";
+  o << "(and\n\t";
   getFirst()->emitFlowsTo(o, rhs);
   o << " ";
   getSecond()->emitFlowsTo(o, rhs);
-  o << ")";
+  o << "\n)";
 }
 
 SecType* JoinType::getFirst()
@@ -366,23 +405,23 @@ SecType* JoinType::simplify()
 			return comp2_->simplify();
 		else if (comp2_->isBottom())
 			return comp1_->simplify();
-		else if (comp1_->hasBottom() || comp2_->hasBottom()) {
-			if (comp1_->hasBottom()) comp1_ = comp1_->simplify();
-			if (comp2_->hasBottom()) comp2_ = comp2_->simplify();
-			return simplify();
+		else {
+		  SecType* lsimpl = comp1_->simplify();
+		  SecType* rsimpl = comp2_->simplify();
+		  if (lsimpl->equals(rsimpl)) {
+		    return lsimpl;
+		  } else {
+		    return new JoinType(lsimpl, rsimpl);
+		  }
 		}
 	}
-	if (comp1_->equals(comp2_))
-		return comp1_;
-	else
-		return this;
 }
 
 bool JoinType::equals(SecType* st)
 {
 	JoinType* ct = dynamic_cast<JoinType*>(st);
 	if (ct!=NULL) {
-		return comp1_->equals(ct->comp1_) && comp2_->equals(ct->comp2_);
+	  return (comp1_->equals(ct->comp1_) && comp2_->equals(ct->comp2_)) || (comp1_->equals(ct->comp2_) && comp2_->equals(ct->comp1_));
 	}
 	return false;
 }
@@ -464,20 +503,20 @@ SecType* MeetType::simplify()
 	if (isBottom()) return ConstType::BOT;
 	else if (isTop()) return ConstType::TOP;
 	else {
-		if (comp1_->isTop())
-			return comp2_->simplify();
-		else if (comp2_->isTop())
-			return comp1_->simplify();
-		else if (comp1_->hasTop() || comp2_->hasTop()) {
-			if (comp1_->hasTop()) comp1_ = comp1_->simplify();
-			if (comp2_->hasTop()) comp2_ = comp2_->simplify();
-			return simplify();
-		}
+	  if (comp1_->isTop())
+	    return comp2_->simplify();
+	  else if (comp2_->isTop())
+	    return comp1_->simplify();
+	  else {
+	    SecType* lsimpl = comp1_->simplify();
+	    SecType* rsimpl = comp2_->simplify();
+	    if (lsimpl->equals(rsimpl)) {
+	      return lsimpl;
+	    } else {
+	      return new MeetType(lsimpl, rsimpl);
+	    }
+	  }
 	}
-	if (comp1_->equals(comp2_))
-		return comp1_;
-	else
-		return this;
 }
 
 bool MeetType::equals(SecType* st)
@@ -505,11 +544,11 @@ bool MeetType::hasExpr(perm_string str)
 	return comp1_->hasExpr(str) || comp2_->hasExpr(str);
 }
 void MeetType::emitFlowsTo(ostream&o, SecType* rhs) {
-  o << "(or ";
+  o << "(or\n\t";
   getFirst()->emitFlowsTo(o, rhs);
   o << " ";
   getSecond()->emitFlowsTo(o, rhs);
-  o << ")";
+  o << "\n)";
 }
 
 //---------------------------------------------
@@ -548,6 +587,17 @@ PolicyType::PolicyType(SecType *lower,
   _static = static_exprs;
   _dynamic = dynamic_exprs;
   _upper = upper;
+}
+
+bool PolicyType::equals(SecType* st) {
+  PolicyType* pt = dynamic_cast<PolicyType*>(st);
+  if (!pt) {
+    return false;
+  } else {
+    return _lower->equals(pt->_lower) && _upper->equals(pt->_upper)
+      && _cond_name == pt->_cond_name && _static == pt->_static
+      && _dynamic == pt->_dynamic;
+  }
 }
 
 SecType* PolicyType::next_cycle(TypeEnv*env)
@@ -651,25 +701,25 @@ void PolicyType::emitFlowsTo(ostream&o, SecType* rhs) {
     return;
   }
   if (right_policy) {
-    o << "(or "; //either simple upperleft <= lowerright, OR complex rule
+    o << "(or\n\t"; //either simple upperleft <= lowerright, OR complex rule
     get_upper()->emitFlowsTo(o, right_policy->get_lower());
-    o << " (and ";
+    o << "\n\t(and\n\t\t";
     //lower bound to lower bound
     get_lower()->emitFlowsTo(o, right_policy->get_lower());
-    o << " ";
+    o << "\n\t\t    ";
     //upper bound to upper bound
     get_upper()->emitFlowsTo(o, right_policy->get_upper());
-    o << " ";
+    o << "\n\t\t    ";
     //only emit erasure check if target is next cycle
     if (right_policy->isNextType()) {
-      o << "(not ";
+      o << "(not\n\t\t\t";
       list<perm_string> arglist = get_all_args();
       dumpZ3Func(o, _cond_name, arglist);
-      o << ") ";
+      o << ")\n\t\t    ";
     }
     //erasure condition must be at least as strong
     //quantify over all possible static variables    
-    o << "(forall (";
+    o << "(forall (\n\t";
 
     set<perm_string> quantlist = set<perm_string>();
     list<perm_string> leftlist = list<perm_string>();
@@ -702,11 +752,11 @@ void PolicyType::emitFlowsTo(ostream&o, SecType* rhs) {
       rightlist.push_back(*it);
     }
     o << ")"; //end quantifier lists   
-    o << "(implies ";
+    o << " (implies ";
     dumpZ3Func(o, _cond_name, leftlist);
     dumpZ3Func(o, right_policy->get_cond(), rightlist);
     o << "))"; //end implies and forall
-    o << "))"; //end and AND or
+    o << "\n))"; //end and AND or
     return;
   }
   //else do super class behavior
