@@ -248,7 +248,6 @@ static PECallFunction*make_call_function(perm_string tn, PExpr*arg1, PExpr*arg2)
 %token K_LOR K_LAND K_NAND K_NOR K_NXOR K_TRIGGER
 %token K_edge_descriptor
 %token K_erase
-%token K_meet
 
  /* The base tokens from 1364-1995. */
 %token K_always K_and K_assign K_begin K_buf K_bufif0 K_bufif1 K_case
@@ -256,7 +255,7 @@ static PECallFunction*make_call_function(perm_string tn, PExpr*arg1, PExpr*arg2)
 %token K_edge K_else K_end K_endcase K_endfunction K_endmodule
 %token K_endprimitive K_endspecify K_endtable K_endtask K_event K_for
 %token K_force K_forever K_fork K_function K_highz0 K_highz1 K_if
-%token K_ifnone K_initial K_inout K_input K_integer K_join K_large
+%token K_ifnone K_initial K_inout K_input K_integer K_large
 %token K_macromodule K_medium K_module K_nand K_negedge K_nmos K_nor
 %token K_not K_notif0 K_notif1 K_or K_output K_parameter K_pmos K_posedge
 %token K_primitive K_pull0 K_pull1 K_pulldown K_pullup K_rcmos K_real
@@ -404,6 +403,8 @@ static PECallFunction*make_call_function(perm_string tn, PExpr*arg1, PExpr*arg2)
 %left '+' '-'
 %left '*' '/' '%'
 %left K_POW
+%left K_meet
+%left K_join
 %left UNARY_PREC
 
 

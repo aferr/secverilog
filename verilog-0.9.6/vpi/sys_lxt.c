@@ -191,7 +191,7 @@ static void show_this_item_x(struct vcd_info*info)
  * managed qsorted list of scope names for duplicates bsearching
  */
 
-struct vcd_names_list_s lxt_tab;
+extern struct vcd_names_list_s lxt_tab;
 
 
 static int dumpvars_status = 0; /* 0:fresh 1:cb installed, 2:callback done */

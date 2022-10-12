@@ -81,9 +81,9 @@ PS2PDF = @PS2PDF@
 GIT = @GIT@
 
 CPPFLAGS = @DEFS@ -I. -I$(srcdir) @CPPFLAGS@
-CXXFLAGS = @WARNING_FLAGS@ @CXXFLAGS@
+CXXFLAGS = @WARNING_FLAGS@ @VERSION_FLAGS@ @CXXFLAGS@ 
 PICFLAGS = @PICFLAG@
-LDFLAGS = @rdynamic@ @LDFLAGS@
+LDFLAGS = @rdynamic@ @LDFLAGS@ -z muldefs
 
 all: dep config.h _pli_types.h version_tag.h ivl@EXEEXT@ version.exe iverilog-vpi.man
 	$(foreach dir,$(SUBDIRS),$(MAKE) -C $(dir) $@ && ) true
@@ -230,7 +230,7 @@ parse.o: parse.cc
 parse.cc: $(srcdir)/parse.y
 	$(YACC) --verbose -t -p VL -d -o $@ $<
 parse.h: parse.cc
-	mv parse.cc.h parse.h 2>/dev/null || mv parse.hh parse.h
+	(mv parse.cc.h parse.h 2>/dev/null && sed -i 's/parse.cc.h/parse.h/g' parse.cc) || (mv parse.hh parse.h && sed -i 's/parse.hh/parse.h/g' parse.cc) || true
 
 syn-rules.cc: $(srcdir)/syn-rules.y
 	$(YACC) --verbose -t -p syn_ -o $@ $<

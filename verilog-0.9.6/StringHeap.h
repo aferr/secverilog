@@ -51,14 +51,14 @@ class perm_string {
       const char*text_;
 };
 
-extern bool operator == (perm_string a, perm_string b);
-extern bool operator == (perm_string a, const char* b);
-extern bool operator != (perm_string a, perm_string b);
-extern bool operator != (perm_string a, const char* b);
-extern bool operator >  (perm_string a, perm_string b);
-extern bool operator <  (perm_string a, perm_string b);
-extern bool operator >= (perm_string a, perm_string b);
-extern bool operator <= (perm_string a, perm_string b);
+extern bool operator == (const perm_string a, const perm_string b);
+extern bool operator == (const perm_string a, const char* b);
+extern bool operator != (const perm_string a, const perm_string b);
+extern bool operator != (const perm_string a, const char* b);
+extern bool operator >  (const perm_string a, const perm_string b);
+extern bool operator <  (const perm_string a, const perm_string b);
+extern bool operator >= (const perm_string a, const perm_string b);
+extern bool operator <= (const perm_string a, const perm_string b);
 
 /*
  * The string heap is a way to permanently allocate strings

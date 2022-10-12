@@ -1,3 +1,5 @@
+SHELL := /bin/bash
+
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 mkfile_dir := $(dir $(mkfile_path))
 
