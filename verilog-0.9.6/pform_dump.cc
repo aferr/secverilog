@@ -550,6 +550,24 @@ void PEBinary::dumpz3(ostream&out) const
     out << ")";
     return;
   }
+  // is this necessary??
+  if (op_ == '+') {
+    out << "(+ ";
+    left_->dumpz3(out);
+    out << " ";
+    right_->dumpz3(out);
+    out << ")";
+    return;
+  }
+  if (op_ == '%') {
+    out << "(mod ";
+    left_->dumpz3(out);
+    out << " ";
+    right_->dumpz3(out);
+    out << ")";
+    return;
+  }
+  std::cerr << "No support for given binary operator: " << op_ << std::endl;
   throw("No support for given binary operator: ");
       // out << "(" << *left_ << ")";
       // switch (op_) {

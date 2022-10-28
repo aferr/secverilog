@@ -228,9 +228,12 @@ parse.o: parse.cc
 
 # Build this in two steps to avoid parallel build issues (see pr3462585)
 parse.cc: $(srcdir)/parse.y
-	$(YACC) --verbose -t -p VL -d -o $@ $<
+	$(YACC) --verbose -t -p VL --header="parse.hh" -o $@ $<
+
 parse.h: parse.cc
-	(mv parse.cc.h parse.h 2>/dev/null && sed -i 's/parse.cc.h/parse.h/g' parse.cc) || (mv parse.hh parse.h && sed -i 's/parse.hh/parse.h/g' parse.cc) || true
+	(mv parse.hh parse.h && sed -i 's/parse.hh/parse.h/g' parse.cc) || true
+
+	# (cp parse.cc.h parse.h 2>/dev/null && sed -i 's/parse.cc.h/parse.h/g' parse.cc) || (cp parse.hh parse.h && sed -i 's/parse.hh/parse.h/g' parse.cc) || true
 
 syn-rules.cc: $(srcdir)/syn-rules.y
 	$(YACC) --verbose -t -p syn_ -o $@ $<
