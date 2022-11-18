@@ -674,6 +674,7 @@ void Module::typecheck(ostream&out, TypeEnv& env,
       }
     }
   }
+
   out << endl << "; assertions to be verified" << endl;
 
   if(debug_typecheck) fprintf(stderr, "checking generates\n");
@@ -1442,6 +1443,9 @@ void PGenerate::typecheck(ostream&out, TypeEnv env,
   typecheck_events_(out, env);
   // Iterate through and display all the wires (including registers).
   typecheck_wires_(out, env);
+  out << endl << "(echo \"base conditions are satisfiable? (should be sat)\")"
+      << endl << "(check-sat)" << endl;
+
   out << endl << "; assertions to be verified" << endl;
 
   for (list<PGate*>::const_iterator gate = gates.begin(); gate != gates.end();

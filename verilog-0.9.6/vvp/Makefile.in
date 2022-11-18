@@ -137,14 +137,15 @@ tables.cc: $(srcdir)/draw_tt.c
 
 lexor.o: lexor.cc parse.h
 
-parse.o: parse.cc
+parse.o: parse.cc parse.h
 
 tables.o: tables.cc
 
 parse.cc: $(srcdir)/parse.y
-	$(YACC) --verbose -t --header=parse.h -o $@ $<
-# parse.h: parse.cc
-# 	mv parse.cc.h $@ 2>/dev/null || mv parse.hh $@
+	$(YACC) --verbose -t -d -o $@ $<
+
+parse.h: parse.cc
+	../build-parse-header.sh
 
 lexor.cc: $(srcdir)/lexor.lex
 	$(LEX) -s -olexor.cc $(srcdir)/lexor.lex
