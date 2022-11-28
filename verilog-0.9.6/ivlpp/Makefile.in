@@ -40,7 +40,7 @@ LEX = @LEX@
 
 CPPFLAGS = -I. -I.. -I$(srcdir)/.. -I$(srcdir) @CPPFLAGS@ @DEFS@
 CFLAGS = @WARNING_FLAGS@ @CFLAGS@
-LDFLAGS = @LDFLAGS@
+LDFLAGS = @LDFLAGS@ @CFLAGS@
 
 all: ivlpp@EXEEXT@
 

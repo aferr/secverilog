@@ -27,8 +27,8 @@ PWire::PWire(perm_string n,
 	     NetNet::PortType pt,
 	     SecType* st, BaseType* bt,
 	     ivl_variable_type_t dt)
-: name_(n), type_(t), port_type_(pt), sectype_(st), data_type_(dt),
-  signed_(false), isint_(false), basetype_(bt),
+: name_(n), type_(t), port_type_(pt), sectype_(st), basetype_(bt),
+  data_type_(dt), signed_(false), isint_(false),
   port_msb_(0), port_lsb_(0), port_set_(false),
   net_msb_(0), net_lsb_(0), net_set_(false), is_scalar_(false),
   error_cnt_(0), lidx_(0), ridx_(0), discipline_(0)

@@ -45,7 +45,7 @@ handle acc_handle_by_name(const char*obj_name, handle scope)
       if (pli_trace) {
 	    fprintf(pli_trace, "acc_handle_by_name(\"%s\", scope=%s) "
 		    " --> %p\n", obj_name,
-		    vpi_get_str(vpiFullName, scope), res);
+		    vpi_get_str(vpiFullName, scope), (void*) res);
       }
 
       return res;

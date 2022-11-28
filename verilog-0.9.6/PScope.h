@@ -34,6 +34,7 @@ class PExpr;
 class SecType;
 class Design;
 class NetScope;
+class SexpPrinter;
 struct TypeEnv;
 
 /*
@@ -98,16 +99,16 @@ class LexicalScope {
 
     protected:
       void dump_parameters_(ostream&out, unsigned indent) const;
-      void typecheck_parameters_(ostream&out, TypeEnv& env) const;
+      void typecheck_parameters_(SexpPrinter&, TypeEnv& env) const;
 
       void dump_localparams_(ostream&out, unsigned indent) const;
-      void typecheck_localparams_(ostream&out, TypeEnv& env) const;
+      void typecheck_localparams_(SexpPrinter&, TypeEnv& env) const;
 
       void dump_events_(ostream&out, unsigned indent) const;
-      void typecheck_events_(ostream&out, TypeEnv& env) const;
+      void typecheck_events_(SexpPrinter&, TypeEnv& env) const;
 
       void dump_wires_(ostream&out, unsigned indent) const;
-      void typecheck_wires_(ostream&out, TypeEnv& env) const;
+      void typecheck_wires_(SexpPrinter&, TypeEnv& env) const;
 
     private:
 };

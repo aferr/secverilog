@@ -36,6 +36,8 @@
 # include  "functor.h"
 # include  <cassert>
 
+#pragma GCC diagnostic warning "-Wfree-nonheap-object"
+
 struct syn_token_t {
       int token;
 

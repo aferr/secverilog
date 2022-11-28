@@ -79,7 +79,7 @@ void* QEVisitor::reduce(void* vals, ...){
 
     void* ret = vals;
     void* next;
-    while(next = va_arg(argp,void*)){
+    while((next = va_arg(argp,void*))){
         ret = reduce( ret, next );
     }
     va_end(argp);

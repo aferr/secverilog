@@ -32,14 +32,14 @@ handle acc_next(PLI_INT32 *type, handle scope, handle prev)
       /* trace */
       if (pli_trace) {
 	    PLI_INT32 *ip;
-	    fprintf(pli_trace, "acc_next(%p <", type);
+	    fprintf(pli_trace, "acc_next(%p <", (void*) type);
 	    for (ip = type; *ip; ip++) {
 		  fprintf(pli_trace, "%s%d", ip != type ? "," : "", (int)*ip);
 	    }
-	    fprintf(pli_trace, ">, %p", scope);
+	    fprintf(pli_trace, ">, %p", (void*) scope);
 	    if (scope)
 		  fprintf(pli_trace, " \"%s\"", vpi_get_str(vpiName, scope));
-	    fprintf(pli_trace, ", %p", prev);
+	    fprintf(pli_trace, ", %p", (void*) prev);
 	    if (prev)
 		  fprintf(pli_trace, " \"%s\"", vpi_get_str(vpiName, prev));
 	    else
@@ -72,7 +72,7 @@ handle acc_next(PLI_INT32 *type, handle scope, handle prev)
 
       /* trace */
       if (pli_trace) {
-	    fprintf(pli_trace, " --> %p", hand);
+	fprintf(pli_trace, " --> %p", (void*) hand);
 	    if (hand)
 		  fprintf(pli_trace, " \"%s\"\n", vpi_get_str(vpiName, hand));
 	    else

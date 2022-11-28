@@ -156,7 +156,7 @@ PLI_INT32 vpi_free_object(vpiHandle ref)
       int rtn;
 
       if (vpi_trace) {
-	    fprintf(vpi_trace, "vpi_free_object(%p)", ref);
+	fprintf(vpi_trace, "vpi_free_object(%p)", (void*) ref);
 	    fflush(vpi_trace);
       }
 
@@ -267,7 +267,7 @@ PLI_INT32 vpi_get(int property, vpiHandle ref)
       if (property == vpiType) {
 	    if (vpi_trace) {
 		  fprintf(vpi_trace, "vpi_get(vpiType, %p) --> %s\n",
-			  ref, vpi_type_values(ref->vpi_type->type_code));
+			  (void*) ref, vpi_type_values(ref->vpi_type->type_code));
 	    }
 
 	    struct __vpiSignal*rfp = (struct __vpiSignal*)ref;
@@ -282,7 +282,7 @@ PLI_INT32 vpi_get(int property, vpiHandle ref)
       if (ref->vpi_type->vpi_get_ == 0) {
 	    if (vpi_trace) {
 		  fprintf(vpi_trace, "vpi_get(%s, %p) --X\n",
-			  vpi_property_str(property), ref);
+			  vpi_property_str(property), (void*) ref);
 	    }
 
 	    return vpiUndefined;
@@ -292,7 +292,7 @@ PLI_INT32 vpi_get(int property, vpiHandle ref)
 
       if (vpi_trace) {
 	    fprintf(vpi_trace, "vpi_get(%s, %p) --> %d\n",
-		    vpi_property_str(property), ref, res);
+		    vpi_property_str(property), (void*) ref, res);
       }
 
       return res;
@@ -309,7 +309,7 @@ char* vpi_get_str(PLI_INT32 property, vpiHandle ref)
       if (property == vpiType) {
 	    if (vpi_trace) {
 		  fprintf(vpi_trace, "vpi_get(vpiType, %p) --> %s\n",
-			  ref, vpi_type_values(ref->vpi_type->type_code));
+			  (void*) ref, vpi_type_values(ref->vpi_type->type_code));
 	    }
 
 	    struct __vpiSignal*rfp = (struct __vpiSignal*)ref;
@@ -326,7 +326,7 @@ char* vpi_get_str(PLI_INT32 property, vpiHandle ref)
       if (ref->vpi_type->vpi_get_str_ == 0) {
 	    if (vpi_trace) {
 		  fprintf(vpi_trace, "vpi_get_str(%s, %p) --X\n",
-			  vpi_property_str(property), ref);
+			  vpi_property_str(property), (void*) ref);
 	    }
 	    return 0;
       }
@@ -335,7 +335,7 @@ char* vpi_get_str(PLI_INT32 property, vpiHandle ref)
 
       if (vpi_trace) {
 	    fprintf(vpi_trace, "vpi_get_str(%s, %p) --> %s\n",
-		    vpi_property_str(property), ref, res);
+		    vpi_property_str(property), (void*) ref, res);
       }
 
       return res;
@@ -772,7 +772,7 @@ void vpi_get_value(vpiHandle expr, s_vpi_value*vp)
 	    if (vpi_trace) switch (vp->format) {
 		case vpiStringVal:
 		  fprintf(vpi_trace,"vpi_get_value(%p=<%d>) -> string=\"%s\"\n",
-			  expr, expr->vpi_type->type_code, vp->value.str);
+			  (void*) expr, expr->vpi_type->type_code, vp->value.str);
 		  break;
 
 		case vpiBinStrVal:
@@ -959,7 +959,7 @@ vpiHandle vpi_handle(PLI_INT32 type, vpiHandle ref)
 
 	    if (vpi_trace) {
 		  fprintf(vpi_trace, "vpi_handle(vpiSysTfCall, 0) "
-			  "-> %p (%s)\n", &vpip_cur_task->base,
+			  "-> %p (%s)\n", (void*) &vpip_cur_task->base,
 			  vpip_cur_task->defn->info.tfname);
 	    }
 
@@ -976,7 +976,7 @@ vpiHandle vpi_handle(PLI_INT32 type, vpiHandle ref)
 
 	    if (vpi_trace) {
 		  fprintf(vpi_trace, "vpi_handle(%d, %p) -X\n",
-			  (int)type, ref);
+			  (int)type, (void*) ref);
 	    }
 
 	    return 0;
@@ -986,8 +986,8 @@ vpiHandle vpi_handle(PLI_INT32 type, vpiHandle ref)
       vpiHandle res = (ref->vpi_type->handle_)(type, ref);
 
       if (vpi_trace) {
-	    fprintf(vpi_trace, "vpi_handle(%d, %p) -> %p\n",
-		    (int)type, ref, res);
+	fprintf(vpi_trace, "vpi_handle(%d, %p) -> %p\n",
+		(int)type, (void*) ref, (void*) res);
       }
 
       return res;
@@ -1027,7 +1027,7 @@ vpiHandle vpi_iterate(PLI_INT32 type, vpiHandle ref)
 
       if (vpi_trace) {
 	    fprintf(vpi_trace, "vpi_iterate(%d, %p) ->%s\n",
-	    (int)type, ref, rtn ? "" : " (null)");
+		    (int)type, (void*) ref, rtn ? "" : " (null)");
       }
 
       return rtn;
@@ -1120,7 +1120,7 @@ vpiHandle vpi_handle_by_name(const char *name, vpiHandle scope)
 
       if (vpi_trace) {
 	    fprintf(vpi_trace, "vpi_handle_by_name(%s, %p) -->\n",
-		    name, scope);
+		    name, (void*) scope);
       }
 
       /* If scope provided, look in corresponding module; otherwise
@@ -1193,7 +1193,7 @@ void vpi_get_delays(vpiHandle expr, p_vpi_delay delays)
 	  if (vpi_trace)
 	    {
 	      fprintf(vpi_trace,
-		      "vpi_get_delays(%p, %p) -->\n", expr, delays);
+		      "vpi_get_delays(%p, %p) -->\n", (void*) expr, (void*) delays);
 	    }
 	}
 }
@@ -1211,7 +1211,7 @@ void vpi_put_delays(vpiHandle expr, p_vpi_delay delays)
 	  if (vpi_trace)
 	    {
 	      fprintf(vpi_trace,
-		      "vpi_put_delays(%p, %p) -->\n", expr, delays);
+		      "vpi_put_delays(%p, %p) -->\n", (void*) expr, (void*) delays);
 	    }
 	}
 }

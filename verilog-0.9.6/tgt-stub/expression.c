@@ -45,7 +45,7 @@ static void show_branch_access_expression(ivl_expr_t net, unsigned ind)
       ivl_branch_t bra = ivl_expr_branch(net);
       ivl_nature_t nature = ivl_expr_nature(net);
       fprintf(out, "%*s<Access branch %p with nature %s>\n",
-	      ind, "", bra, ivl_nature_name(nature));
+	      ind, "", (void*) bra, ivl_nature_name(nature));
 
       if (ivl_expr_value(net) != IVL_VT_REAL) {
 	    fprintf(out, "%*sERROR: Expecting type IVL_VT_REAL, got %s\n",

@@ -225,13 +225,13 @@ static void show_lpm_arithmetic_pins(ivl_lpm_t net)
 {
       ivl_nexus_t nex;
       nex = ivl_lpm_q(net, 0);
-      fprintf(out, "    Q: %p\n", nex);
+      fprintf(out, "    Q: %p\n", (void*) nex);
 
       nex = ivl_lpm_data(net, 0);
-      fprintf(out, "    DataA: %p\n", nex);
+      fprintf(out, "    DataA: %p\n", (void*) nex);
 
       nex = ivl_lpm_data(net, 1);
-      fprintf(out, "    DataB: %p\n", nex);
+      fprintf(out, "    DataB: %p\n", (void*) nex);
 }
 
 static void show_lpm_abs(ivl_lpm_t net)
@@ -243,10 +243,10 @@ static void show_lpm_abs(ivl_lpm_t net)
 	      ivl_lpm_basename(net), width);
 
       nex = ivl_lpm_q(net, 0);
-      fprintf(out, "    Q: %p\n", nex);
+      fprintf(out, "    Q: %p\n", (void*) nex);
 
       nex = ivl_lpm_data(net, 0);
-      fprintf(out, "    D: %p\n", nex);
+      fprintf(out, "    D: %p\n", (void*) nex);
       if (nex == 0) {
 	    fprintf(out, "    ERROR: missing input\n");
 	    stub_errors += 1;
@@ -280,11 +280,11 @@ static void show_lpm_array(ivl_lpm_t net)
 	      width, ivl_signal_basename(array));
       nex = ivl_lpm_q(net, 0);
       assert(nex);
-      fprintf(out, "    Q: %p\n", nex);
+      fprintf(out, "    Q: %p\n", (void*) nex);
       nex = ivl_lpm_select(net);
       assert(nex);
       fprintf(out, "    Address: %p (address width=%u)\n",
-	      nex, ivl_lpm_selects(net));
+	      (void*) nex, ivl_lpm_selects(net));
 
       if (width_of_nexus(ivl_lpm_q(net,0)) != width) {
 	    fprintf(out, "    ERROR: Data Q width doesn't match "
@@ -309,8 +309,8 @@ static void show_lpm_cast_int(ivl_lpm_t net)
 
       q = ivl_lpm_q(net,0);
       a = ivl_lpm_data(net,0);
-      fprintf(out, "    O: %p\n", ivl_lpm_q(net,0));
-      fprintf(out, "    A: %p\n", ivl_lpm_data(net,0));
+      fprintf(out, "    O: %p\n", (void*) ivl_lpm_q(net,0));
+      fprintf(out, "    A: %p\n", (void*) ivl_lpm_data(net,0));
 
       if (type_of_nexus(q) == IVL_VT_REAL) {
 	    fprintf(out, "    ERROR: Data type of Q is %s, expecting !real\n",
@@ -335,8 +335,8 @@ static void show_lpm_cast_real(ivl_lpm_t net)
 
       q = ivl_lpm_q(net,0);
       a = ivl_lpm_data(net,0);
-      fprintf(out, "    O: %p\n", ivl_lpm_q(net,0));
-      fprintf(out, "    A: %p\n", ivl_lpm_data(net,0));
+      fprintf(out, "    O: %p\n", (void*) ivl_lpm_q(net,0));
+      fprintf(out, "    A: %p\n", (void*) ivl_lpm_data(net,0));
 
       if (type_of_nexus(q) != IVL_VT_REAL) {
 	    fprintf(out, "    ERROR: Data type of Q is %s, expecting real\n",
@@ -373,9 +373,9 @@ static void show_lpm_cmp_eeq(ivl_lpm_t net)
       fprintf(out, "  LPM_CMP_%s %s: <width=%u>\n", str,
 	      ivl_lpm_basename(net), width);
 
-      fprintf(out, "    O: %p\n", ivl_lpm_q(net,0));
-      fprintf(out, "    A: %p\n", ivl_lpm_data(net,0));
-      fprintf(out, "    B: %p\n", ivl_lpm_data(net,1));
+      fprintf(out, "    O: %p\n", (void*) ivl_lpm_q(net,0));
+      fprintf(out, "    A: %p\n", (void*) ivl_lpm_data(net,0));
+      fprintf(out, "    B: %p\n", (void*) ivl_lpm_data(net,1));
       check_cmp_widths(net);
 }
 
@@ -390,9 +390,9 @@ static void show_lpm_cmp_ge(ivl_lpm_t net)
 	      ivl_lpm_basename(net), width,
 	      ivl_lpm_signed(net)? "signed" : "unsigned");
 
-      fprintf(out, "    O: %p\n", ivl_lpm_q(net,0));
-      fprintf(out, "    A: %p\n", ivl_lpm_data(net,0));
-      fprintf(out, "    B: %p\n", ivl_lpm_data(net,1));
+      fprintf(out, "    O: %p\n", (void*) ivl_lpm_q(net,0));
+      fprintf(out, "    A: %p\n", (void*) ivl_lpm_data(net,0));
+      fprintf(out, "    B: %p\n", (void*) ivl_lpm_data(net,1));
       check_cmp_widths(net);
 }
 
@@ -407,9 +407,9 @@ static void show_lpm_cmp_gt(ivl_lpm_t net)
 	      ivl_lpm_basename(net), width,
 	      ivl_lpm_signed(net)? "signed" : "unsigned");
 
-      fprintf(out, "    O: %p\n", ivl_lpm_q(net,0));
-      fprintf(out, "    A: %p\n", ivl_lpm_data(net,0));
-      fprintf(out, "    B: %p\n", ivl_lpm_data(net,1));
+      fprintf(out, "    O: %p\n", (void*) ivl_lpm_q(net,0));
+      fprintf(out, "    A: %p\n", (void*) ivl_lpm_data(net,0));
+      fprintf(out, "    B: %p\n", (void*) ivl_lpm_data(net,1));
       check_cmp_widths(net);
 }
 
@@ -424,9 +424,9 @@ static void show_lpm_cmp_ne(ivl_lpm_t net)
       fprintf(out, "  LPM_CMP_NE %s: <width=%u>\n",
 	      ivl_lpm_basename(net), width);
 
-      fprintf(out, "    O: %p\n", ivl_lpm_q(net,0));
-      fprintf(out, "    A: %p\n", ivl_lpm_data(net,0));
-      fprintf(out, "    B: %p\n", ivl_lpm_data(net,1));
+      fprintf(out, "    O: %p\n", (void*) ivl_lpm_q(net,0));
+      fprintf(out, "    A: %p\n", (void*) ivl_lpm_data(net,0));
+      fprintf(out, "    B: %p\n", (void*) ivl_lpm_data(net,1));
       check_cmp_widths(net);
 }
 
@@ -446,13 +446,13 @@ static void show_lpm_concat(ivl_lpm_t net)
 
       fprintf(out, "  LPM_CONCAT %s: <width=%u, inputs=%u>\n",
 	      ivl_lpm_basename(net), width, ivl_lpm_size(net));
-      fprintf(out, "    O: %p\n", ivl_lpm_q(net,0));
+      fprintf(out, "    O: %p\n", (void*) ivl_lpm_q(net,0));
 
       for (idx = 0 ;  idx < ivl_lpm_size(net) ;  idx += 1) {
 	    ivl_nexus_t nex = ivl_lpm_data(net, idx);
 	    unsigned signal_width = width_of_nexus(nex);
 
-	    fprintf(out, "    I%u: %p (width=%u)\n", idx, nex, signal_width);
+	    fprintf(out, "    I%u: %p (width=%u)\n", idx, (void*) nex, signal_width);
 	    width_sum += signal_width;
       }
 
@@ -471,7 +471,7 @@ static void show_lpm_ff(ivl_lpm_t net)
 	      ivl_lpm_basename(net), width);
 
       nex = ivl_lpm_clk(net);
-      fprintf(out, "    clk: %p\n", nex);
+      fprintf(out, "    clk: %p\n", (void*) nex);
       if (width_of_nexus(nex) != 1) {
 	    fprintf(out, "    clk: ERROR: Nexus width is %u\n",
 		    width_of_nexus(nex));
@@ -480,7 +480,7 @@ static void show_lpm_ff(ivl_lpm_t net)
 
       if (ivl_lpm_enable(net)) {
 	    nex = ivl_lpm_enable(net);
-	    fprintf(out, "    CE: %p\n", nex);
+	    fprintf(out, "    CE: %p\n", (void*) nex);
 	    if (width_of_nexus(nex) != 1) {
 		  fprintf(out, "    CE: ERROR: Nexus width is %u\n",
 			  width_of_nexus(nex));
@@ -489,7 +489,7 @@ static void show_lpm_ff(ivl_lpm_t net)
       }
 
       nex = ivl_lpm_data(net,0);
-      fprintf(out, "    D: %p\n", nex);
+      fprintf(out, "    D: %p\n", (void*) nex);
       if (width_of_nexus(nex) != width) {
 	    fprintf(out, "    D: ERROR: Nexus width is %u\n",
 		    width_of_nexus(nex));
@@ -497,7 +497,7 @@ static void show_lpm_ff(ivl_lpm_t net)
       }
 
       nex = ivl_lpm_q(net,0);
-      fprintf(out, "    Q: %p\n", nex);
+      fprintf(out, "    Q: %p\n", (void*) nex);
       if (width_of_nexus(nex) != width) {
 	    fprintf(out, "    Q: ERROR: Nexus width is %u\n",
 		    width_of_nexus(nex));
@@ -527,11 +527,11 @@ static void show_lpm_mult(ivl_lpm_t net)
       fprintf(out, "  LPM_MULT %s: <width=%u>\n",
 	      ivl_lpm_basename(net), width);
 
-      fprintf(out, "    O: %p\n", ivl_lpm_q(net,0));
+      fprintf(out, "    O: %p\n", (void*) ivl_lpm_q(net,0));
       fprintf(out, "    A: %p <width=%u>\n",
-	      ivl_lpm_data(net,0), width_of_nexus(ivl_lpm_data(net,0)));
+	      (void*) ivl_lpm_data(net,0), width_of_nexus(ivl_lpm_data(net,0)));
       fprintf(out, "    B: %p <width=%u>\n",
-	      ivl_lpm_data(net,1), width_of_nexus(ivl_lpm_data(net,1)));
+	      (void*) ivl_lpm_data(net,1), width_of_nexus(ivl_lpm_data(net,1)));
 
       if (width != width_of_nexus(ivl_lpm_q(net,0))) {
 	    fprintf(out, "    ERROR: Width of Q is %u, not %u\n",
@@ -558,7 +558,7 @@ static void show_lpm_mux(ivl_lpm_t net)
 	      ivl_lpm_basename(net), width, size);
 
       nex = ivl_lpm_q(net,0);
-      fprintf(out, "    Q: %p\n", nex);
+      fprintf(out, "    Q: %p\n", (void*) nex);
       if (width != width_of_nexus(nex)) {
 	    fprintf(out, "    Q: ERROR: Nexus width is %u\n",
 		    width_of_nexus(nex));
@@ -569,7 +569,7 @@ static void show_lpm_mux(ivl_lpm_t net)
 	   ivl_lpm_selects function. */
       nex = ivl_lpm_select(net);
       fprintf(out, "    S: %p <width=%u>\n",
-	      nex, ivl_lpm_selects(net));
+	      (void*) nex, ivl_lpm_selects(net));
       if (ivl_lpm_selects(net) != width_of_nexus(nex)) {
 	    fprintf(out, "    S: ERROR: Nexus width is %u\n",
 		    width_of_nexus(nex));
@@ -580,7 +580,7 @@ static void show_lpm_mux(ivl_lpm_t net)
 	   can be selected from. */
       for (idx = 0 ;  idx < size ;  idx += 1) {
 	    nex = ivl_lpm_data(net,idx);
-	    fprintf(out, "    D%u: %p\n", idx, nex);
+	    fprintf(out, "    D%u: %p\n", idx, (void*) nex);
 	    if (width != width_of_nexus(nex)) {
 		  fprintf(out, "    D%u: ERROR, Nexus width is %u\n",
 			  idx, width_of_nexus(nex));
@@ -610,11 +610,11 @@ static void show_lpm_part(ivl_lpm_t net)
       fprintf(out, "  LPM_PART_%s %s: <width=%u, base=%u, signed=%d>\n",
 	      part_type_string, ivl_lpm_basename(net),
 	      width, base, ivl_lpm_signed(net));
-      fprintf(out, "    O: %p\n", ivl_lpm_q(net,0));
-      fprintf(out, "    I: %p\n", ivl_lpm_data(net,0));
+      fprintf(out, "    O: %p\n", (void*) ivl_lpm_q(net,0));
+      fprintf(out, "    I: %p\n", (void*) ivl_lpm_data(net,0));
 
       if (sel != 0) {
-	    fprintf(out, "    S: %p\n", sel);
+	    fprintf(out, "    S: %p\n", (void*) sel);
 	    if (base != 0) {
 		  fprintf(out, "   ERROR: Part select has base AND selector\n");
 		  stub_errors += 1;
@@ -698,10 +698,10 @@ static void show_lpm_re(ivl_lpm_t net)
 	      type, ivl_lpm_name(net),width);
 
       nex = ivl_lpm_q(net, 0);
-      fprintf(out, "    Q: %p\n", nex);
+      fprintf(out, "    Q: %p\n", (void*) nex);
 
       nex = ivl_lpm_data(net, 0);
-      fprintf(out, "    D: %p\n", nex);
+      fprintf(out, "    D: %p\n", (void*) nex);
 
       nex = ivl_lpm_q(net, 0);
 
@@ -729,8 +729,8 @@ static void show_lpm_repeat(ivl_lpm_t net)
       fprintf(out, "  LPM_REPEAT %s: <width=%u, count=%u>\n",
 	      ivl_lpm_basename(net), width, count);
 
-      fprintf(out, "    Q: %p\n", nex_q);
-      fprintf(out, "    D: %p\n", nex_a);
+      fprintf(out, "    Q: %p\n", (void*) nex_q);
+      fprintf(out, "    D: %p\n", (void*) nex_a);
 
       if (width != width_of_nexus(nex_q)) {
 	    fprintf(out, "    ERROR: Width of Q is %u, expecting %u\n",
@@ -759,7 +759,7 @@ static void show_lpm_shift(ivl_lpm_t net, const char*shift_dir)
 	      ivl_lpm_signed(net)? "" : "un");
 
       nex = ivl_lpm_q(net, 0);
-      fprintf(out, "    Q: %p\n", nex);
+      fprintf(out, "    Q: %p\n", (void*) nex);
 
       if (width != width_of_nexus(nex)) {
 	    fprintf(out, "    ERROR: Q output nexus width=%u "
@@ -768,7 +768,7 @@ static void show_lpm_shift(ivl_lpm_t net, const char*shift_dir)
       }
 
       nex = ivl_lpm_data(net, 0);
-      fprintf(out, "    D: %p\n", nex);
+      fprintf(out, "    D: %p\n", (void*) nex);
 
       if (width != width_of_nexus(nex)) {
 	    fprintf(out, "    ERROR: Q output nexus width=%u "
@@ -777,7 +777,7 @@ static void show_lpm_shift(ivl_lpm_t net, const char*shift_dir)
       }
 
       nex = ivl_lpm_data(net, 1);
-      fprintf(out, "    S: %p <width=%u>\n", nex, width_of_nexus(nex));
+      fprintf(out, "    S: %p <width=%u>\n", (void*) nex, width_of_nexus(nex));
 }
 
 static void show_lpm_sign_ext(ivl_lpm_t net)
@@ -789,8 +789,8 @@ static void show_lpm_sign_ext(ivl_lpm_t net)
       fprintf(out, "  LPM_SIGN_EXT %s: <width=%u>\n",
 	      ivl_lpm_basename(net), width);
 
-      fprintf(out, "    Q: %p\n", nex_q);
-      fprintf(out, "    D: %p <width=%u>\n", nex_a, width_of_nexus(nex_a));
+      fprintf(out, "    Q: %p\n", (void*) nex_q);
+      fprintf(out, "    D: %p <width=%u>\n", (void*) nex_a, width_of_nexus(nex_a));
 
       if (width != width_of_nexus(nex_q)) {
 	    fprintf(out, "    ERROR: Width of Q is %u, expecting %u\n",
@@ -828,11 +828,11 @@ static void show_lpm_sfunc(ivl_lpm_t net)
 	    stub_errors += 1;
       }
 
-      fprintf(out, "    Q: %p\n", nex);
+      fprintf(out, "    Q: %p\n", (void*) nex);
       for (idx = 0 ;  idx < ports ;  idx += 1) {
 	    nex = ivl_lpm_data(net, idx);
 	    fprintf(out, "    D%u: %p <width=%u, type=%s>\n", idx,
-		    nex, width_of_nexus(nex),
+		    (void*) nex, width_of_nexus(nex),
 		    data_type_string(type_of_nexus(nex)));
       }
 }
@@ -882,12 +882,12 @@ static void show_lpm_ufunc(ivl_lpm_t net)
 	    stub_errors += 1;
       }
 
-      fprintf(out, "    Q: %p\n", nex);
+      fprintf(out, "    Q: %p\n", (void*) nex);
 
       for (idx = 0 ;  idx < ports ;  idx += 1) {
 	    nex = ivl_lpm_data(net, idx);
 	    fprintf(out, "    D%u: %p <width=%u>\n", idx,
-		    nex, width_of_nexus(nex));
+		    (void*) nex, width_of_nexus(nex));
       }
 }
 
@@ -1066,17 +1066,17 @@ static void show_event(ivl_event_t net)
 
       for (idx = 0 ;  idx < ivl_event_nany(net) ;  idx += 1) {
 	    ivl_nexus_t nex = ivl_event_any(net, idx);
-	    fprintf(out, "      ANYEDGE: %p\n", nex);
+	    fprintf(out, "      ANYEDGE: %p\n", (void*) nex);
       }
 
       for (idx = 0 ;  idx < ivl_event_nneg(net) ;  idx += 1) {
 	    ivl_nexus_t nex = ivl_event_neg(net, idx);
-	    fprintf(out, "      NEGEDGE: %p\n", nex);
+	    fprintf(out, "      NEGEDGE: %p\n", (void*) nex);
       }
 
       for (idx = 0 ;  idx < ivl_event_npos(net) ;  idx += 1) {
 	    ivl_nexus_t nex = ivl_event_pos(net, idx);
-	    fprintf(out, "      POSEDGE: %p\n", nex);
+	    fprintf(out, "      POSEDGE: %p\n", (void*) nex);
       }
 }
 
@@ -1192,7 +1192,7 @@ static void show_nexus_details(ivl_signal_t net, ivl_nexus_t nex)
 
 	    } else if ((bra = ivl_nexus_ptr_branch(ptr))) {
 		  fprintf(out, "      BRANCH %p terminal %u\n",
-			  bra, ivl_nexus_ptr_pin(ptr));
+			  (void*) bra, ivl_nexus_ptr_pin(ptr));
 
 	    } else {
 		  fprintf(out, "      ?[%u] (%s0, %s1)\n",
@@ -1287,7 +1287,7 @@ static void show_signal(ivl_signal_t net)
 		  fprintf(out, "nexus=<virtual>\n");
 		  continue;
 	    } else {
-		  fprintf(out, "nexus=%p\n", nex);
+		  fprintf(out, "nexus=%p\n", (void*) nex);
 	    }
 
 	    show_nexus_details(net, nex);
@@ -1300,10 +1300,10 @@ static void show_signal(ivl_signal_t net)
 	    int posedge = ivl_path_source_posedge(path);
 	    int negedge = ivl_path_source_negedge(path);
 
-	    fprintf(out, "      path %p", nex);
+	    fprintf(out, "      path %p", (void*) nex);
 	    if (posedge) fprintf(out, " posedge");
 	    if (negedge) fprintf(out, " negedge");
-	    if (con) fprintf(out, " (if %p)", con);
+	    if (con) fprintf(out, " (if %p)", (void*) con);
 	    else if (ivl_path_is_condit(path)) fprintf(out, " (ifnone)");
 	    fprintf(out, " %" PRIu64 ",%" PRIu64 ",%" PRIu64
 		         " %" PRIu64 ",%" PRIu64 ",%" PRIu64
@@ -1471,7 +1471,7 @@ static void show_logic(ivl_net_logic_t net)
       for (idx = 0 ;  idx < npins ;  idx += 1) {
 	    ivl_nexus_t nex = ivl_logic_pin(net, idx);
 
-	    fprintf(out, "    %d: %p", idx, nex);
+	    fprintf(out, "    %d: %p", idx, (void*) nex);
 	    if (idx == 0)
 		  fprintf(out, " <drive0/1 = %u/%u>", drive0, drive1);
 	    fprintf(out, "\n");

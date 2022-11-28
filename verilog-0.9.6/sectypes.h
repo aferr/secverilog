@@ -54,7 +54,8 @@ class QuantType;
 class PolicyType;
 struct TypeEnv;
 
-void dumpZ3Func(ostream& o, perm_string name, list<perm_string> args);
+
+void dumpZ3Func(SexpPrinter&printer, perm_string name, list<perm_string> args);
 
 class SecType {
 
@@ -64,7 +65,7 @@ class SecType {
       // void setBaseType(BaseType*b) { base_type = b;}
       // BaseType* getBaseType() { assert(base_type); return base_type; }
 
-      virtual void dump(ostream&o) {}
+      virtual void dump(SexpPrinter&printer) {}
       virtual bool hasBottom() {return false;}
       virtual bool isBottom() {return false;}
       virtual bool hasTop() {return false;}
@@ -77,10 +78,10 @@ class SecType {
       virtual void collect_dep_expr(set<perm_string>& m) {};
       virtual bool hasExpr(perm_string str) {return false;};
       virtual SecType* freshVars(unsigned int lineno, map<perm_string, perm_string>& m) {return this;};
-      virtual SecType* apply_index(PExpr* index_val) { return this; }      
+      virtual SecType* apply_index(PExpr* index_val) { return this; }
       virtual SecType* apply_index(perm_string index_var, perm_string index_val) { return this; }
     //  BasicType& operator= (const BasicType&);
-      virtual void emitFlowsTo(ostream&o, SecType* rhs);
+      virtual void emitFlowsTo(SexpPrinter&printer, SecType* rhs);
 };
 
 class ConstType : public SecType {
@@ -90,8 +91,9 @@ public:
 	ConstType();
 	ConstType(perm_string name);
 	~ConstType();
-	void dump(ostream&o) {
-		o << name;
+	void dump(SexpPrinter&printer) {
+	  std::cout << "dumping const: " << name.str() << std::endl;
+	  printer << name.str();
 	}
 	bool hasBottom() {
 		return name == "LOW";
@@ -143,8 +145,8 @@ class IndexType : public SecType {
 	  IndexType(perm_string name, const list<perm_string>&exprs);
       ~IndexType();
       IndexType& operator= (const IndexType&);
-      void dump(ostream&o) {
-	dumpZ3Func(o, name_, exprs_);
+      void dump(SexpPrinter&printer) {
+	dumpZ3Func(printer, name_, exprs_);
       }
       bool equals(SecType* st);
 
@@ -188,12 +190,17 @@ class JoinType : public SecType {
 	  JoinType(SecType*, SecType*);
       ~JoinType();
       JoinType& operator= (const JoinType&);
-      void dump(ostream&o) {
-          o << "(join ";
-          comp1_->dump(o);
-          o << " ";
-          comp2_->dump(o);
-          o << ")";
+      void dump(SexpPrinter&printer) {
+	printer.startList();
+	printer << "join";
+	comp1_->dump(printer);
+	comp2_->dump(printer);
+	printer.endList();
+          // o << "(join ";
+          // comp1_->dump(o);
+          // o << " ";
+          // comp2_->dump(o);
+          // o << ")";
       }
       SecType* getFirst();
       SecType* getSecond();
@@ -210,7 +217,7 @@ class JoinType : public SecType {
       void collect_dep_expr(set<perm_string>& m);
       SecType* freshVars(unsigned int lineno, map<perm_string, perm_string>& m);
       bool hasExpr(perm_string str);
-      virtual void emitFlowsTo(ostream&o, SecType* rhs);
+      virtual void emitFlowsTo(SexpPrinter&printer, SecType* rhs);
     private:
 	  SecType* comp1_;
 	  SecType* comp2_;
@@ -222,12 +229,17 @@ class MeetType : public SecType {
 	  MeetType(SecType*, SecType*);
       ~MeetType();
       MeetType& operator= (const MeetType&);
-      void dump(ostream&o) {
-          o << "(meet ";
-          comp1_->dump(o);
-          o << " ";
-          comp2_->dump(o);
-          o << ")";
+      void dump(SexpPrinter&printer) {
+	printer.startList();
+	printer << "meet";
+	comp1_->dump(printer);
+	comp2_->dump(printer);
+	printer.endList();
+          // o << "(meet ";
+          // comp1_->dump(o);
+          // o << " ";
+          // comp2_->dump(o);
+          // o << ")";
       }
       SecType* getFirst();
       SecType* getSecond();
@@ -244,7 +256,7 @@ class MeetType : public SecType {
       void collect_dep_expr(set<perm_string>& m);
       SecType* freshVars(unsigned int lineno, map<perm_string, perm_string>& m);
       bool hasExpr(perm_string str);
-      virtual void emitFlowsTo(ostream&o, SecType* rhs);
+      virtual void emitFlowsTo(SexpPrinter&printer, SecType* rhs);
     private:
 	  SecType* comp1_;
 	  SecType* comp2_;
@@ -257,8 +269,8 @@ class QuantType : public SecType {
   ~QuantType();
 
   void collect_dep_expr(set<perm_string>& m);
-  void dump(ostream&o) {
-    _sectype->dump(o);
+  void dump(SexpPrinter&printer) {
+    _sectype->dump(printer);
   }
 
   SecType* getInnerType() {
@@ -331,21 +343,26 @@ class PolicyType : public SecType {
   virtual SecType* subst(perm_string e1, perm_string e2);
   virtual SecType* subst(map<perm_string, perm_string> m);
   virtual void collect_dep_expr(set<perm_string>& m);
-  
-  void dump(ostream&o) {
-    o << "(Policy ";
-    _lower->dump(o);
-    o << " (";
-    o << _cond_name << " ";
-    for (list<perm_string>::iterator it = _static.begin(); it != _static.end(); ++it) {
-      o << *it << " ";
-    }
-    for (list<perm_string>::iterator it = _dynamic.begin(); it != _dynamic.end(); ++it) {
-      o << *it << " ";
-    }
-    o << ") ";
-    _upper->dump(o);
-    o << ")";
+
+  void dump(SexpPrinter&printer) {
+    printer.startList();
+    printer << "Policy";
+    _lower->dump(printer);
+    printer.startList();
+    printer << _cond_name.str();
+    // o << "(Policy ";
+    // _lower->dump(o);
+    // o << " (";
+    // o << _cond_name << " ";
+    // for (list<perm_string>::iterator it = _static.begin(); it != _static.end(); ++it) {
+    //   o << *it << " ";
+    // }
+    // for (list<perm_string>::iterator it = _dynamic.begin(); it != _dynamic.end(); ++it) {
+    //   o << *it << " ";
+    // }
+    // o << ") ";
+    // _upper->dump(o);
+    // o << ")";
   }
   
   SecType* apply_index(perm_string index_var, perm_string index_val) {
@@ -386,7 +403,7 @@ class PolicyType : public SecType {
     return arglist;
   }
   
-  virtual void emitFlowsTo(ostream&o, SecType* rhs);
+  virtual void emitFlowsTo(SexpPrinter&printer, SecType* rhs);
   virtual bool equals(SecType* st);
  private:
   bool _isNext;
@@ -425,7 +442,7 @@ struct Equality {
 		isleq = leq;
 	}
 
-	void dump(ostream&out) const;
+	void dump(SexpPrinter&printerut) const;
 	Equality* subst(map<perm_string, perm_string> m);
 };
 
@@ -474,71 +491,151 @@ struct Constraint {
 	}
 };
 
-inline ostream& operator << (ostream&o, SecType&t)
+inline SexpPrinter& operator << (SexpPrinter&printer, SecType&t)
 {
-	t.dump(o);
-    return o;
+  std::cout << "printing default sectype..." <<std::endl;
+  std::cout << typeid(t).name() << std::endl;
+  t.dump(printer);
+  return printer;
+}
+
+inline ostream &operator<<(ostream &o, SecType &t)
+{
+  SexpPrinter sp(o, 9999);
+  sp << t;
+  return o;
 }
 
 
-inline ostream& operator << (ostream&o, Predicate& pred)
+inline SexpPrinter& operator << (SexpPrinter&printer, Predicate& pred)
 {
-	set<Hypothesis*> l = pred.hypotheses;
-	set<Hypothesis*>::iterator i = l.begin();
-	if (l.size() > 1) {
-	  o << "(and ";
-	}
-	if (i != l.end()) {
-		(*i)->bexpr_->dumpz3(o);
-		i++;
-	}
-	for (; i != l.end() ; i++) {
-	  (*i)->bexpr_->dumpz3(o);
-	}
-	if (l.size() > 1) {
-	  o << ") ";
-	}	
-	return o;
+  auto l = pred.hypotheses;
+  auto i = l.begin();
+  if(l.size() > 1)
+    {
+      printer.startList();
+      printer << "and";
+    }
+  if(i != l.end())
+    {
+      (*i)->bexpr_->dumpz3(printer);
+      ++i;
+    }
+  for(; i != l.end(); ++i)
+    {
+      (*i)->bexpr_->dumpz3(printer);
+    }
+  if(l.size() > 1)
+    printer.endList();
+  return printer;
+	// set<Hypothesis*> l = pred.hypotheses;
+	// set<Hypothesis*>::iterator i = l.begin();
+	// if (l.size() > 1) {
+	//   o << "(and ";
+	// }
+	// if (i != l.end()) {
+	// 	(*i)->bexpr_->dumpz3(o);
+	// 	i++;
+	// }
+	// for (; i != l.end() ; i++) {
+	//   (*i)->bexpr_->dumpz3(o);
+	// }
+	// if (l.size() > 1) {
+	//   o << ") ";
+	// }
+	// return o;
 }
 
-inline ostream& operator << (ostream&o, Invariant& invs)
+inline ostream &operator<<(ostream &o, Predicate &t)
 {
-	set<Equality*> l = invs.invariants;
-	set<Equality*>::iterator i = l.begin();
-	if (i != l.end()) {
-		o << "(";
-		(*i)->dump(o);
-		o << ")";
-		i++;
-	}
-	for (; i != l.end() ; i++) {
-		o << " ("; (*i)->dump(o); o << ")";
-	}
-	return o;
+  SexpPrinter sp(o, 9999);
+  sp << t;
+  return o;
 }
 
-
-inline ostream& operator << (ostream&o, Constraint&c)
+inline SexpPrinter& operator << (SexpPrinter&printer, Invariant& invs)
 {
-	o << "(assert ";
-	bool hashypo = c.pred != NULL && c.pred->hypotheses.size() != 0;
-	bool hasinv = c.invariant != NULL && c.invariant->invariants.size() != 0;;
+  for(auto inv : invs.invariants)
+    {
+      printer.startList();
+      inv->dump(printer);
+      printer.endList();
+    }
+  return printer;
+	// set<Equality*> l = invs.invariants;
+	// set<Equality*>::iterator i = l.begin();
+	// if (i != l.end()) {
+	// 	o << "(";
+	// 	(*i)->dump(o);
+	// 	o << ")";
+	// 	i++;
+	// }
+	// for (; i != l.end() ; i++) {
+	// 	o << " ("; (*i)->dump(o); o << ")";
+	// }
+	// return o;
+}
 
-	if (hashypo || hasinv)
-		o << "(and ";
-	if (hashypo)
-		o << (*c.pred) << " ";
-	if (hasinv)
-		o << (*c.invariant);	
+inline ostream &operator<<(ostream &o, Invariant &t)
+{
+  SexpPrinter sp(o, 9999);
+  sp << t;
+  return o;
+}
 
-	o << " (not ";
-	c.right->simplify()->emitFlowsTo(o, c.left->simplify());
-	o << ") ";
+inline SexpPrinter& operator << (SexpPrinter&printer, Constraint&c)
+{
+  std::cout << "printing constraint to sexp!" << std::endl;
+  printer.startList();
+  printer << "assert";
+  bool hashypo = c.pred != NULL && c.pred->hypotheses.size() != 0;
+  bool hasinv = c.invariant != NULL && c.invariant->invariants.size() != 0;;
+
+  std::cout << "made it this far" << std::endl;
+  
+  if(hashypo || hasinv)
+    printer.startList("and");
+  if(hashypo)
+    printer << (*c.pred);
+  if(hasinv)
+    printer << (*c.invariant);
+
+  std::cout << "oh boy" << std::endl;
+  
+  printer.startList("not");
+  c.right->simplify()->emitFlowsTo(printer, c.left->simplify());
+  printer.endList();
+  if(hashypo || hasinv)
+    printer.endList();
+  printer.endList();
+  std::cout << "done?" << std::endl;
+  return printer;
+    // 	o << "(assert ";
+    // 	bool hashypo = c.pred != NULL && c.pred->hypotheses.size() != 0;
+    // 	bool hasinv = c.invariant != NULL && c.invariant->invariants.size() != 0;;
+
+    // 	if (hashypo || hasinv)
+    // 		o << "(and ";
+    // 	if (hashypo)
+    // 		o << (*c.pred) << " ";
+    // 	if (hasinv)
+    // 		o << (*c.invariant);	
+
+    // 	o << " (not ";
+    // 	c.right->simplify()->emitFlowsTo(o, c.left->simplify());
+    // 	o << ") ";
 	
-	if (hashypo || hasinv)
-		o << ")";
-	o << ")";
-    return o;
+    // 	if (hashypo || hasinv)
+    // 		o << ")";
+    // 	o << ")";
+    // return o;
+}
+
+inline ostream &operator<<(ostream &o, Constraint &t)
+{
+  SexpPrinter sp(o, 9999);
+  sp << t;
+  return o;
 }
 
 #endif

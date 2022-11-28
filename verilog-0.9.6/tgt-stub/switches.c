@@ -61,15 +61,15 @@ void show_switch(ivl_switch_t net)
 	    break;
       }
 
-      fprintf(out, " island=%p\n", ivl_switch_island(net));
+      fprintf(out, " island=%p\n", (void*) ivl_switch_island(net));
 
       nexa = ivl_switch_a(net);
       nex_type_a = nexa? type_of_nexus(nexa) : IVL_VT_NO_TYPE;
-      fprintf(out, "    A: %p <type=%s>\n", nexa, data_type_string(nex_type_a));
+      fprintf(out, "    A: %p <type=%s>\n", (void*) nexa, data_type_string(nex_type_a));
 
       nexb = ivl_switch_b(net);
       nex_type_b = nexb? type_of_nexus(nexb) : IVL_VT_NO_TYPE;
-      fprintf(out, "    B: %p <type=%s>\n", nexb, data_type_string(nex_type_b));
+      fprintf(out, "    B: %p <type=%s>\n", (void*) nexb, data_type_string(nex_type_b));
 
 	/* The A/B pins of the switch must be present, and must match. */
       if (nex_type_a == IVL_VT_NO_TYPE) {
@@ -114,7 +114,7 @@ void show_switch(ivl_switch_t net)
 
       if (has_enable) {
 	    ivl_nexus_t nexe = ivl_switch_enable(net);
-	    fprintf(out, "    E: %p\n", nexe);
+	    fprintf(out, "    E: %p\n", (void*) nexe);
 	    if (width_of_nexus(nexe) != 1) {
 		  fprintf(out, "    E: ERROR: Nexus width is %u\n",
 			  width_of_nexus(nexe));

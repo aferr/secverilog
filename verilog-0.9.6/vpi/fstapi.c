@@ -187,15 +187,15 @@ return(*(uint32_t *)buf);
 }
 
 
-static void fstWriterSetUint32(unsigned char *mem, uint32_t u32)
-{
-unsigned char *buf = (unsigned char *)(&u32);
+/* static void fstWriterSetUint32(unsigned char *mem, uint32_t u32) */
+/* { */
+/* unsigned char *buf = (unsigned char *)(&u32); */
 
-mem[0] = buf[0];
-mem[1] = buf[1];
-mem[2] = buf[2];
-mem[3] = buf[3];
-}
+/* mem[0] = buf[0]; */
+/* mem[1] = buf[1]; */
+/* mem[2] = buf[2]; */
+/* mem[3] = buf[3]; */
+/* } */
 #endif
 
 

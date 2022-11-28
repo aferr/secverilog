@@ -51,7 +51,7 @@ perm_string nextify_perm_string(perm_string s){
 
 svector<named_pexpr_t*>* nextify_named_pexpr_list(svector<named_pexpr_t*>*namelist){
     svector<named_pexpr_t*>* ret = new svector<named_pexpr_t*>(namelist->count());
-    for(int i=0; i<ret->count(); i++){
+    for(size_t i=0; i<ret->count(); i++){
         (*ret)[i] = nextify_named_pexpr((*namelist)[i]);
     }
     return ret;
