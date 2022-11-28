@@ -97,7 +97,7 @@ void vhdl_element::print() const
 // Trap allocations of vhdl_element subclasses.
 // This records the pointer allocated in a static field of vhdl_element
 // so we can delete it just before the code generator exits.
-void* vhdl_element::operator new(size_t size) throw (bad_alloc)
+void* vhdl_element::operator new(size_t size)
 {
    // Let the default new handle the allocation
    void* ptr = ::operator new(size);
