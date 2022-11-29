@@ -26,7 +26,6 @@
 # include  "verinum.h"
 # include  "LineInfo.h"
 # include  "pform_types.h"
-#include "sexp_printer.h"
 
 class Design;
 class Module;
@@ -37,6 +36,7 @@ class SecType;
 class PCondit;
 struct TypeEnv;
 class BaseType;
+class SexpPrinter;
 /*
  * The PExpr class hierarchy supports the description of
  * expressions. The parser can generate expression objects from the

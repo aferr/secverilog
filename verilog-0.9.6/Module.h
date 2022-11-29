@@ -31,7 +31,7 @@
 # include  "LineInfo.h"
 # include  "netlist.h"
 # include  "pform_types.h"
-#include "sexp_printer.h"
+
 class PExpr;
 class PEIdent;
 class PGate;
@@ -43,6 +43,7 @@ class PWire;
 class PProcess;
 class Design;
 class NetScope;
+class SexpPrinter;
 struct Predicate;
 
 /*

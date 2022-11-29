@@ -2,7 +2,7 @@ SHELL := /bin/bash
 BENCHS=$(shell ls *.v)
 
 BENCH_EXP=$(BENCHS:.v=.expected)
-BENCH_SMT=$(BENCHS:.v=z3)
+BENCH_SMT=$(BENCHS:.v=.z3)
 BENCH_OUT=$(BENCHS:.v=.out)
 BENCH_LATTICE=$(BENCHS:.v=.lattice)
 BENCH_FUN=$(BENCHS:.v=.fun)
@@ -11,6 +11,8 @@ BENCH_FUN=$(BENCHS:.v=.fun)
 all: $(BENCH_OUT)
 	@echo "All Tests passed!"
 .PRECIOUS: %.z3
+
+z3files: $(BENCH_SMT)
 
 %.z3: %.v %.lattice %.fun
 	@../bin/iverilog -F $*.fun -l $*.lattice -z $*.v

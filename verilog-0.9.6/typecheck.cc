@@ -94,7 +94,7 @@ void LexicalScope::typecheck_localparams_(SexpPrinter&printer, TypeEnv& env) con
       else
        tmp << "/* ERROR */;" << endl;
     }
-    printer << tmp.str();
+    printer.writeRawLine(tmp.str());
   }
   for (parm_iter_t cur = localparams.begin();
        cur != localparams.end(); cur++) {
@@ -745,6 +745,12 @@ void Module::typecheck(SexpPrinter&printer, TypeEnv& env,
     }
   }
   printer.lineBreak();
+  printer.startList("echo");
+  printer << "\"base conditions are satisfiable? (should be sat)\"";
+  printer.endList();
+  printer.singleton("check-sat");
+
+  printer.lineBreak();
   printer.addComment("assertions to be verified");
   //out << endl << "; assertions to be verified" << endl;
 
@@ -752,7 +758,6 @@ void Module::typecheck(SexpPrinter&printer, TypeEnv& env,
   typedef list<PGenerate*>::const_iterator genscheme_iter_t;
   for (genscheme_iter_t cur = generate_schemes.begin();
        cur != generate_schemes.end(); cur++) {
-    std::cout << "generates" << std::endl;
     (*cur)->typecheck(printer, env, modules);
   }
 
@@ -855,13 +860,10 @@ void typecheck_assignment_constraint(SexpPrinter&printer, SecType* lhs, SecType*
   //out << endl << "(push)" << endl;
   //out << vardecl;
   printer.lineBreak();
-  std::cout << "push1: " << vardecl << endl;
   printer.singleton("push");
-  printer << vardecl;
-  std::cout << "am here?" << std::endl;
+  printer.writeRawLine(vardecl);
   Constraint* c = new Constraint(lhs, rhs, env->invariants, &pred);
   printer << *c;
-  std::cout << "got here!" << std::endl;
   printer.addComment(note);
   printer.startList("echo");
   printer << (string("\"") + note + "\"");
@@ -878,7 +880,6 @@ void typecheck_assignment_constraint(SexpPrinter&printer, SecType* lhs, SecType*
     // out << endl << "(push)" << endl;
     // out << vardecl;
     printer.lineBreak();
-    std::cout << "push2: " << vardecl << endl;
     printer.singleton("push");
     printer << vardecl;
     c = new Constraint(lhs, IndexType::WL, env->invariants, &pred);
@@ -1084,7 +1085,6 @@ void PGModule::typecheck(SexpPrinter&printer, TypeEnv& env,
 	  if (param != NULL) {
 	    //out << endl << "(push)" << endl;
 	    printer.lineBreak();
-	    std::cout << "push3" << std::endl;
 	    printer.singleton("push");
 	    // the direction (input, output) determines def or use should be more restrictive:
 	    // def <= use for outputs
@@ -1580,13 +1580,6 @@ void PGenerate::typecheck(SexpPrinter&printer, TypeEnv env,
   // Iterate through and display all the wires (including registers).
   typecheck_wires_(printer, env);
   printer.lineBreak();
-  printer.startList("echo");
-  printer << "\"base conditions are satisfiable? (should be sat)\"";
-  printer.endList();
-  printer.singleton("check-sat");
-  // out << endl << "(echo \"base conditions are satisfiable? (should be sat)\")"
-  //     << endl << "(check-sat)" << endl;
-  printer.lineBreak();
   printer.addComment("assertions to be verified");
   printer.lineBreak();
   // out << endl << "; assertions to be verified" << endl;
@@ -1809,13 +1802,13 @@ void typecheck(map<perm_string, Module*> modules,
     z3file.open((z3filename + ".z3").c_str());
     output_lattice(z3file, lattice_file_name);
     SexpPrinter printer(z3file, 80);
-    std::cout << "starting typecheck" << std::endl;
     try {
       rmod->typecheck(printer, *env, modules, depfun_file_name);
     } catch (char const* str) {
       cerr << "Unimplemented " << str << endl;
+    } catch (Sexception &exn) {
+      cerr << "Error with sexpifying: " << exn.what() << endl;
     }
-    std::cout << "done checking" << std::endl;
     z3file.close();
   }
 }

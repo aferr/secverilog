@@ -3,18 +3,23 @@
 
 #include <string>
 #include <fstream>
-#include <sstream>
 #include <vector>
-#include <stack>
-#include <list>
 
-#include <iostream>
+class Sexception : public std::exception
+{
+public:
+  Sexception(const char *message);
+  ~Sexception();
+  virtual const char *what() const noexcept override;
+private:
+  static const std::string tag;
+  const char *message;
+};
 
 class SexpPrinter
 {
  public:
   SexpPrinter(std::ostream &, unsigned int margin, unsigned int tabsize = 2);
-  ~SexpPrinter();
   void startList();
   void printAtom(const std::string &atom);
   void endList();
@@ -32,12 +37,10 @@ class SexpPrinter
   const unsigned int margin;
   const unsigned int tabsize;
  private:
-  enum class State
-  {
-    FRESH, ONE_LINE, MULTI_LINE
-  };
+  enum class State { FRESH, ONE_LINE, MULTI_LINE };
   struct PrintState
   {
+    PrintState(int indent) :idnt(indent), st(State::FRESH), acc(), acc_len(0) {}
     unsigned int idnt;
     State st;
     std::vector<std::string> acc;
@@ -55,7 +58,6 @@ class SexpPrinter
   };
   std::vector<PrintState> stack;
   std::ostream &o;
-  //std::ofstream logger;
 };
 
 #endif

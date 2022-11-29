@@ -84,13 +84,11 @@ SecType* ConstType::freshVars(unsigned int lineno, map<perm_string, perm_string>
 	return this;
 }
 void SecType::emitFlowsTo(SexpPrinter&printer, SecType* rhs) {
-  std::cout << "emitflows SecType: ";
   JoinType* right_join = dynamic_cast<JoinType*>(rhs);
   MeetType* right_meet = dynamic_cast<MeetType*>(rhs);
   QuantType* right_quant = dynamic_cast<QuantType*>(rhs);
   PolicyType* right_policy = dynamic_cast<PolicyType*>(rhs);
   if (right_join) {
-    std::cout << "to join" << std::endl;
     // o << "(or\n\t";
     // emitFlowsTo(o, right_join->getFirst());
     // o << " ";
@@ -103,7 +101,6 @@ void SecType::emitFlowsTo(SexpPrinter&printer, SecType* rhs) {
     return;
   }
   if (right_meet) {
-    std::cout << "to meet" << std::endl;
     // o << "(and\n\t";
     // emitFlowsTo(o, right_meet->getFirst());
     // o << " ";
@@ -116,27 +113,18 @@ void SecType::emitFlowsTo(SexpPrinter&printer, SecType* rhs) {
     return;
   }
   if (right_quant) {
-    std::cout << "to quant" << std::endl;
     emitFlowsTo(printer, right_quant->getInnerType());
-    std::cout << "done quant" << std::endl;
     return;
   }
   if (right_policy) {
-    std::cout << "to policy" << std::endl;
     emitFlowsTo(printer, right_policy->get_lower());
     return;
   }
-  std::cout << "to default" << std::endl;
   //o << "(leq " << *this << " " << *rhs << ")";
   printer.startList("leq");
-  std::cout << "got here?" << std::endl;
   //printer << *this << *rhs;
-  std::cout << "attempting to print this: " << std::endl;
-  printer << *this;
-  std::cout <<"printed this" << std::endl;
-  printer << *rhs;
+  printer << *this << *rhs;
   printer.endList();
-  std::cout << "done default" << std::endl;
 }
 
 /* type variables */
@@ -372,7 +360,6 @@ JoinType::~JoinType()
 }
 
 void JoinType::emitFlowsTo(SexpPrinter&printer, SecType* rhs) {
-  std::cout << "emitFlows JoinType" <<std::endl;
   printer.startList("and");
   getFirst()->emitFlowsTo(printer, rhs);
   getSecond()->emitFlowsTo(printer, rhs);
@@ -578,7 +565,6 @@ bool MeetType::hasExpr(perm_string str)
 	return comp1_->hasExpr(str) || comp2_->hasExpr(str);
 }
 void MeetType::emitFlowsTo(SexpPrinter&printer, SecType* rhs) {
-  std::cout << "emit flows meet" <<std::endl;
   printer.startList("or");
   getFirst()->emitFlowsTo(printer, rhs);
   getSecond()->emitFlowsTo(printer, rhs);
@@ -728,10 +714,9 @@ void PolicyType::collect_dep_expr(set<perm_string>& m)
       // value of the label is the dependand      
       m.insert(nextify_perm_string(ex));
     }
-  }  
+  }
 }
 void PolicyType::emitFlowsTo(SexpPrinter&printer, SecType* rhs) {
-    std::cout << "emit flows policy" <<std::endl;
   PolicyType* right_policy = dynamic_cast<PolicyType*>(rhs);
   ConstType* right_const = dynamic_cast<ConstType*>(rhs);
   VarType* right_var = dynamic_cast<VarType*>(rhs);

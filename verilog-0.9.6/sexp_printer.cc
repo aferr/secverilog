@@ -1,14 +1,33 @@
 #include "sexp_printer.h"
 #include <ostream>
-#include <type_traits>
-
+#include <sstream>
+#include <cstring>
 
 using strvec = std::vector<std::string>;
 
+Sexception::Sexception(const char *m)
+{
+  size_t m_len = strlen(m);
+  char *tmp = (char*) malloc(tag.size() + m_len + 1);
+  memcpy(tmp, tag.c_str(), tag.size());
+  memcpy(tmp + tag.size(), m, m_len + 1);
+  message = tmp;
+}
+
+Sexception::~Sexception()
+{
+  free((char*) message);
+}
+
+const char *Sexception::what() const noexcept
+{
+  return message;
+}
+
+const std::string Sexception::tag = "SexpPrinter: ";
+
 void SexpPrinter::startList()
 {
-  //logger << "printer.startList();\n";
-  std::cout << "starting list" << std::endl;
   unsigned int idnt = 0;
   if(!stack.empty())
     {
@@ -24,17 +43,14 @@ void SexpPrinter::startList()
 	  idnt = stack.back().idnt + tabsize;
 	}
     }
-  SexpPrinter::PrintState st{idnt, SexpPrinter::State::FRESH, strvec{}, 0};
-  std::cout << "created state" << std::endl;
-  stack.push_back(st);
-  std::cout << "started list" << std::endl;
+  stack.emplace_back(idnt);
 }
 
 
 void SexpPrinter::printAtom(const std::string &atom)
 {
-  std::cout << "printing atom: " << atom << std::endl;
-  //logger << "printer.printAtom(\"" << atom << "\");\n";
+  if(stack.empty())
+    throw Sexception("cannot print naked atom!");
   if(atom.empty())
     return;
   auto &state = stack.back();
@@ -54,15 +70,12 @@ void SexpPrinter::printAtom(const std::string &atom)
 		{
 		  if(s.st == SexpPrinter::State::ONE_LINE)
 		    {
-		      //std::cout << "changing to multiline" << std::endl;
 		      s.st = SexpPrinter::State::MULTI_LINE;
-		      //s.idnt -= s.acc.front().size();
 		      std::string indent(s.idnt, ' ');
 		      s.idnt += tabsize;
 		      std::string more_indent(tabsize, ' ');
 		      for(auto &str : s.acc)
 			{
-			  //std::cout << "printing: " << str << std::endl;
 			  if(&str == &s.acc.front())
 			    o << (&s == &stack.front() ? "" : "\n") << indent << "(" << str;
 			  else
@@ -78,16 +91,14 @@ void SexpPrinter::printAtom(const std::string &atom)
         }
       break;
     case SexpPrinter::State::MULTI_LINE:
-      //std::cout << "multiline print: " << atom << std::endl;
       std::string indent(state.idnt, ' ');
       o << std::endl << indent << atom;
     }
 }
 void SexpPrinter::endList()
 {
-  //logger << "printer.endList();\n";
   if(stack.empty())
-    throw("mismatched delimiters");
+    throw Sexception("mismatched delimiters");
   auto &state = stack.back();
   switch(state.st)
     {
@@ -132,17 +143,15 @@ void SexpPrinter::endList()
 
 void SexpPrinter::addComment(const std::string &comment)
 {
-  //logger << "printer.addComment(\"" << comment << "\");\n";
   if(!stack.empty())
-    throw("cannot add comment inside of S-expression");
+    throw Sexception("cannot add comment inside of S-expression");
   o << ";; " << comment << std::endl;
 }
 
 void SexpPrinter::lineBreak()
 {
-  //logger << "printer.lineBreak();\n";
   if(!stack.empty())
-    throw("cannot add line break inside of S-expression");
+    throw Sexception("cannot add line break inside of S-expression");
   o << std::endl;
 }
 
@@ -155,7 +164,6 @@ void SexpPrinter::startList(const std::string &first)
 
 SexpPrinter::SexpPrinter(std::ostream &os, unsigned int m, unsigned int ts)
     : margin(m), tabsize(ts), stack(), o(os) {
-  //logger.open("sexp_log.cc");
 }
 
 void SexpPrinter::singleton(const std::string &atom)
@@ -167,13 +175,6 @@ void SexpPrinter::singleton(const std::string &atom)
 void SexpPrinter::writeRawLine(const std::string &str)
 {
   if(!stack.empty())
-    throw("cannot write raw line inside of S-expression");
+    throw Sexception("cannot write raw line inside of S-expression");
   o << str << std::endl;
-}
-
-
-SexpPrinter::~SexpPrinter()
-{
-  //logger.close();
-  std::cout << "destroying with stack size: " << stack.size() << std::endl;
 }

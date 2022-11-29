@@ -36,10 +36,10 @@
 # include  "StringHeap.h"
 # include  "basetypes.h"
 # include  "QuantExpr.h"
+# include  "PExpr.h"
 #include "sexp_printer.h"
-#include "PExpr.h"
-# include <sstream>
-# include <fstream>
+# include  <sstream>
+# include  <fstream>
 #include <cstdlib>
 #include <list>
 #include <map>
@@ -92,7 +92,6 @@ public:
 	ConstType(perm_string name);
 	~ConstType();
 	void dump(SexpPrinter&printer) {
-	  std::cout << "dumping const: " << name.str() << std::endl;
 	  printer << name.str();
 	}
 	bool hasBottom() {
@@ -493,8 +492,6 @@ struct Constraint {
 
 inline SexpPrinter& operator << (SexpPrinter&printer, SecType&t)
 {
-  std::cout << "printing default sectype..." <<std::endl;
-  std::cout << typeid(t).name() << std::endl;
   t.dump(printer);
   return printer;
 }
@@ -585,14 +582,11 @@ inline ostream &operator<<(ostream &o, Invariant &t)
 
 inline SexpPrinter& operator << (SexpPrinter&printer, Constraint&c)
 {
-  std::cout << "printing constraint to sexp!" << std::endl;
   printer.startList();
   printer << "assert";
   bool hashypo = c.pred != NULL && c.pred->hypotheses.size() != 0;
   bool hasinv = c.invariant != NULL && c.invariant->invariants.size() != 0;;
 
-  std::cout << "made it this far" << std::endl;
-  
   if(hashypo || hasinv)
     printer.startList("and");
   if(hashypo)
@@ -600,15 +594,12 @@ inline SexpPrinter& operator << (SexpPrinter&printer, Constraint&c)
   if(hasinv)
     printer << (*c.invariant);
 
-  std::cout << "oh boy" << std::endl;
-  
   printer.startList("not");
   c.right->simplify()->emitFlowsTo(printer, c.left->simplify());
   printer.endList();
   if(hashypo || hasinv)
     printer.endList();
   printer.endList();
-  std::cout << "done?" << std::endl;
   return printer;
     // 	o << "(assert ";
     // 	bool hashypo = c.pred != NULL && c.pred->hypotheses.size() != 0;
