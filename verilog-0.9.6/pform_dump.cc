@@ -298,7 +298,6 @@ void PEIdent::dumpz3(SexpPrinter&printer) const
     PExpr* msb = idxit->msb;
     PExpr* lsb = idxit->lsb;
     if (!msb || lsb) { //just dump normally if its form x[msb:lsb]
-      //dump(out);
       std::stringstream str;
       dump(str);
       printer << str.str();;
@@ -310,9 +309,6 @@ void PEIdent::dumpz3(SexpPrinter&printer) const
       msb->dump(tmp);
       printer << tmp.str();
       printer.endList();
-      // out << "(select " << base_name << " ";
-      // msb->dump(out);
-      // out << ")";
     }
   } else {
     //no index information, just dump it!
@@ -330,9 +326,6 @@ void PEIdent::dumpEq(SexpPrinter&printer, int val) const
   dumpz3(printer);
   printer << std::to_string(val);
   printer.endList();
-  // out << "(= ";
-  // dumpz3(out);
-  // out << " " << val << ")";
 }
 
 void PEString::dump(ostream&out) const
@@ -363,18 +356,6 @@ void PETernary::dumpz3(SexpPrinter&printer) const
   tru_->dumpz3(printer);
   fal_->dumpz3(printer);
   printer.endList();
-  // out << "(ite ";
-  // PEIdent* exident = dynamic_cast<PEIdent*>(expr_);
-  // if (exident) {
-  //   exident->dumpEq(out, 1);
-  // } else {
-  //   expr_->dumpz3(out);
-  // }
-  // out << " ";
-  // tru_->dumpz3(out);
-  // out << " ";
-  // fal_->dumpz3(out);
-  // out << " )";
 }
 
 void PEUnary::dump(ostream&out) const
@@ -397,13 +378,12 @@ void PEUnary::dumpz3(SexpPrinter&printer) const
 
   PEIdent* exident = dynamic_cast<PEIdent*>(expr_);
   bool doEq = false;
-  //out << "(";
   printer.startList();
   switch (op_) {
     case 'm':
       printer << "abs";
       break;
-    case '!':      
+    case '!':
     case 'N':
       printer << "not";
       doEq = true;
@@ -413,13 +393,11 @@ void PEUnary::dumpz3(SexpPrinter&printer) const
       printer << std::string(1, op_);
       break;
     }
-  //out << " ";
     if (exident && doEq){
       exident->dumpEq(printer, 1);
     } else {
       expr_->dumpz3(printer);
     }
-    //out << ")";
     printer.endList();
 }
 
@@ -449,7 +427,7 @@ void PEBinary::dump(ostream&out) const
     	return;
       }
       if (op_ == 'L') {
-    	//out << "<= "<< "(" << *left_ << ") (" << *right_ << ")";
+
     	out << "<= "<< *left_ << " " << *right_;
     	return;
       }
@@ -494,150 +472,95 @@ void PEBinary::dumpz3(SexpPrinter&printer) const
   PEIdent* liden = dynamic_cast<PEIdent*>(left_);
   PEIdent* riden = dynamic_cast<PEIdent*>(right_);    
   if (op_ == 'm') {
-    //out << "(min" ;
     printer.startList("min");
     left_->dumpz3(printer);
-    //out << " ";
     right_->dumpz3(printer);
-    //out << ")";
     printer.endList();
     return;
   }
   if (op_ == 'M') {
-    //out << "(max" ;
     printer.startList("max");
     left_->dumpz3(printer);
-    //out << " ";
     right_->dumpz3(printer);
-    //out << ")";
     printer.endList();
     return;
   }
   if (op_ == 'e') {
-    //out << "(= ";
     printer.startList("=");
     left_->dumpz3(printer);
-    //out << " ";
     right_->dumpz3(printer);
-    //out << ")";
     printer.endList();
     return;
   }
   if (op_ == 'o') {
-    //out << "(or " ;
     printer.startList("or");
     if (liden) {
       liden->dumpEq(printer, 1);
     } else {
       left_->dumpz3(printer);
     }
-    //out << " ";
     if (riden) {
       riden->dumpEq(printer, 1);
     } else {
       right_->dumpz3(printer);
     }
-    //out << ")";
     printer.endList();
     return;
   }
   if (op_ == 'a') {
-    //out << "(and " ;
     printer.startList("and");
     if (liden) {
       liden->dumpEq(printer, 1);
     } else {
       left_->dumpz3(printer);
     }
-    //    out << " ";
     if (riden) {
       riden->dumpEq(printer, 1);
     } else {
       right_->dumpz3(printer);
     }
-    //out << ")";
     printer.endList();
     return;
   }
   if (op_ == 'L') {
-    //out << "(<= ";
     printer.startList("<=");
     left_->dumpz3(printer);
-    //out << " ";
     right_->dumpz3(printer);
-    //out << ")";
     printer.endList();
     return;
   }
   if (op_ == 'G') {
-    //out << "(>= ";
     printer.startList(">=");
     left_->dumpz3(printer);
-    //out << " ";
     right_->dumpz3(printer);
-    //out << ")";
     printer.endList();
     return;
   }
   if (op_ == 'n') {
-    //out << "(not (= ";
     printer.startList("not");
     printer.startList("=");
     left_->dumpz3(printer);
-    //out << " ";
     right_->dumpz3(printer);
-    //out << "))";
     printer.endList();
     printer.endList();
     return;
   }
   if ((op_ == '>') || (op_ == '<') || (op_ == '+')) {
-    //out << "(" << op_ << " ";
     printer.startList(std::string(1, op_));
     left_->dumpz3(printer);
-    //out << " ";
     right_->dumpz3(printer);
-    //out << ")";
     printer.endList();
     return;
   }
   if (op_ == '%') {
-    //out << "(mod ";
     printer.startList("mod");
     left_->dumpz3(printer);
-    //out << " ";
     right_->dumpz3(printer);
-    //out << ")";
     printer.endList();
     return;
   }
   std::cerr << "No support for given binary operator: " << op_ << std::endl;
   throw("No support for given binary operator: ");
-      // out << "(" << *left_ << ")";
-      // switch (op_) {
-      // 	  case 'E':
-      // 	    out << "===";
-      // 	    break;
-      // 	  case 'l':
-      // 	    out << "<<";
-      // 	    break;
-      // 	  case 'N':
-      // 	    out << "!==";
-      // 	    break;
-      // 	  case 'p':
-      // 	    out << "**";
-      // 	    break;
-      // 	  case 'R':
-      // 	    out << ">>>";
-      // 	    break;
-      // 	  case 'r':
-      // 	    out << ">>";
-      // 	    break;
-      // 	  default:
-      // 	    out << op_;
-      // 	    break;
-      // }
-      // out << "(" << *right_ << ")";
 }
 
 

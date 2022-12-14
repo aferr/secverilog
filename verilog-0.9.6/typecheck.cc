@@ -148,21 +148,21 @@ PProcess* Module::gen_assign_next_block(perm_string id){
 
 void PProcess::next_cycle_transform(SexpPrinter&printer, TypeEnv&env) const {
   if(statement_ == NULL) return;
-  if(debug_typecheck) 
+  if(debug_typecheck)
     fprintf(stderr, "NextCycleTransform:: %s\n", typeid(*statement_).name());
   statement_->next_cycle_transform(printer, env);
 }
 
 bool PProcess::collect_dep_invariants(SexpPrinter&printer, TypeEnv&env, Predicate&pred) {
   if(statement_ == NULL) return false;
-  if(debug_typecheck) 
+  if(debug_typecheck)
     fprintf(stderr, "collect_dep_invariants:: %s\n", typeid(*statement_).name());
   return statement_->collect_dep_invariants(printer, env, pred);
 }
 
 void PProcess::collect_index_exprs(set<perm_string>&exprs, map<perm_string, SecType*>&env) {
   if(statement_ == NULL) return;
-  if(debug_typecheck) 
+  if(debug_typecheck)
     fprintf(stderr, "collect_index_exprs:: %s\n", typeid(*statement_).name());
   statement_->collect_index_exprs(exprs, env);
 }
@@ -303,25 +303,18 @@ bool PAssign_::collect_dep_invariants(SexpPrinter&printer, TypeEnv&env, Predicat
       isLeftSeq && !isNextAssign) {
     
     bool hasPreds = !pred.hypotheses.empty();
-    //out << "(assert ";
     printer.startList("assert");
     if (hasPreds) {
-      //out << "(=> " << pred << " ";
       printer.startList("=>");
       printer << pred;
     }
-    //out << "(= ";
     printer.startList("=");
     lval()->dumpz3(printer);
-    //out << " ";
     rval()->dumpz3(printer);
-    //out << ")";
     printer.endList();
     if (hasPreds) {
-      //out << ")";
       printer.endList();
     }
-    //out << ")" << endl;
     printer.endList();
     //also collect rhs variables in the dep_exprs to define them in z3 file
     rval()->collect_idens(env.dep_exprs);
@@ -513,7 +506,6 @@ void Module::dumpExprDefs(SexpPrinter&printer, set<perm_string>exprs) const {
       PWire* def = (*cur).second;
       //assume wires are either arrays or ints
       if (def->get_isarray()) {
-	//out << "(declare-fun " << (*ite) << " () (Array Int Int))" << endl;
 	printer.startList("declare-fun");
 	printer << ite->str() << "()";
 	printer.startList("Array");
@@ -521,7 +513,6 @@ void Module::dumpExprDefs(SexpPrinter&printer, set<perm_string>exprs) const {
 	printer.endList();
 	printer.endList();
 
-	//out << "(assert (forall ((x Int)) (<= 0 (select " << (*ite) << "x))))" << endl;
 	printer.startList("assert");
 	printer.startList("forall");
 	printer.startList();
@@ -538,8 +529,6 @@ void Module::dumpExprDefs(SexpPrinter&printer, set<perm_string>exprs) const {
 	printer.endList();
 	printer.endList();
 
-	// out << "(assert (forall ((x Int)) (<= (select " << (*ite) << " x) " <<
-	//   (1 << (def->getRange() + 1)) - 1 << ")))" << endl;
 	printer.startList("assert");
 	printer.startList("forall");
 	printer.startList();
@@ -556,21 +545,17 @@ void Module::dumpExprDefs(SexpPrinter&printer, set<perm_string>exprs) const {
 	printer.endList();
 	printer.endList();
       } else {
-	//out << "(declare-fun " << (*ite) << " () Int)" << endl;
 	printer.startList("declare-fun");
 	printer << ite->str() << "()" << "Int";
 	printer.endList();
 
-	// out << "(assert (<= 0  " << (*ite) << "))" << endl;
 	printer.startList("assert");
 	printer.startList("<=");
 	printer << "0" << ite->str();
 	printer.endList();
 	printer.endList();
 
-	// out << "(assert (<= " << (*ite) << " "
-	//     << (1 << (def->getRange() + 1)) - 1 << "))" << endl;
-	printer.startList("assert");
+        printer.startList("assert");
 	printer.startList("<=");
 	printer << ite->str() << std::to_string((1 << (def->getRange() + 1)) - 1);
 	printer.endList();
@@ -579,7 +564,6 @@ void Module::dumpExprDefs(SexpPrinter&printer, set<perm_string>exprs) const {
     } else {
       // in this case, its probably a genvar, just declare it as an unbound int
       if (debug_typecheck) { cout << "couldn't find wire for " << temp << endl; }
-      //out << "(declare-fun " << temp << " () Int)" << endl;
       printer.startList("declare-fun");
       printer << temp.str() << "()" << "Int";
       printer.endList();
@@ -626,7 +610,6 @@ void Module::CollectDepExprs(SexpPrinter&printer, TypeEnv & env) const {
   if (check_write)
     env.dep_exprs.insert(perm_string::literal("WriteLabel"));
   // declare the expressions as variables in z3 file
-  //out << endl << "; variables to be solved" << endl;
   printer.addComment("variables to be solved");
 
   dumpExprDefs(printer, env.dep_exprs);
@@ -637,7 +620,6 @@ void Module::CollectDepExprs(SexpPrinter&printer, TypeEnv & env) const {
  * Only generate if expr is in a dependent label but skip the automatic next_cycle_transform assignment
  */
 void Module::CollectDepInvariants(SexpPrinter&printer, TypeEnv & env) const {
-  //out << "; invariants about dependent variables" << endl;
   printer.addComment("invariants about dependent variables");
   set<perm_string> oldDeps = env.dep_exprs;
   //collect invariants and print them after definining new variables
@@ -752,7 +734,6 @@ void Module::typecheck(SexpPrinter&printer, TypeEnv& env,
 
   printer.lineBreak();
   printer.addComment("assertions to be verified");
-  //out << endl << "; assertions to be verified" << endl;
 
   if(debug_typecheck) fprintf(stderr, "checking generates\n");
   typedef list<PGenerate*>::const_iterator genscheme_iter_t;
@@ -857,8 +838,6 @@ void AContrib::typecheck(SexpPrinter&printer, TypeEnv& env, Predicate& pred) con
  */
 void typecheck_assignment_constraint(SexpPrinter&printer, SecType* lhs, SecType* rhs,
 				     Predicate pred, string note, string vardecl, TypeEnv* env) {
-  //out << endl << "(push)" << endl;
-  //out << vardecl;
   printer.lineBreak();
   printer.singleton("push");
   printer.writeRawLine(vardecl);
@@ -870,15 +849,9 @@ void typecheck_assignment_constraint(SexpPrinter&printer, SecType* lhs, SecType*
   printer.endList();
   printer.singleton("check-sat");
   printer.singleton("pop");
-  //out << "    ; " << note << endl;
-  // out << "(echo \"" << note << "\")" << endl;
-  // out << "(check-sat)" << endl;
-  // out << "(pop)" << endl << endl;
 
   // check restrictions on write labels
   if (check_write) {
-    // out << endl << "(push)" << endl;
-    // out << vardecl;
     printer.lineBreak();
     printer.singleton("push");
     printer << vardecl;
@@ -887,10 +860,6 @@ void typecheck_assignment_constraint(SexpPrinter&printer, SecType* lhs, SecType*
     printer.addComment(std::string("check write label ") + note);
     printer.singleton("check-sat");
     printer.singleton("pop");
-    // out << *c;
-    // out << "    ; check write label " << note << endl;
-    // out << "(check-sat)" << endl;
-    // out << "(pop)" << endl << endl;
   }
 }
 
@@ -912,8 +881,7 @@ void typecheck_assignment(SexpPrinter&printer, PExpr* lhs, PExpr* rhs, TypeEnv* 
       ltype = lhs->typecheck(printer, env->varsToType);
     }
     lbase = lhs->check_base_type(printer, env->varsToBase);
-        
-    //If ltype is sequential, substitute its free variables with the 
+    //If ltype is sequential, substitute its free variables with the
     //next-cycle version of that variable.
     if(lbase->isNextType()){
       ltype  = ltype->next_cycle(env);
@@ -1003,15 +971,10 @@ bool PGAssign::collect_dep_invariants(SexpPrinter&printer, TypeEnv&env) {
     return false;
   }
   if (env.dep_exprs.find(lval->get_name()) != env.dep_exprs.end()) {
-    //out << "(assert ";
-    //out << "(= ";
     printer.startList("assert");
     printer.startList("=");
     lval->dumpz3(printer);
-    //out << " ";
     rval->dumpz3(printer);
-    //out << ")";
-    //out << ")" << endl;
     printer.endList();
     printer.endList();
     //also collect rhs variables in the dep_exprs to define them in z3 file
@@ -1083,7 +1046,6 @@ void PGModule::typecheck(SexpPrinter&printer, TypeEnv& env,
 	if (ite != mwires.end()) {
 	  PExpr* param = get_param(idx);
 	  if (param != NULL) {
-	    //out << endl << "(push)" << endl;
 	    printer.lineBreak();
 	    printer.singleton("push");
 	    // the direction (input, output) determines def or use should be more restrictive:
@@ -1113,8 +1075,6 @@ void PGModule::typecheck(SexpPrinter&printer, TypeEnv& env,
 		 varsite != vars.end(); varsite++) {
 	      if (env.dep_exprs.find(*varsite)
 		  == env.dep_exprs.end()) {
-		// out << "(declare-fun " << (*varsite)
-		//     << " () Int)" << endl;
 		printer.startList("declare-fun");
 		printer << varsite->str() << "()" << "Int";
 		printer.endList();
@@ -1123,16 +1083,11 @@ void PGModule::typecheck(SexpPrinter&printer, TypeEnv& env,
 		// get the range of the free variables
 		if (decl != mwires.end()) {
 		  PWire* def = (*decl).second;
-		  // out << "(assert (<= 0  " << (*varsite)
-		  //     << "))" << endl;
 		  printer.startList("assert");
 		  printer.startList("<=");
 		  printer << "0" << varsite->str();
 		  printer.endList();
 		  printer.endList();
-		  // out << "(assert (<= " << (*varsite) << " "
-		  //     << (1 << (def->getRange() + 1)) - 1
-		  //     << "))" << endl;
 		  printer.startList("assert");
 		  printer.startList("<=");
 		  printer << varsite->str()
@@ -1168,11 +1123,6 @@ void PGModule::typecheck(SexpPrinter&printer, TypeEnv& env,
 	      printer.endList();
 	      printer.singleton("check-sat");
 	      printer.singleton("pop");
-	      // out << "(echo \"parameter " << get_pin_name(idx)
-	      // 	  << " for module " << get_type() << " @" << get_fileline()
-	      // 	  << "\")" << endl;
-	      // out << "(check-sat)" << endl;
-	      // out << "(pop)" << endl << endl;
 	    } else if (porttype == NetNet::POUTPUT
 		       || porttype == NetNet::PINOUT) {
 	      SecType* rhs = pinType;
@@ -1180,7 +1130,6 @@ void PGModule::typecheck(SexpPrinter&printer, TypeEnv& env,
 	      Predicate pred;
 	      Constraint* c = new Constraint(lhs, rhs,
 					     env.invariants, &pred);
-	      //out << *c;
 	      printer << *c;
 	      // debugging information
 	      std::stringstream tmp;
@@ -1199,11 +1148,6 @@ void PGModule::typecheck(SexpPrinter&printer, TypeEnv& env,
 	      printer.endList();
 	      printer.singleton("check-sat");
 	      printer.singleton("pop");
-	      // out << "(echo \"parameter " << get_pin_name(idx)
-	      // 	  << " for module " << get_type() << " @" << get_fileline()
-	      // 	  << "\")" << endl;
-	      // out << "(check-sat)" << endl;
-	      // out << "(pop)" << endl << endl;
 	    }
 	  } else {
 	    cerr << "parameter " << *param << " is not found"
@@ -1584,7 +1528,6 @@ void PGenerate::typecheck(SexpPrinter&printer, TypeEnv env,
   printer.lineBreak();
   printer.addComment("assertions to be verified");
   printer.lineBreak();
-  // out << endl << "; assertions to be verified" << endl;
 
   for (list<PGate*>::const_iterator gate = gates.begin(); gate != gates.end();
        gate++) {
@@ -1747,11 +1690,6 @@ void output_lattice(ostream& out, char* lattice) {
  * using the [-F depfun_file] option to SecVerilog.
  */
 void output_type_families(SexpPrinter&printer, char* depfun) {
-  // out << endl << "; function that maps 0 to LOW; 1 to HIGH" << endl;
-  // out << "(declare-fun LH (Int) Label)" << endl;
-  // out << "(assert (= (LH 0) LOW))" << endl;
-  // out << "(assert (= (LH 1) HIGH))" << endl;
-
   printer.lineBreak();
   printer.addComment("function that maps 0 to LOW; 1 to HIGH");
   printer.singleton("declare-fun LH (Int) Label");
@@ -1765,7 +1703,6 @@ void output_type_families(SexpPrinter&printer, char* depfun) {
     ifstream infile(depfun);
     while (getline(infile, line)) {
       printer.writeRawLine(line);
-      //out << line << endl;
     }
   }
 }
