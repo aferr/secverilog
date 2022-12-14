@@ -1685,13 +1685,14 @@ struct root_elem {
 };
 
 /**
- * SecVerilog by default declares a "dimand" lattice with four security labels as follows:
+ * SecVerilog by default declares a minimal lattice with only bottom and top:
  *                   HIGH
- *             D1            D2
+ *
  *                   LOW
  *
  * Programmers can define their own lattice structure in a Z3 file,
- * by using the [-l lattice_file] option to SecVerilog.
+ * by using the [-l lattice_file] option to SecVerilog. This will not
+ * overwrite the existing bottom and top, and can only specify other, new elements.
  */
 void output_lattice(ostream& out, char* lattice) {
   out << "; this part encodes a partial order on labels" << endl;
@@ -1719,9 +1720,7 @@ void output_lattice(ostream& out, char* lattice) {
   out << endl << "; lattice elements" << endl;
   out << "(declare-fun LOW () Label)" << endl;
   out << "(declare-fun HIGH () Label)" << endl;
-  out << "(declare-fun D1 () Label)" << endl;
-  out << "(declare-fun D2 () Label)" << endl;
-
+  
   out << endl << "; lattice structure" << endl;
   out << "(assert (forall ((x Label)) (leq LOW x)))" << endl;
   out << "(assert (forall ((x Label)) (leq x HIGH)))" << endl;
