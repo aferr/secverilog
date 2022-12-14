@@ -9,6 +9,8 @@ my $iveriloghome = "/home/drew/volume/secverilog/bin/"; # specify iverilog home 
 my $z3option = "smt2";
 my $secoption = "";
 
+my $base_expected_str = "base conditions are satisfiable? (should be sat)\n";
+
 my $fail_counter = 0;
 my $counter = 0;
 
@@ -72,10 +74,25 @@ foreach my $file (@files) {
     my $isassertion = 0;
     $counter = 0;
 
-    # find "unsat" assertions, and output the corrensponding comment in constraint source file
+   
+    # first output should check that basic assumptions are satisfiable    
+    # then find "unsat" assertions, and output the corrensponding comment in constraint source file
     my $errors = "";
     my $prevLine = "";
-    for(split /^/, $str) {
+    my @lines = split(/^/, $str);
+    if (scalar @lines < 2) {
+	print_fail();
+	print "Invalid output, missing basic assertions check\n";
+	exit $1;
+    }
+    if (@lines[0] ne $base_expected_str || @lines[1] ne "sat\n") {	
+	print_fail();
+	print "Basic assertions not satisfiable, test invalid\n";
+	exit $1;
+    }    
+    shift(@lines);
+    shift(@lines);
+    for(@lines) {
       if (/^sat|^unknown/) {
 	  $errors .= $prevLine;
 	  $fail_counter ++;
