@@ -1158,6 +1158,7 @@ void PGModule::typecheck(SexpPrinter&printer, TypeEnv& env,
 		  << get_type() << " @" << get_fileline()
 		  << endl;
 	      printer.addComment(tmp.str());
+	      tmp.str("");
 	      tmp.clear();
 	      printer.startList("echo");
 	      tmp << "\"parameter" << get_pin_name(idx)
@@ -1188,6 +1189,7 @@ void PGModule::typecheck(SexpPrinter&printer, TypeEnv& env,
 		  << get_type() << " @" << get_fileline()
 		  << endl;
 	      printer.addComment(tmp.str());
+	      tmp.str("");
 	      tmp.clear();
 	      printer.startList("echo");
 	      tmp << "\"parameter " << get_pin_name(idx)

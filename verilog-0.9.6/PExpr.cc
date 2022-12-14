@@ -128,7 +128,7 @@ bool PEBinary::is_wellformed(set<perm_string> s)
   if (op_ == 'a')
     return left_->is_wellformed(s) || right_->is_wellformed(s);
   else {
-    cout << "Operator: " << op_ << " is not wellformed";    
+    cout << "Operator: " << op_ << " is not wellformed";
     return false;
   }
 }
