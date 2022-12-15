@@ -31,13 +31,12 @@
 extern StringHeap lex_strings;
 extern perm_string nextify_perm_string(perm_string s);
 
-void dumpZ3Func(ostream& o, perm_string name, list<perm_string> args) {
-  o << "(" << name << " ";
-
-  for (list<perm_string>::iterator it = args.begin(); it != args.end(); ++it){
-    o << *it << " ";
-  }
-  o << ")";  
+void dumpZ3Func(SexpPrinter& printer, perm_string name, list<perm_string> args)
+{
+  printer.startList(name.str());
+  for(auto pstr : args)
+    printer << pstr.str();
+  printer.endList();
 }
 
 ConstType* ConstType::TOP = new ConstType(lex_strings.make("HIGH"));
@@ -78,36 +77,36 @@ SecType* ConstType::freshVars(unsigned int lineno, map<perm_string, perm_string>
 {
 	return this;
 }
-void SecType::emitFlowsTo(ostream&o, SecType* rhs) {
+void SecType::emitFlowsTo(SexpPrinter&printer, SecType* rhs) {
   JoinType* right_join = dynamic_cast<JoinType*>(rhs);
   MeetType* right_meet = dynamic_cast<MeetType*>(rhs);
   QuantType* right_quant = dynamic_cast<QuantType*>(rhs);
   PolicyType* right_policy = dynamic_cast<PolicyType*>(rhs);
   if (right_join) {
-    o << "(or\n\t";
-    emitFlowsTo(o, right_join->getFirst());
-    o << " ";
-    emitFlowsTo(o, right_join->getSecond());
-    o << "\n)";
+    printer.startList("or");
+    emitFlowsTo(printer, right_join->getFirst());
+    emitFlowsTo(printer, right_join->getSecond());
+    printer.endList();
     return;
   }
   if (right_meet) {
-    o << "(and\n\t";
-    emitFlowsTo(o, right_meet->getFirst());
-    o << " ";
-    emitFlowsTo(o, right_meet->getSecond());
-    o << "\n)";
-    return;    
+    printer.startList("and");
+    emitFlowsTo(printer, right_meet->getFirst());
+    emitFlowsTo(printer, right_meet->getSecond());
+    printer.endList();
+    return;
   }
   if (right_quant) {
-    emitFlowsTo(o, right_quant->getInnerType());
+    emitFlowsTo(printer, right_quant->getInnerType());
     return;
   }
   if (right_policy) {
-    emitFlowsTo(o, right_policy->get_lower());
+    emitFlowsTo(printer, right_policy->get_lower());
     return;
   }
-  o << "(leq " << *this << " " << *rhs << ")";
+  printer.startList("leq");
+  printer << *this << *rhs;
+  printer.endList();
 }
 
 /* type variables */
@@ -342,12 +341,11 @@ JoinType::~JoinType()
 {
 }
 
-void JoinType::emitFlowsTo(ostream&o, SecType* rhs) {
-  o << "(and\n\t";
-  getFirst()->emitFlowsTo(o, rhs);
-  o << " ";
-  getSecond()->emitFlowsTo(o, rhs);
-  o << "\n)";
+void JoinType::emitFlowsTo(SexpPrinter&printer, SecType* rhs) {
+  printer.startList("and");
+  getFirst()->emitFlowsTo(printer, rhs);
+  getSecond()->emitFlowsTo(printer, rhs);
+  printer.endList();
 }
 
 SecType* JoinType::getFirst()
@@ -543,12 +541,11 @@ bool MeetType::hasExpr(perm_string str)
 {
 	return comp1_->hasExpr(str) || comp2_->hasExpr(str);
 }
-void MeetType::emitFlowsTo(ostream&o, SecType* rhs) {
-  o << "(or\n\t";
-  getFirst()->emitFlowsTo(o, rhs);
-  o << " ";
-  getSecond()->emitFlowsTo(o, rhs);
-  o << "\n)";
+void MeetType::emitFlowsTo(SexpPrinter&printer, SecType* rhs) {
+  printer.startList("or");
+  getFirst()->emitFlowsTo(printer, rhs);
+  getSecond()->emitFlowsTo(printer, rhs);
+  printer.endList();
 }
 
 //---------------------------------------------
@@ -689,37 +686,36 @@ void PolicyType::collect_dep_expr(set<perm_string>& m)
       // value of the label is the dependand      
       m.insert(nextify_perm_string(ex));
     }
-  }  
+  }
 }
-void PolicyType::emitFlowsTo(ostream&o, SecType* rhs) {
+void PolicyType::emitFlowsTo(SexpPrinter&printer, SecType* rhs) {
   PolicyType* right_policy = dynamic_cast<PolicyType*>(rhs);
   ConstType* right_const = dynamic_cast<ConstType*>(rhs);
   VarType* right_var = dynamic_cast<VarType*>(rhs);
   IndexType* right_index = dynamic_cast<IndexType*>(rhs);
   if (right_const || right_var || right_index) {
-    get_upper()->emitFlowsTo(o, rhs);
+    get_upper()->emitFlowsTo(printer, rhs);
     return;
   }
   if (right_policy) {
-    o << "(or\n\t"; //either simple upperleft <= lowerright, OR complex rule
-    get_upper()->emitFlowsTo(o, right_policy->get_lower());
-    o << "\n\t(and\n\t\t";
+    printer.startList("or");
+    get_upper()->emitFlowsTo(printer, right_policy->get_lower());
+    printer.startList("and");
     //lower bound to lower bound
-    get_lower()->emitFlowsTo(o, right_policy->get_lower());
-    o << "\n\t\t    ";
+    get_lower()->emitFlowsTo(printer, right_policy->get_lower());
     //upper bound to upper bound
-    get_upper()->emitFlowsTo(o, right_policy->get_upper());
-    o << "\n\t\t    ";
+    get_upper()->emitFlowsTo(printer, right_policy->get_upper());
     //only emit erasure check if target is next cycle
     if (right_policy->isNextType()) {
-      o << "(not\n\t\t\t";
+      printer.startList("not");
       list<perm_string> arglist = get_all_args();
-      dumpZ3Func(o, _cond_name, arglist);
-      o << ")\n\t\t    ";
+      dumpZ3Func(printer, _cond_name, arglist);
+      printer.endList();
     }
     //erasure condition must be at least as strong
     //quantify over all possible static variables    
-    o << "(forall (\n\t";
+    printer.startList("forall");
+    printer.startList();
 
     set<perm_string> quantlist = set<perm_string>();
     list<perm_string> leftlist = list<perm_string>();
@@ -741,7 +737,9 @@ void PolicyType::emitFlowsTo(ostream&o, SecType* rhs) {
     }
     //dump quantified variable names
     for (set<perm_string>::iterator it = quantlist.begin(); it != quantlist.end(); ++it) {
-      o << "(" << *it << " Int) ";
+      printer.startList(it->str());
+      printer << "Int";
+      printer.endList();
     }
     //append all (non quantified) dynamic variables
     for (list<perm_string>::iterator it = _dynamic.begin(); it != _dynamic.end(); ++it) {
@@ -751,16 +749,18 @@ void PolicyType::emitFlowsTo(ostream&o, SecType* rhs) {
     for (list<perm_string>::iterator it = rightdynamic.begin(); it != rightdynamic.end(); ++it) {
       rightlist.push_back(*it);
     }
-    o << ")"; //end quantifier lists   
-    o << " (implies ";
-    dumpZ3Func(o, _cond_name, leftlist);
-    dumpZ3Func(o, right_policy->get_cond(), rightlist);
-    o << "))"; //end implies and forall
-    o << "\n))"; //end and AND or
+    printer.endList();
+    printer.startList("implies");
+    dumpZ3Func(printer, _cond_name, leftlist);
+    dumpZ3Func(printer, right_policy->get_cond(), rightlist);
+    printer.endList();
+    printer.endList();
+    printer.endList();
+    printer.endList();
     return;
   }
   //else do super class behavior
-  SecType::emitFlowsTo(o, rhs);
+  SecType::emitFlowsTo(printer, rhs);
 
 }
 ////////////////////////////
@@ -803,10 +803,10 @@ Equality* Equality::subst(map<perm_string, perm_string> m)
 	return ret;
 }
 
-void Equality::dump(ostream&out) const
+void Equality::dump(SexpPrinter&printer) const
 {
-	if (isleq)
-      out << "leq " << *left << " " << *right;
-	else
-      out << "= " << *left << " " << *right;
+  if(isleq)
+    printer << "leq" << *left << *right;
+  else
+    printer << "=" << *left << *right;
 }

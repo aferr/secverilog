@@ -47,7 +47,7 @@ double acc_fetch_itfarg(PLI_INT32 n, handle obj)
 
       if (pli_trace) {
 	    fprintf(pli_trace, "%s: acc_fetch_itfarg(%d, %p) --> %f\n",
-		    vpi_get_str(vpiName, obj), (int)n, obj, rtn);
+		    vpi_get_str(vpiName, obj), (int)n, (void*) obj, rtn);
       }
 
       return rtn;
@@ -82,7 +82,7 @@ PLI_INT32 acc_fetch_itfarg_int(PLI_INT32 n, handle obj)
 
       if (pli_trace) {
 	    fprintf(pli_trace, "%s: acc_fetch_itfarg_int(%d, %p) --> %d\n",
-		    vpi_get_str(vpiName, obj), (int)n, obj, rtn);
+		    vpi_get_str(vpiName, obj), (int)n, (void*) obj, rtn);
       }
 
       return rtn;
@@ -118,7 +118,7 @@ char *acc_fetch_itfarg_str(PLI_INT32 n, handle obj)
       if (pli_trace) {
 	    fprintf(pli_trace, "%s: acc_fetch_itfarg_str(%d, %p) --> \"%s\"\n",
 		    vpi_get_str(vpiName, obj),
-		    (int)n, obj, rtn? rtn : "");
+		    (int)n, (void*) obj, rtn? rtn : "");
       }
 
       return rtn;

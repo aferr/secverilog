@@ -38,6 +38,7 @@ class PTask;
 class PGate;
 class PWire;
 class Module;
+class SexpPrinter;
 
 /*
  * This represents a generate scheme. The interpretation of the
@@ -111,8 +112,8 @@ class PGenerate : public LineInfo, public LexicalScope {
       bool elaborate(Design*des, NetScope*container) const;
 
       void dump(ostream&out, unsigned indent) const;
-      void next_cycle_transform(ostream&out, TypeEnv env);
-      void typecheck(ostream&out, TypeEnv env, map<perm_string,Module*> modules);
+      void next_cycle_transform(SexpPrinter&, TypeEnv env);
+      void typecheck(SexpPrinter&, TypeEnv env, map<perm_string,Module*> modules);
       void collect_index_exprs(set<perm_string>&exprs, map<perm_string, SecType*>&env);
     private:
       bool generate_scope_loop_(Design*des, NetScope*container);

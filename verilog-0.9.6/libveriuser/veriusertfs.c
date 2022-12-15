@@ -151,6 +151,8 @@ void veriusertfs_register_table(p_tfcell vtable)
 	    tf_data.sizetf = (PLI_INT32 (*)(PLI_BYTE8 *))tf->sizetf;
 	    tf_data.user_data = (char *)data;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat="
 	    if (pli_trace) {
 		  fprintf(pli_trace, "Registering system %s:\n",
 			tf->type == usertask ? "task" : "function");
@@ -158,7 +160,7 @@ void veriusertfs_register_table(p_tfcell vtable)
 		  if (tf->data)
 			fprintf(pli_trace, "  data   : %d\n", tf->data);
 		  if (tf->checktf)
-			fprintf(pli_trace, "  checktf: %p\n", tf->checktf);
+		    fprintf(pli_trace, "  checktf: %p\n", tf->checktf);
 		  if (tf->sizetf)
 			fprintf(pli_trace, "  sizetf : %p\n", tf->sizetf);
 		  if (tf->calltf)
@@ -166,6 +168,7 @@ void veriusertfs_register_table(p_tfcell vtable)
 		  if (tf->misctf)
 			fprintf(pli_trace, "  misctf : %p\n", tf->misctf);
 	    }
+#pragma GCC diagnostic pop
 
 	    /* register */
 	    vpi_register_systf(&tf_data);

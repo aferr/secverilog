@@ -30,8 +30,10 @@
 # include  "PGenerate.h"
 # include  "PSpec.h"
 # include  "discipline.h"
+#include "sexp_printer.h"
 # include  <iostream>
 # include  <iomanip>
+#include <sstream>
 # include  <typeinfo>
 
 ostream& operator << (ostream&out, const PExpr&obj)
@@ -187,9 +189,9 @@ void PExpr::dump(ostream&out) const
       out << typeid(*this).name();
 }
 
-void PExpr::dumpz3(ostream&out) const
+void PExpr::dumpz3(SexpPrinter&out) const
 {
-  dump(out);
+  out << typeid(*this).name();
 }
 
 void PEConcat::dump(ostream&out) const
@@ -214,7 +216,7 @@ void PEConcat::dump(ostream&out) const
       if (repeat_) out << "}";
 }
 
-void PEConcat::dumpz3(ostream&out) const
+void PEConcat::dumpz3(SexpPrinter&) const
 {
   throw "Cannot dump concat to z3 constraints";
 }
@@ -233,7 +235,7 @@ void PECallFunction::dump(ostream &out) const
       out << ")";
 }
 
-void PECallFunction::dumpz3(ostream&out) const
+void PECallFunction::dumpz3(SexpPrinter&out) const
 {
   throw "Cannot dump function call to z3 constraints";
 }
@@ -257,7 +259,7 @@ void PEEvent::dump(ostream&out) const
 
 }
 
-void PEEvent::dumpz3(ostream&out) const
+void PEEvent::dumpz3(SexpPrinter&) const
 {
   throw "Cannot dump event to z3 constraints";
 }
@@ -267,9 +269,10 @@ void PEFNumber::dump(ostream &out) const
       out << value();
 }
 
-void PEFNumber::dumpz3(ostream &out) const
+void PEFNumber::dumpz3(SexpPrinter&printer) const
 {
-  return dump(out);
+  //we shouldn't have floats in our constraints
+  printer << std::to_string(value().as_long());
 }
 
 void PENumber::dump(ostream&out) const
@@ -277,9 +280,9 @@ void PENumber::dump(ostream&out) const
       out << value();
 }
 
-void PENumber::dumpz3(ostream&out) const
+void PENumber::dumpz3(SexpPrinter&printer) const
 {
-  return dump(out);
+  printer << std::to_string(value().as_long());
 }
 
 void PEIdent::dump(ostream&out) const
@@ -287,7 +290,7 @@ void PEIdent::dump(ostream&out) const
       out << path();
 }
 
-void PEIdent::dumpz3(ostream&out) const
+void PEIdent::dumpz3(SexpPrinter&printer) const
 {
   std::list<index_component_t>::const_iterator idxit = path_.back().index.begin();
   if (idxit != path_.back().index.end()) {
@@ -295,26 +298,34 @@ void PEIdent::dumpz3(ostream&out) const
     PExpr* msb = idxit->msb;
     PExpr* lsb = idxit->lsb;
     if (!msb || lsb) { //just dump normally if its form x[msb:lsb]
-      dump(out);
+      std::stringstream str;
+      dump(str);
+      printer << str.str();;
     } else {
-      perm_string base_name = peek_tail_name(path_);      
-      out << "(select " << base_name << " ";
-      msb->dump(out);
-      out << ")";
+      perm_string base_name = peek_tail_name(path_);
+      printer.startList("select");
+      printer << base_name.str();
+      std::stringstream tmp;
+      msb->dump(tmp);
+      printer << tmp.str();
+      printer.endList();
     }
   } else {
     //no index information, just dump it!
-    dump(out);
+    std::stringstream tmp;
+    dump(tmp);
+    printer << tmp.str();
   }
   return;
 
 }
 
-void PEIdent::dumpEq(ostream&out, int val) const
+void PEIdent::dumpEq(SexpPrinter&printer, int val) const
 {
-  out << "(= ";
-  dumpz3(out);
-  out << " " << val << ")";
+  printer.startList("=");
+  dumpz3(printer);
+  printer << std::to_string(val);
+  printer.endList();
 }
 
 void PEString::dump(ostream&out) const
@@ -322,9 +333,11 @@ void PEString::dump(ostream&out) const
       out << "\"" << text_ << "\"";
 }
 
-void PEString::dumpz3(ostream&out) const
+void PEString::dumpz3(SexpPrinter&printer) const
 {
-  return dump(out);
+  std::stringstream tmp;
+  dump(tmp);
+  printer << tmp.str();
 }
 
 void PETernary::dump(ostream&out) const
@@ -332,20 +345,17 @@ void PETernary::dump(ostream&out) const
       out << "(" << *expr_ << ")?(" << *tru_ << "):(" << *fal_ << ")";
 }
 
-void PETernary::dumpz3(ostream&out) const
+void PETernary::dumpz3(SexpPrinter&printer) const
 {
-  out << "(ite ";
-  PEIdent* exident = dynamic_cast<PEIdent*>(expr_);
-  if (exident) {
-    exident->dumpEq(out, 1);
-  } else {
-    expr_->dumpz3(out);
-  }
-  out << " ";
-  tru_->dumpz3(out);
-  out << " ";
-  fal_->dumpz3(out);
-  out << " )";
+  printer.startList("ite");
+  auto exident = dynamic_cast<PEIdent*>(expr_);
+  if(exident)
+    exident->dumpEq(printer, 1);
+  else
+    expr_->dumpz3(printer);
+  tru_->dumpz3(printer);
+  fal_->dumpz3(printer);
+  printer.endList();
 }
 
 void PEUnary::dump(ostream&out) const
@@ -363,33 +373,32 @@ void PEUnary::dump(ostream&out) const
       }
       out << "(" << *expr_ << ")";
 }
-void PEUnary::dumpz3(ostream&out) const
+void PEUnary::dumpz3(SexpPrinter&printer) const
 {
 
   PEIdent* exident = dynamic_cast<PEIdent*>(expr_);
   bool doEq = false;
-  out << "(";
-    switch (op_) {
+  printer.startList();
+  switch (op_) {
     case 'm':
-      out << "abs";
+      printer << "abs";
       break;
-    case '!':      
+    case '!':
     case 'N':
-      out << "not";
+      printer << "not";
       doEq = true;
       break;
 
     default:
-      out << op_;
+      printer << std::string(1, op_);
       break;
     }
-    out << " ";
     if (exident && doEq){
-      exident->dumpEq(out, 1);
+      exident->dumpEq(printer, 1);
     } else {
-      expr_->dumpz3(out);
+      expr_->dumpz3(printer);
     }
-    out << ")";
+    printer.endList();
 }
 
 void PEBinary::dump(ostream&out) const
@@ -418,7 +427,7 @@ void PEBinary::dump(ostream&out) const
     	return;
       }
       if (op_ == 'L') {
-    	//out << "<= "<< "(" << *left_ << ") (" << *right_ << ")";
+
     	out << "<= "<< *left_ << " " << *right_;
     	return;
       }
@@ -458,142 +467,100 @@ void PEBinary::dump(ostream&out) const
       }
       out << "(" << *right_ << ")";
 }
-void PEBinary::dumpz3(ostream&out) const
+void PEBinary::dumpz3(SexpPrinter&printer) const
 {
   PEIdent* liden = dynamic_cast<PEIdent*>(left_);
   PEIdent* riden = dynamic_cast<PEIdent*>(right_);    
   if (op_ == 'm') {
-    out << "(min" ;
-    left_->dumpz3(out);
-    out << " ";
-    right_->dumpz3(out);
-    out << ")";
+    printer.startList("min");
+    left_->dumpz3(printer);
+    right_->dumpz3(printer);
+    printer.endList();
     return;
   }
   if (op_ == 'M') {
-    out << "(max" ;
-    left_->dumpz3(out);
-    out << " ";
-    right_->dumpz3(out);
-    out << ")";
+    printer.startList("max");
+    left_->dumpz3(printer);
+    right_->dumpz3(printer);
+    printer.endList();
     return;
   }
   if (op_ == 'e') {
-    out << "(= ";
-    left_->dumpz3(out);
-    out << " ";
-    right_->dumpz3(out);
-    out << ")";
+    printer.startList("=");
+    left_->dumpz3(printer);
+    right_->dumpz3(printer);
+    printer.endList();
     return;
   }
   if (op_ == 'o') {
-    out << "(or " ;
+    printer.startList("or");
     if (liden) {
-      liden->dumpEq(out, 1);
+      liden->dumpEq(printer, 1);
     } else {
-      left_->dumpz3(out);
+      left_->dumpz3(printer);
     }
-    out << " ";
     if (riden) {
-      riden->dumpEq(out, 1);
+      riden->dumpEq(printer, 1);
     } else {
-      right_->dumpz3(out);
+      right_->dumpz3(printer);
     }
-    out << ")";
+    printer.endList();
     return;
   }
   if (op_ == 'a') {
-    out << "(and " ;
+    printer.startList("and");
     if (liden) {
-      liden->dumpEq(out, 1);
+      liden->dumpEq(printer, 1);
     } else {
-      left_->dumpz3(out);
+      left_->dumpz3(printer);
     }
-    out << " ";
     if (riden) {
-      riden->dumpEq(out, 1);
+      riden->dumpEq(printer, 1);
     } else {
-      right_->dumpz3(out);
+      right_->dumpz3(printer);
     }
-    out << ")";
+    printer.endList();
     return;
   }
   if (op_ == 'L') {
-    out << "(<= ";
-    left_->dumpz3(out);
-    out << " ";
-    right_->dumpz3(out);
-    out << ")";
+    printer.startList("<=");
+    left_->dumpz3(printer);
+    right_->dumpz3(printer);
+    printer.endList();
     return;
   }
   if (op_ == 'G') {
-    out << "(>= ";
-    left_->dumpz3(out);
-    out << " ";
-    right_->dumpz3(out);
-    out << ")";
+    printer.startList(">=");
+    left_->dumpz3(printer);
+    right_->dumpz3(printer);
+    printer.endList();
     return;
   }
   if (op_ == 'n') {
-    out << "(not (= ";
-    left_->dumpz3(out);
-    out << " ";
-    right_->dumpz3(out);
-    out << "))";
+    printer.startList("not");
+    printer.startList("=");
+    left_->dumpz3(printer);
+    right_->dumpz3(printer);
+    printer.endList();
+    printer.endList();
     return;
   }
-  if ((op_ == '>') || (op_ == '<')) {
-    out << "(" << op_ << " ";
-    left_->dumpz3(out);
-    out << " ";
-    right_->dumpz3(out);
-    out << ")";
-    return;
-  }
-  // is this necessary??
-  if (op_ == '+') {
-    out << "(+ ";
-    left_->dumpz3(out);
-    out << " ";
-    right_->dumpz3(out);
-    out << ")";
+  if ((op_ == '>') || (op_ == '<') || (op_ == '+')) {
+    printer.startList(std::string(1, op_));
+    left_->dumpz3(printer);
+    right_->dumpz3(printer);
+    printer.endList();
     return;
   }
   if (op_ == '%') {
-    out << "(mod ";
-    left_->dumpz3(out);
-    out << " ";
-    right_->dumpz3(out);
-    out << ")";
+    printer.startList("mod");
+    left_->dumpz3(printer);
+    right_->dumpz3(printer);
+    printer.endList();
     return;
   }
   std::cerr << "No support for given binary operator: " << op_ << std::endl;
   throw("No support for given binary operator: ");
-      // out << "(" << *left_ << ")";
-      // switch (op_) {
-      // 	  case 'E':
-      // 	    out << "===";
-      // 	    break;
-      // 	  case 'l':
-      // 	    out << "<<";
-      // 	    break;
-      // 	  case 'N':
-      // 	    out << "!==";
-      // 	    break;
-      // 	  case 'p':
-      // 	    out << "**";
-      // 	    break;
-      // 	  case 'R':
-      // 	    out << ">>>";
-      // 	    break;
-      // 	  case 'r':
-      // 	    out << ">>";
-      // 	    break;
-      // 	  default:
-      // 	    out << op_;
-      // 	    break;
-      // }
-      // out << "(" << *right_ << ")";
 }
 
 

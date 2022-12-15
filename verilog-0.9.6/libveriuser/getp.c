@@ -26,6 +26,9 @@
 /*
  * tf_getp and friends, implemented using VPI interface
  */
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpointer-to-int-cast"
 PLI_INT32 tf_igetp(PLI_INT32 n, void *obj)
 {
       vpiHandle sys_h, sys_i, arg_h = 0;
@@ -69,6 +72,8 @@ out:
 
       return rtn;
 }
+#pragma GCC diagnostic pop
+
 
 PLI_INT32 tf_getp(PLI_INT32 n)
 {

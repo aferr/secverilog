@@ -150,7 +150,7 @@ FILE*iconfig_file = 0;
 
 char*compiled_defines_path = 0;
 
-static char iconfig_common_path[4096] = "";
+static char iconfig_common_path[4000] = "";
 
 int synth_flag = 0;
 int verbose_flag = 0;

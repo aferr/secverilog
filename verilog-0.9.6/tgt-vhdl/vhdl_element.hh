@@ -46,7 +46,7 @@ class vhdl_element {
 public:
    virtual ~vhdl_element() {}
 
-   void* operator new(size_t size) throw (std::bad_alloc);
+   void* operator new(size_t size);
    void operator delete(void* ptr);
 
    virtual void emit(std::ostream &of, int level=0) const = 0;

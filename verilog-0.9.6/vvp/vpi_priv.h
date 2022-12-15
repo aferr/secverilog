@@ -452,12 +452,12 @@ vpiHandle vpip_make_string_param(char*name, char*value,
                                  long file_idx, long lineno);
 
 struct __vpiBinaryConst {
-      struct __vpiHandle base;
-      vvp_vector4_t bits;
-	/* TRUE if this constant is signed. */
-      int signed_flag :1;
-	/* TRUE if this constant has an explicit size (i.e. 19'h0 vs. 'h0) */
-      int sized_flag   :1;
+  struct __vpiHandle base;
+  vvp_vector4_t bits;
+  /* TRUE if this constant is signed. */
+  unsigned int signed_flag :1;
+  /* TRUE if this constant has an explicit size (i.e. 19'h0 vs. 'h0) */
+  unsigned int sized_flag   :1;
 };
 
 vpiHandle vpip_make_binary_const(unsigned wid, const char*bits);

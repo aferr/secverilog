@@ -44,7 +44,7 @@ class AContrib : public Statement {
       ~AContrib();
 
       virtual void dump(ostream&out, unsigned ind) const;
-      virtual void typecheck(ostream&out, TypeEnv& env, Predicate& pred) const;
+      virtual void typecheck(SexpPrinter&, TypeEnv& env, Predicate& pred) const;
       void absintp(Predicate&) const;
 
       virtual NetProc* elaborate(Design*des, NetScope*scope) const;

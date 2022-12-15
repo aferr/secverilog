@@ -33,6 +33,8 @@
 # include  <sstream>
 # include <typeinfo>
 
+#pragma GCC diagnostic ignored "-Wsign-compare"
+
 class PSpecPath;
 
 extern void lex_start_table();

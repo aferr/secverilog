@@ -274,7 +274,7 @@ static double uniform(long *seed, long start, long end )
 
 static double normal(long *seed, long mean, long deviation)
 {
-      double v1, v2, s;
+      double v1 = 0.0, v2, s;
 
       s = 1.0;
       while ((s >= 1.0) || (s == 0.0)) {

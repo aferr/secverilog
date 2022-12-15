@@ -1,0 +1,3 @@
+(declare-fun D1 () Label)
+(declare-fun D2 () Label)
+(assert (and (not (leq D1 D2)) (not (leq D2 D1))))

@@ -71,7 +71,10 @@ static void thunker_register(void)
 	    free(module);
 	    assert(boot);
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
 	    tf = (*((funcvp)boot))();
+#pragma GCC diagnostic pop
 	    assert(tf);
 
 	    veriusertfs_register_table(tf);

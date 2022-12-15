@@ -32,6 +32,7 @@ class PUdp;
 class Module;
 class TypeEnv;
 class SecType;
+class SexpPrinter;
 struct Predicate;
 
 /*
@@ -121,9 +122,9 @@ class PGAssign  : public PGate {
       void dump(ostream&out, unsigned ind =4) const;
       virtual void elaborate(Design*des, NetScope*scope) const;
       virtual bool elaborate_sig(Design*des, NetScope*scope) const;
-      void typecheck(ostream&out, TypeEnv& env, Predicate pred) const;
+      void typecheck(SexpPrinter&, TypeEnv& env, Predicate pred) const;
       void collect_index_exprs(set<perm_string>&exprs, map<perm_string, SecType*>&env); 
-      bool collect_dep_invariants(ostream&out, TypeEnv&env);
+      bool collect_dep_invariants(SexpPrinter&printer, TypeEnv&env);
 
     private:
 };
@@ -219,7 +220,7 @@ class PGModule  : public PGate {
       virtual void elaborate(Design*, NetScope*scope) const;
       virtual void elaborate_scope(Design*des, NetScope*sc) const;
       virtual bool elaborate_sig(Design*des, NetScope*scope) const;
-      void typecheck(ostream&out, TypeEnv& env, map<perm_string,Module*> modules);
+      void typecheck(SexpPrinter&, TypeEnv& env, map<perm_string,Module*> modules);
 
 	// This returns the module name of this module. It is a
 	// permallocated string.

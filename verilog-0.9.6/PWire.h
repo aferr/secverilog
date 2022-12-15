@@ -35,6 +35,7 @@ class PExpr;
 class Design;
 class SecType;
 class BaseType;
+class SexpPrinter;
 
 /*
  * The different type of PWire::set_range() calls.
@@ -96,7 +97,7 @@ class PWire : public LineInfo {
 	// Write myself to the specified stream.
       void dump(ostream&out, unsigned ind=4) const;
 
-      void typecheck(ostream&out, map<perm_string, SecType*>&varsToType,
+      void typecheck(SexpPrinter&, map<perm_string, SecType*>&varsToType,
               map<perm_string, BaseType*>&varsToBase,
               set<perm_string>&seqVars) const;
 

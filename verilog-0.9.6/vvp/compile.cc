@@ -439,12 +439,12 @@ bool vpi_handle_resolv_list_s::resolve(bool mes)
 	    unsigned base, wid;
 	    unsigned n = 0;
 	    char ss[32];
-	    if (2 <= sscanf(label(), "T<%u,%u>%n", &base, &wid, &n)
+	    if (2 <= sscanf(label(), "T<%u,%u>%u", &base, &wid, &n)
 		&& n == strlen(label())) {
 		  val.ptr = vpip_make_vthr_vector(base, wid, false);
 		  sym_set_value(sym_vpi, label(), val);
 
-	    } else if (3 <= sscanf(label(), "T<%u,%u,%[su]>%n", &base,
+	    } else if (3 <= sscanf(label(), "T<%u,%u,%[su]>%u", &base,
 				   &wid, ss, &n)
 		       && n == strlen(label())) {
 
@@ -463,7 +463,7 @@ bool vpi_handle_resolv_list_s::resolve(bool mes)
 		  val.ptr = vpip_make_vthr_vector(base, wid, signed_flag);
 		  sym_set_value(sym_vpi, label(), val);
 
-	    } else if (2 == sscanf(label(), "W<%u,%[r]>%n", &base, ss, &n)
+	    } else if (2 == sscanf(label(), "W<%u,%[r]>%u", &base, ss, &n)
 		       && n == strlen(label())) {
 
 		  val.ptr = vpip_make_vthr_word(base, ss);
