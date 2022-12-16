@@ -10,14 +10,17 @@ BENCH_FUN=$(BENCHS:.v=.fun)
 
 all: $(BENCH_OUT)
 	@echo "All Tests passed!"
+
 .PRECIOUS: %.z3
 
 z3files: $(BENCH_SMT)
 
 %.z3: %.v %.lattice %.fun
+	@echo "Generating $@"
 	@../bin/iverilog -F $*.fun -l $*.lattice -z $*.v
 
 %.out: %.z3 %.expected
+	@echo "Checking $*.z3"
 	@diff $*.expected <(z3 -smt2  $< | grep "sat\|unknown\|error") > $@
 
 
