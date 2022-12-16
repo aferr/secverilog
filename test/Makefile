@@ -21,7 +21,7 @@ z3files: $(BENCH_SMT)
 
 %.out: %.z3 %.expected
 	@echo "Checking $*.z3"
-	@diff $*.expected <(z3 -smt2  $< | grep "sat\|unknown\|error") > $@
+	@diff $*.expected <(z3 -smt2  -T:30 $< | grep "sat\|unknown\|error") > $@
 
 
 .PHONY: clean
