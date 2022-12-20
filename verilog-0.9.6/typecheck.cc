@@ -42,6 +42,8 @@
 # include  "ivl_assert.h"
 # include  "parse_misc.h"
 
+#define ASSUME_NAME "assume"
+
 void output_type_families(SexpPrinter&printer, char* depfun);
 extern bool check_write;
 
@@ -420,7 +422,6 @@ void LexicalScope::typecheck_wires_(SexpPrinter&printer, TypeEnv& env) const {
 void PWire::typecheck(SexpPrinter&printer, map<perm_string, SecType*>& varsToType,
 		      map<perm_string, BaseType*>& varsToBase,
 		      set<perm_string>& seqVars) const {
-  //void PWire::typecheck(SexpPrinter&printer, TypeEnv&env) const {
   if (debug_typecheck) {
     cout << "PWire::check " << type_;
 
@@ -577,6 +578,11 @@ void Module::dumpExprDefs(SexpPrinter&printer, set<perm_string>exprs) const {
  */
 void Module::CollectDepExprs(SexpPrinter&printer, TypeEnv & env) const {
   set<perm_string> exprs;
+  PExpr* assumption = getAssumptions();
+  //Need all identifiers in our module assumptions to be defined
+  if (assumption) {
+    assumption->collect_idens(exprs);
+  }
   for (std::map<perm_string, SecType*>::iterator iter =
 	 env.varsToType.begin(); iter != env.varsToType.end(); iter++) {
     SecType* st = iter->second;
@@ -645,6 +651,26 @@ void Module::CollectDepInvariants(SexpPrinter&printer, TypeEnv & env) const {
   printer.writeRawLine(invs.str());
 }
 
+PExpr* Module::getAssumptions() const {
+  try{
+    return attributes.at(perm_string::literal(ASSUME_NAME));
+  } catch (const std::out_of_range& oor) {
+    return NULL;
+  }
+}
+
+void makeAssumptions(Module* mod, SexpPrinter&printer, TypeEnv& env) {
+  PExpr* assumeAttr = mod->getAssumptions();
+  if (assumeAttr) {
+    if (debug_typecheck) {
+      fprintf(stderr, "Found assume attribute in module\n");
+    }
+    printer.addComment("Input module assertions");
+    printer.startList("assert");
+    assumeAttr->dumpz3(printer);
+    printer.endList();
+  }
+}
 
 /**
  * Type-check a module.
@@ -670,7 +696,7 @@ void Module::typecheck(SexpPrinter&printer, TypeEnv& env,
       cout << ")" << endl;
     }
   }
-
+  
   typecheck_parameters_(printer, env);
   if(debug_typecheck) fprintf(stderr, "typechecking localparams\n");
   typecheck_localparams_(printer, env);
@@ -705,6 +731,8 @@ void Module::typecheck(SexpPrinter&printer, TypeEnv& env,
   CollectDepExprs(printer, env);
   if(debug_typecheck) fprintf(stderr, "outputting type families\n");
   output_type_families(printer, depfun);
+  if (debug_typecheck) fprintf(stderr, "Generating input invariant assumptions\n");
+  makeAssumptions(this, printer, env);  
   if(debug_typecheck) fprintf(stderr, "collecting dependent invariants\n");
   CollectDepInvariants(printer, env);
   // remove an invariant if some variable does not show up

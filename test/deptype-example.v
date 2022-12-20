@@ -3,6 +3,7 @@
  * state 0 is L and states 2, 3 are H.
  * A timer controls the switch between L and H states every 10 cycles. 
  */
+(* assume = data > 0 *)
 module deptype(clk, timer, data, out);
 
 input {L} clk;
