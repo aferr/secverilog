@@ -158,7 +158,7 @@ class Module : public PScope, public LineInfo {
       void typecheck(SexpPrinter&printer, TypeEnv& env, map<perm_string,Module*> modules, char* depfun);
       void next_cycle_transform(SexpPrinter&printer, TypeEnv& env);
       void dumpExprDefs(SexpPrinter&, set<perm_string>exprs) const;
-      void CollectDepExprs(SexpPrinter&, TypeEnv & env) const;
+      void CollectDepExprs(SexpPrinter&, TypeEnv & env, map<perm_string,Module*> modules) const;
       void CollectDepInvariants(SexpPrinter&printer, TypeEnv & env) const;
       PProcess* gen_assign_next_block(perm_string);
 
