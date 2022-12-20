@@ -216,6 +216,8 @@ class PGModule  : public PGate {
 	// method to pass the range to the pform.
       void set_range(PExpr*msb, PExpr*lsb);
 
+      virtual void fillPinMap(map<perm_string, perm_string>&pinSubst, Module* moddef);
+      virtual void fillParamMap(map<perm_string, perm_string>&paraSubst, Module* moddef);
       virtual void dump(ostream&out, unsigned ind =4) const;
       virtual void elaborate(Design*, NetScope*scope) const;
       virtual void elaborate_scope(Design*des, NetScope*sc) const;

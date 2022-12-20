@@ -35,12 +35,14 @@
 # include  "PSpec.h"
 # include  "netlist.h"
 # include  "netmisc.h"
-#include "sexp_printer.h"
+# include  "sexp_printer.h"
 # include  "util.h"
 # include  "parse_api.h"
 # include  "compiler.h"
 # include  "ivl_assert.h"
 # include  "parse_misc.h"
+
+#define ASSUME_NAME "assume"
 
 void output_type_families(SexpPrinter&printer, char* depfun);
 extern bool check_write;
@@ -420,7 +422,6 @@ void LexicalScope::typecheck_wires_(SexpPrinter&printer, TypeEnv& env) const {
 void PWire::typecheck(SexpPrinter&printer, map<perm_string, SecType*>& varsToType,
 		      map<perm_string, BaseType*>& varsToBase,
 		      set<perm_string>& seqVars) const {
-  //void PWire::typecheck(SexpPrinter&printer, TypeEnv&env) const {
   if (debug_typecheck) {
     cout << "PWire::check " << type_;
 
@@ -570,13 +571,34 @@ void Module::dumpExprDefs(SexpPrinter&printer, set<perm_string>exprs) const {
     }
   }
 }
+PExpr* getInstantiatedAssumption(PGModule* mod, map<perm_string, Module*> modlist) {
+  map<perm_string, Module*>::const_iterator tmp = modlist.find(mod->get_type());
+  Module* moddef = (tmp != modlist.end()) ? (*tmp).second : NULL;
+  if (moddef) {
+    PExpr* assume = moddef->getAssumptions();
+    if (assume) {
+      map<perm_string, perm_string> pinSubst;    
+      mod->fillPinMap(pinSubst, moddef);      
+      return assume->subst(pinSubst);
+    }
+  }
+  return NULL;
+}
+
+
 /**
  * Collect all expressions that  appears in dependent types.
  * Need to also collect all identifiers that appear in
  * index expressions of quantified types.
  */
-void Module::CollectDepExprs(SexpPrinter&printer, TypeEnv & env) const {
+void Module::CollectDepExprs(SexpPrinter&printer, TypeEnv & env,
+			     map<perm_string, Module*> modules) const {
   set<perm_string> exprs;
+  PExpr* assumption = getAssumptions();
+  //Need all identifiers in our module assumptions to be defined
+  if (assumption) {
+    assumption->collect_idens(exprs);
+  }
   for (std::map<perm_string, SecType*>::iterator iter =
 	 env.varsToType.begin(); iter != env.varsToType.end(); iter++) {
     SecType* st = iter->second;
@@ -595,8 +617,15 @@ void Module::CollectDepExprs(SexpPrinter&printer, TypeEnv & env) const {
   for (list<PGate*>::const_iterator gate = gates_.begin();
        gate != gates_.end(); gate++) {
     PGAssign* pgassign = dynamic_cast<PGAssign*>(*gate);
+    PGModule* pgmodule = dynamic_cast<PGModule*>(*gate);    
     if (pgassign != NULL) {
       pgassign->collect_index_exprs(exprs, env.varsToType);
+    }
+    if (pgmodule) {
+      PExpr* modAssume = getInstantiatedAssumption(pgmodule, modules);
+      if (modAssume) {
+	modAssume->collect_idens(exprs);
+      }
     }
   }
   
@@ -645,6 +674,26 @@ void Module::CollectDepInvariants(SexpPrinter&printer, TypeEnv & env) const {
   printer.writeRawLine(invs.str());
 }
 
+PExpr* Module::getAssumptions() const {
+  try{
+    return attributes.at(perm_string::literal(ASSUME_NAME));
+  } catch (const std::out_of_range& oor) {
+    return NULL;
+  }
+}
+
+void makeAssumptions(Module* mod, SexpPrinter&printer, TypeEnv& env) {
+  PExpr* assumeAttr = mod->getAssumptions();
+  if (assumeAttr) {
+    if (debug_typecheck) {
+      fprintf(stderr, "Found assume attribute in module\n");
+    }
+    printer.addComment("Input module assertions");
+    printer.startList("assert");
+    assumeAttr->dumpz3(printer);
+    printer.endList();
+  }
+}
 
 /**
  * Type-check a module.
@@ -670,7 +719,7 @@ void Module::typecheck(SexpPrinter&printer, TypeEnv& env,
       cout << ")" << endl;
     }
   }
-
+  
   typecheck_parameters_(printer, env);
   if(debug_typecheck) fprintf(stderr, "typechecking localparams\n");
   typecheck_localparams_(printer, env);
@@ -702,9 +751,11 @@ void Module::typecheck(SexpPrinter&printer, TypeEnv& env,
   next_cycle_transform(printer, env);
 
   if(debug_typecheck) fprintf(stderr, "collecting dependands\n");
-  CollectDepExprs(printer, env);
+  CollectDepExprs(printer, env, modules);
   if(debug_typecheck) fprintf(stderr, "outputting type families\n");
   output_type_families(printer, depfun);
+  if (debug_typecheck) fprintf(stderr, "Generating input invariant assumptions\n");
+  makeAssumptions(this, printer, env);  
   if(debug_typecheck) fprintf(stderr, "collecting dependent invariants\n");
   CollectDepInvariants(printer, env);
   // remove an invariant if some variable does not show up
@@ -1000,12 +1051,64 @@ void PGAssign::typecheck(SexpPrinter&printer, TypeEnv& env, Predicate pred) cons
 		       ss.str());
 }
 
+void check_assumption(SexpPrinter&printer, PExpr* assume,
+		      perm_string mname, perm_string mtype) {
+  printer.lineBreak();
+  printer.singleton("push");
+  printer.startList("assert");
+  printer.startList("not");
+  assume->dumpz3(printer);
+  printer.endList();
+  printer.endList();
+  printer.startList("echo");
+  printer << "\"checking assumptions for" <<
+    mname.str() << "of type module" << mtype.str() << "\"";
+  printer.endList();
+  printer.singleton("check-sat");
+  printer.singleton("pop");
+}
+
+
+void PGModule::fillPinMap(map<perm_string, perm_string>&pinSubst, Module* moddef) {
+  map<perm_string, PWire*> mwires = moddef->wires;
+  for (unsigned idx = 0; idx < get_pin_count(); idx += 1) {
+    map<perm_string, PWire*>::const_iterator ite = mwires.find(get_pin_name(idx));
+    if (ite != mwires.end()) {
+      PWire* port = (*ite).second;
+      if (port->get_port_type() == NetNet::PINPUT
+	  || port->get_port_type() == NetNet::PINOUT) {
+	pinSubst[get_pin_name(idx)] =
+	  get_param(idx)->get_name();
+      } else {
+	pinSubst[get_pin_name(idx)] = get_pin_name(idx);
+      }
+    }
+  }
+}
+
+void PGModule::fillParamMap(map<perm_string, perm_string>&paraSubst, Module* moddef) {
+  map<perm_string, PWire*> mwires = moddef->wires;
+  for (unsigned idx = 0; idx < get_pin_count(); idx += 1) {
+    map<perm_string, PWire*>::const_iterator ite = mwires.find(get_pin_name(idx));    
+    PWire* port = (*ite).second;    
+    if (port->get_port_type() == NetNet::POUTPUT
+	|| port->get_port_type() == NetNet::PINOUT) {
+      paraSubst[get_param(idx)->get_name()] = get_pin_name(idx);
+    } else {
+      paraSubst[get_param(idx)->get_name()] =
+	get_param(idx)->get_name();
+    }    
+  }  
+}
+
 /**
  * Type-check a module instantiation.
  */
 void PGModule::typecheck(SexpPrinter&printer, TypeEnv& env,
 			 map<perm_string, Module*> modules) {
-  cout << "pc context for module instantiation?" << endl;
+
+  if (debug_typecheck) cout << "pc context for module instantiation?" << endl;
+  
   this->pin_count();
   this->get_pin_count();
   map<perm_string, Module*>::const_iterator cur = modules.find(get_type());
@@ -1013,154 +1116,138 @@ void PGModule::typecheck(SexpPrinter&printer, TypeEnv& env,
   if (cur != modules.end()) {
     mwires = ((*cur).second)->wires;
     unsigned pincount = get_pin_count();
-    if (pincount != 0) {
-      // collect name maps
-      map<perm_string, perm_string> pinSubst;
-      map<perm_string, perm_string> paraSubst;
-      for (unsigned idx = 0; idx < pincount; idx += 1) {
-	map<perm_string, PWire*>::const_iterator ite = mwires.find(
-								   get_pin_name(idx));
-	if (ite != mwires.end()) {
+    map<perm_string, perm_string> pinSubst;
+    map<perm_string, perm_string> paraSubst;
+    fillPinMap(pinSubst, (*cur).second);
+    fillParamMap(paraSubst, (*cur).second);
+    
+    //Check that assumptions of this module MUST be satisfied:
+    //negate assumption and look for unsat
+    //Also substitute the original pin names for the instantiated pins
+    PExpr* assume = getInstantiatedAssumption(this, modules);
+    if (assume) {
+      check_assumption(printer, assume->subst(pinSubst), get_name(), get_type());
+    }
+    
+    for (unsigned idx = 0; idx < pincount; idx += 1) {
+      map<perm_string, PWire*>::const_iterator ite = mwires.find(get_pin_name(idx));
+      if (ite != mwires.end()) {
+	PExpr* param = get_param(idx);
+	if (param != NULL) {
+	  printer.lineBreak();
+	  printer.singleton("push");
+	  // the direction (input, output) determines def or use should be more restrictive:
+	  // def <= use for outputs
+	  // use <= def for inputs
 	  PWire* port = (*ite).second;
-	  if (port->get_port_type() == NetNet::PINPUT
-	      || port->get_port_type() == NetNet::PINOUT) {
-	    pinSubst[get_pin_name(idx)] =
-	      get_param(idx)->get_name();
-	  } else {
-	    pinSubst[get_pin_name(idx)] = get_pin_name(idx);
-	  }
-
-	  if (port->get_port_type() == NetNet::POUTPUT
-	      || port->get_port_type() == NetNet::PINOUT) {
-	    paraSubst[get_param(idx)->get_name()] = get_pin_name(
-								 idx);
-	  } else {
-	    paraSubst[get_param(idx)->get_name()] =
-	      get_param(idx)->get_name();
-	  }
-	}
-      }
-      for (unsigned idx = 0; idx < pincount; idx += 1) {
-	map<perm_string, PWire*>::const_iterator ite = mwires.find(
-								   get_pin_name(idx));
-	if (ite != mwires.end()) {
-	  PExpr* param = get_param(idx);
-	  if (param != NULL) {
-	    printer.lineBreak();
-	    printer.singleton("push");
-	    // the direction (input, output) determines def or use should be more restrictive:
-	    // def <= use for outputs
-	    // use <= def for inputs
-	    PWire* port = (*ite).second;
-	    NetNet::PortType porttype = port->get_port_type();
-
-	    SecType* paramType = param->typecheck(printer,
-						  env.varsToType);
-	    SecType* pinType = port->get_sec_type();
-	    for (std::map<perm_string, perm_string>::iterator substiter =
-		   pinSubst.begin(); substiter != pinSubst.end();
-		 ++substiter)
-	      pinType = pinType->subst(substiter->first,
-				       pinSubst[substiter->first]);
-	    for (std::map<perm_string, perm_string>::iterator substiter =
-		   paraSubst.begin(); substiter != paraSubst.end();
-		 ++substiter)
-	      paramType = paramType->subst(substiter->first,
-					   paraSubst[substiter->first]);
-
-	    // declare the free variables in pinType when necessary
-	    set<perm_string> vars;
-	    pinType->collect_dep_expr(vars);
-	    for (set<perm_string>::iterator varsite = vars.begin();
-		 varsite != vars.end(); varsite++) {
-	      if (env.dep_exprs.find(*varsite)
-		  == env.dep_exprs.end()) {
-		printer.startList("declare-fun");
-		printer << varsite->str() << "()" << "Int";
+	  NetNet::PortType porttype = port->get_port_type();
+	  
+	  SecType* paramType = param->typecheck(printer,
+						env.varsToType);
+	  SecType* pinType = port->get_sec_type();
+	  for (std::map<perm_string, perm_string>::iterator substiter =
+		 pinSubst.begin(); substiter != pinSubst.end();
+	       ++substiter)
+	    pinType = pinType->subst(substiter->first,
+				     pinSubst[substiter->first]);
+	  for (std::map<perm_string, perm_string>::iterator substiter =
+		 paraSubst.begin(); substiter != paraSubst.end();
+	       ++substiter)
+	    paramType = paramType->subst(substiter->first,
+					 paraSubst[substiter->first]);	  
+	  // declare the free variables in pinType when necessary
+	  set<perm_string> vars;
+	  pinType->collect_dep_expr(vars);
+	  for (set<perm_string>::iterator varsite = vars.begin();
+	       varsite != vars.end(); varsite++) {
+	    if (env.dep_exprs.find(*varsite)
+		== env.dep_exprs.end()) {
+	      printer.startList("declare-fun");
+	      printer << varsite->str() << "()" << "Int";
+	      printer.endList();
+	      map<perm_string, PWire*>::const_iterator decl =
+		mwires.find(*varsite);
+	      // get the range of the free variables
+	      if (decl != mwires.end()) {
+		PWire* def = (*decl).second;
+		printer.startList("assert");
+		printer.startList("<=");
+		printer << "0" << varsite->str();
 		printer.endList();
-		map<perm_string, PWire*>::const_iterator decl =
-		  mwires.find(*varsite);
-		// get the range of the free variables
-		if (decl != mwires.end()) {
-		  PWire* def = (*decl).second;
-		  printer.startList("assert");
-		  printer.startList("<=");
-		  printer << "0" << varsite->str();
-		  printer.endList();
-		  printer.endList();
-		  printer.startList("assert");
-		  printer.startList("<=");
-		  printer << varsite->str()
-			  << std::to_string((1 << (def->getRange() + 1)) - 1);
-		  printer.endList();
-		  printer.endList();
-		}
+		printer.endList();
+		printer.startList("assert");
+		printer.startList("<=");
+		printer << varsite->str()
+			<< std::to_string((1 << (def->getRange() + 1)) - 1);
+		printer.endList();
+		printer.endList();
 	      }
 	    }
-
-	    if (porttype == NetNet::PINPUT
-		|| porttype == NetNet::PINOUT) {
-	      SecType* rhs = paramType;
-	      SecType* lhs = pinType;
-	      Predicate pred;
-	      Constraint* c = new Constraint(lhs, rhs,
-					     env.invariants, &pred);
-	      printer << *c;
-	      // debugging information
-	      std::stringstream tmp;
-	      tmp << "Instantiate parameter "
-		  << get_pin_name(idx) << " in module "
-		  << get_type() << " @" << get_fileline()
-		  << endl;
-	      printer.addComment(tmp.str());
-	      tmp.str("");
-	      tmp.clear();
-	      printer.startList("echo");
-	      tmp << "\"parameter" << get_pin_name(idx)
-		  << " for module " << get_type() << " @" << get_fileline()
-		  << "\"";
-	      printer << tmp.str();
-	      printer.endList();
-	      printer.singleton("check-sat");
-	      printer.singleton("pop");
-	    } else if (porttype == NetNet::POUTPUT
-		       || porttype == NetNet::PINOUT) {
-	      SecType* rhs = pinType;
-	      SecType* lhs = paramType;
-	      Predicate pred;
-	      Constraint* c = new Constraint(lhs, rhs,
-					     env.invariants, &pred);
-	      printer << *c;
-	      // debugging information
-	      std::stringstream tmp;
-	      tmp << "Instantiate parameter "
-		  << get_pin_name(idx) << " in module "
-		  << get_type() << " @" << get_fileline()
-		  << endl;
-	      printer.addComment(tmp.str());
-	      tmp.str("");
-	      tmp.clear();
-	      printer.startList("echo");
-	      tmp << "\"parameter " << get_pin_name(idx)
-		  << " for module " << get_type() << " @" << get_fileline()
-		  << "\"";
-	      printer << tmp.str();
-	      printer.endList();
-	      printer.singleton("check-sat");
-	      printer.singleton("pop");
-	    }
-	  } else {
-	    cerr << "parameter " << *param << " is not found"
-		 << endl;
+	  }
+	  
+	  if (porttype == NetNet::PINPUT
+	      || porttype == NetNet::PINOUT) {
+	    SecType* rhs = paramType;
+	    SecType* lhs = pinType;
+	    Predicate pred;
+	    Constraint* c = new Constraint(lhs, rhs,
+					   env.invariants, &pred);
+	    printer << *c;
+	    // debugging information
+	    std::stringstream tmp;
+	    tmp << "Instantiate parameter "
+		<< get_pin_name(idx) << " in module "
+		<< get_type() << " @" << get_fileline()
+		<< endl;
+	    printer.addComment(tmp.str());
+	    tmp.str("");
+	    tmp.clear();
+	    printer.startList("echo");
+	    tmp << "\"parameter " << get_pin_name(idx)
+		<< " for module " << get_type() << " @" << get_fileline()
+		<< "\"";
+	    printer << tmp.str();
+	    printer.endList();
+	    printer.singleton("check-sat");
+	    printer.singleton("pop");
+	  } else if (porttype == NetNet::POUTPUT
+		     || porttype == NetNet::PINOUT) {
+	    SecType* rhs = pinType;
+	    SecType* lhs = paramType;
+	    Predicate pred;
+	    Constraint* c = new Constraint(lhs, rhs,
+					   env.invariants, &pred);
+	    printer << *c;
+	    // debugging information
+	    std::stringstream tmp;
+	    tmp << "Instantiate parameter "
+		<< get_pin_name(idx) << " in module "
+		<< get_type() << " @" << get_fileline()
+		<< endl;
+	    printer.addComment(tmp.str());
+	    tmp.str("");
+	    tmp.clear();
+	    printer.startList("echo");
+	    tmp << "\"parameter " << get_pin_name(idx)
+		<< " for module " << get_type() << " @" << get_fileline()
+		<< "\"";
+	    printer << tmp.str();
+	    printer.endList();
+	    printer.singleton("check-sat");
+	    printer.singleton("pop");
 	  }
 	} else {
-	  cerr << "PWire " << get_pin_name(idx) << " is not found"
+	  cerr << "parameter " << *param << " is not found"
 	       << endl;
 	}
+      } else {
+	cerr << "PWire " << get_pin_name(idx) << " is not found"
+	     << endl;
       }
     }
   }
 }
+
 
 /**
  * Type-check an assignment statement.
