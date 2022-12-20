@@ -3,6 +3,8 @@
 #include <sstream>
 #include <cstring>
 
+#include <iostream>
+
 using strvec = std::vector<std::string>;
 
 Sexception::Sexception(const char *m)
@@ -50,7 +52,14 @@ void SexpPrinter::startList()
 void SexpPrinter::printAtom(const std::string &atom)
 {
   if(stack.empty())
-    throw Sexception("cannot print naked atom!");
+    {
+      if(allow_naked_atom)
+	{
+	  o << atom;
+	  return;
+	}
+      throw Sexception("cannot print naked atom!");
+    }
   if(atom.empty())
     return;
   auto &state = stack.back();
@@ -162,8 +171,9 @@ void SexpPrinter::startList(const std::string &first)
   printAtom(first);
 }
 
-SexpPrinter::SexpPrinter(std::ostream &os, unsigned int m, unsigned int ts)
-    : margin(m), tabsize(ts), stack(), o(os) {
+SexpPrinter::SexpPrinter(std::ostream &os, unsigned int m,
+			 unsigned int ts, bool alw)
+  : margin(m), tabsize(ts), allow_naked_atom(alw), stack(), o(os) {
 }
 
 void SexpPrinter::singleton(const std::string &atom)

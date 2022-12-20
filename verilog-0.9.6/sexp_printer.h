@@ -19,7 +19,8 @@ private:
 class SexpPrinter
 {
  public:
-  SexpPrinter(std::ostream &, unsigned int margin, unsigned int tabsize = 2);
+  SexpPrinter(std::ostream &, unsigned int margin,
+	      unsigned int tabsize = 2, bool allow_naked_atom = false);
   void startList();
   void printAtom(const std::string &atom);
   void endList();
@@ -36,6 +37,7 @@ class SexpPrinter
   }
   const unsigned int margin;
   const unsigned int tabsize;
+  const bool allow_naked_atom;
  private:
   enum class State { FRESH, ONE_LINE, MULTI_LINE };
   struct PrintState

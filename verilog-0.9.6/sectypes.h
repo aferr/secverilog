@@ -498,7 +498,7 @@ inline SexpPrinter& operator << (SexpPrinter&printer, SecType&t)
 
 inline ostream &operator<<(ostream &o, SecType &t)
 {
-  SexpPrinter sp(o, 9999);
+  SexpPrinter sp(o, 9999, 2, true);
   sp << t;
   return o;
 }
@@ -545,7 +545,7 @@ inline SexpPrinter& operator << (SexpPrinter&printer, Predicate& pred)
 
 inline ostream &operator<<(ostream &o, Predicate &t)
 {
-  SexpPrinter sp(o, 9999);
+  SexpPrinter sp(o, 9999, 2, true);
   sp << t;
   return o;
 }
@@ -575,7 +575,7 @@ inline SexpPrinter& operator << (SexpPrinter&printer, Invariant& invs)
 
 inline ostream &operator<<(ostream &o, Invariant &t)
 {
-  SexpPrinter sp(o, 9999);
+  SexpPrinter sp(o, 9999, 2, true);
   sp << t;
   return o;
 }
@@ -624,7 +624,7 @@ inline SexpPrinter& operator << (SexpPrinter&printer, Constraint&c)
 
 inline ostream &operator<<(ostream &o, Constraint &t)
 {
-  SexpPrinter sp(o, 9999);
+  SexpPrinter sp(o, 9999, 2, true);
   sp << t;
   return o;
 }
