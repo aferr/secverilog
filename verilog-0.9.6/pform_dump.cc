@@ -545,7 +545,7 @@ void PEBinary::dumpz3(SexpPrinter&printer) const
     printer.endList();
     return;
   }
-  if ((op_ == '>') || (op_ == '<') || (op_ == '+')) {
+  if ((op_ == '>') || (op_ == '<') || (op_ == '+') || (op_ == '-')) {
     printer.startList(std::string(1, op_));
     left_->dumpz3(printer);
     right_->dumpz3(printer);
