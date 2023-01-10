@@ -45,7 +45,7 @@
 #define ASSUME_NAME "assume"
 
 void output_type_families(SexpPrinter&printer, char* depfun);
-extern bool check_write;
+
 
 /**
  * Type-check parameters, which are constants.
@@ -634,10 +634,6 @@ void Module::CollectDepExprs(SexpPrinter&printer, TypeEnv & env,
     env.dep_exprs.insert(*expr);
   }
 
-
-  // check write labels, skipped for most hardware designs
-  if (check_write)
-    env.dep_exprs.insert(perm_string::literal("WriteLabel"));
   // declare the expressions as variables in z3 file
   printer.addComment("variables to be solved");
 
@@ -900,18 +896,6 @@ void typecheck_assignment_constraint(SexpPrinter&printer, SecType* lhs, SecType*
   printer.endList();
   printer.singleton("check-sat");
   printer.singleton("pop");
-
-  // check restrictions on write labels
-  if (check_write) {
-    printer.lineBreak();
-    printer.singleton("push");
-    printer << vardecl;
-    c = new Constraint(lhs, IndexType::WL, env->invariants, &pred);
-    printer << *c;
-    printer.addComment(std::string("check write label ") + note);
-    printer.singleton("check-sat");
-    printer.singleton("pop");
-  }
 }
 
 /**
@@ -961,48 +945,13 @@ void typecheck_assignment(SexpPrinter&printer, PExpr* lhs, PExpr* rhs, TypeEnv* 
       cout << "postcond: " << postcond << endl;
     }
 
-    // if nothing depends on LHS, simple case
-    if (!lhs->typecheck(printer, env->varsToType)->hasExpr(lhs->get_name())) {
-      typecheck_assignment_constraint(printer, ltype, rtype, precond, note,
-				      "", env);
-    } else {
-      // declare a fresh variable
-      stringstream ss, vardecl;
-      ss << lhs->get_name() << lineno;
-      const std::string* tmp = new string(ss.str());
-      perm_string newname = perm_string::literal(tmp->c_str());
-      vardecl << "(declare-fun " << newname << " () Int)" << endl;
-      map<perm_string, PWire*>::const_iterator cur =
-	env->module->wires.find(lhs->get_name());
-      if (cur != env->module->wires.end()) {
-	PWire* def = (*cur).second;
-	vardecl << "(assert (<= 0  " << newname << "))" << endl;
-	vardecl << "(assert (<= " << newname << " "
-		<< (1 << (def->getRange() + 1)) - 1 << "))" << endl;
-      }
-      // add assumption v' = [[e]] if [[e]] is not bottom
-      // perform no-sensitive-upgrade check if the variable being assigned to
-      // might not be assigned to in other paths.
-      set<perm_string>::iterator aiter = env->aliveVars.find(
-							     lhs->get_name());
-      if (aiter != env->aliveVars.end()) {
-	rtype = env->pc;
-	typecheck_assignment_constraint(printer, ltype, rtype, precond,
-					"no-sensitive-upgrade check " + note, "", env);
-      }
-
-      PENumber* number = dynamic_cast<PENumber*>(rhs);
-      if (number != NULL
-	  || env->dep_exprs.find(rhs->get_name())
-	  != env->dep_exprs.end()) {
-	precond.hypotheses.insert(
-				  new Hypothesis(new PEIdent(newname), rhs));
-      }
-      typecheck_assignment_constraint(printer,
-				      ltype->subst(lhs->get_name(), newname), rtype, precond,
-				      note, vardecl.str(), env);
-    }
-  } else {
+    // we used to treat recursive labels differently
+    // which would be necessary if we allowed non-input wires
+    // to appear in dependent types
+    //    if (is_recursive) { do old thing
+    //    if (lhs->typecheck(printer, env->varsToType)->hasExpr(lhs->get_name())) {
+    typecheck_assignment_constraint(printer, ltype, rtype, precond, note, "", env);
+   } else {
     ternary->translate(lhs)->typecheck(printer, *env, precond);
   }
 }

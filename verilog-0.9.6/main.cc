@@ -159,8 +159,6 @@ StringHeapLex lex_strings;
 
 StringHeapLex filename_strings;
 
-/** enable/disable write label check */
-bool check_write = false;
 
 /*
  * In library searches, Windows file names are never case sensitive.
@@ -807,9 +805,6 @@ int main(int argc, char*argv[])
 	  case 'V':
 	    version_flag = true;
 	    break;
-	  case 'w':
-		check_write = true;
-		break;
 	  case 'z':
 		typecheck_only = true;
 		break;
