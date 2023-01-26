@@ -714,32 +714,14 @@ void PolicyType::emitFlowsTo(SexpPrinter&printer, SecType* rhs) {
     }
     //erasure condition must be at least as strong
     //quantify over all possible static variables    
-    printer.startList("forall");
-    printer.startList();
-
-    set<perm_string> quantlist = set<perm_string>();
     list<perm_string> leftlist = list<perm_string>();
     list<perm_string> rightlist = list<perm_string>();  
     for (list<perm_string>::iterator it = _static.begin(); it != _static.end(); ++it) {
-      string tmp = it->str();
-      string tmp2 = "quant_" + tmp;
-      perm_string qstr = lex_strings.make(tmp2.c_str());
-      leftlist.push_back(qstr);
-      quantlist.insert(qstr);
+      leftlist.push_back(*it);
     }
     list<perm_string> rightstatic = right_policy->get_static();
     for (list<perm_string>::iterator it = rightstatic.begin(); it != rightstatic.end(); ++it) {
-      string tmp = it->str();
-      string tmp2 = "quant_" + tmp;
-      perm_string qstr = lex_strings.make(tmp2.c_str());
-      rightlist.push_back(qstr);
-      quantlist.insert(qstr);
-    }
-    //dump quantified variable names
-    for (set<perm_string>::iterator it = quantlist.begin(); it != quantlist.end(); ++it) {
-      printer.startList(it->str());
-      printer << "Int";
-      printer.endList();
+      rightlist.push_back(*it);
     }
     //append all (non quantified) dynamic variables
     for (list<perm_string>::iterator it = _dynamic.begin(); it != _dynamic.end(); ++it) {
@@ -749,11 +731,9 @@ void PolicyType::emitFlowsTo(SexpPrinter&printer, SecType* rhs) {
     for (list<perm_string>::iterator it = rightdynamic.begin(); it != rightdynamic.end(); ++it) {
       rightlist.push_back(*it);
     }
-    printer.endList();
     printer.startList("implies");
     dumpZ3Func(printer, _cond_name, leftlist);
     dumpZ3Func(printer, right_policy->get_cond(), rightlist);
-    printer.endList();
     printer.endList();
     printer.endList();
     printer.endList();

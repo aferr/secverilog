@@ -37,12 +37,12 @@
 # include  "basetypes.h"
 # include  "QuantExpr.h"
 # include  "PExpr.h"
-#include "sexp_printer.h"
+# include  "sexp_printer.h"
 # include  <sstream>
 # include  <fstream>
-#include <cstdlib>
-#include <list>
-#include <map>
+# include  <cstdlib>
+# include  <list>
+# include  <map>
 
 class SecType;
 class ConstType;

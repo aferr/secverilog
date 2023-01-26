@@ -299,10 +299,8 @@ bool PAssign_::collect_dep_invariants(SexpPrinter&printer, TypeEnv&env, Predicat
     }
   }
   BaseType *ltyp = lval()->check_base_type(printer, env.varsToBase);
-  bool isLeftSeq = ltyp->isNextType() || ltyp->isSeqType();
-  //if lhs appears in dependent type, and is a seq or next type and this is not the generated assignment (x = x_next_)
-  if ((env.dep_exprs.find(lval()->get_name()) != env.dep_exprs.end()) &&
-      isLeftSeq && !isNextAssign) {
+  //if lhs appears in dependent type, and  this is not the generated assignment (x = x_next_)
+  if ((env.dep_exprs.find(lval()->get_name()) != env.dep_exprs.end()) && !isNextAssign) {
     
     bool hasPreds = !pred.hypotheses.empty();
     printer.startList("assert");
