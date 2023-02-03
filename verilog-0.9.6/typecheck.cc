@@ -56,7 +56,7 @@ void LexicalScope::typecheck_parameters_(SexpPrinter&printer, TypeEnv& env) cons
     for (parm_iter_t cur = parameters.begin();
 	 cur != parameters.end();
 	 cur++) {
-      cout << "check parameter " << (*cur).first << " " << (*cur).second.type << endl;
+      cerr << "check parameter " << (*cur).first << " " << (*cur).second.type << endl;
     }
   }
   // parameters can only be assigned to constants. So the label must be LOW
@@ -394,10 +394,7 @@ void LexicalScope::typecheck_events_(SexpPrinter&printer, TypeEnv& env) const {
 	 cur != events.end();
 	 cur++) {
       PEvent*ev = (*cur).second;
-      // out << "check event " << ev->name() << "; // " << ev->get_fileline()
-      // 	  << endl;
-      //TODO is this right?
-      printer.addComment(string("check event") + ev->name().str() + ev->get_fileline());
+      cerr << ev->name() << ev->get_fileline() << endl;
     }
   }
 }
@@ -695,65 +692,64 @@ void makeAssumptions(Module* mod, SexpPrinter&printer, TypeEnv& env) {
 void Module::typecheck(SexpPrinter&printer, TypeEnv& env,
 		       map<perm_string, Module*> modules, char* depfun) {
   if (debug_typecheck) {
-    cout << "Module::check " << mod_name() << endl;
-
+    cerr << "Module::check " << mod_name() << endl;
     for (unsigned idx = 0; idx < ports.size(); idx += 1) {
       port_t*cur = ports[idx];
-
       if (cur == 0) {
-	cout << "    unconnected" << endl;
+	cerr << "    unconnected" << endl;
 	continue;
       }
-
-      cout << "Port::check " << cur->name << "(" << *cur->expr[0];
+      cerr << "Port::check " << cur->name << "(" << *cur->expr[0];
       for (unsigned wdx = 1; wdx < cur->expr.size(); wdx += 1) {
-	cout << ", " << *cur->expr[wdx];
+	cerr << ", " << *cur->expr[wdx];
       }
-
-      cout << ")" << endl;
+      cerr << ")" << endl;
     }
   }
-  
+
+  if(debug_typecheck) cerr << "typechecking module parameters" << endl;
   typecheck_parameters_(printer, env);
-  if(debug_typecheck) fprintf(stderr, "typechecking localparams\n");
+  if(debug_typecheck) cerr << "typechecking localparams" << endl;
   typecheck_localparams_(printer, env);
 
   typedef map<perm_string, LineInfo*>::const_iterator genvar_iter_t;
   for (genvar_iter_t cur = genvars.begin(); cur != genvars.end(); cur++) {
-    // genvars must be public
+    // genvars are bottom
     env.varsToType[(*cur).first] = ConstType::BOT;
   }
 
   typedef map<perm_string, PExpr*>::const_iterator specparm_iter_t;
   for (specparm_iter_t cur = specparams.begin(); cur != specparams.end();
        cur++) {
-    throw "specparm";
+    throw "specparams not supported";
   }
 
   typedef list<Module::named_expr_t>::const_iterator parm_hiter_t;
   for (parm_hiter_t cur = defparms.begin(); cur != defparms.end(); cur++) {
-    throw "defparam";
+    throw "defparams not supported";
   }
 
   typecheck_events_(printer, env);
 
   // Iterate through and display all the wires (including registers).
-  if(debug_typecheck) fprintf(stderr, "typechecking wires\n");
+  if(debug_typecheck) cerr << "typechecking wires" << endl;
   typecheck_wires_(printer, env);
 
-  if(debug_typecheck) fprintf(stderr, "next-cycle transform \n");
+  if(debug_typecheck) cerr << "next-cycle transform" << endl;
   next_cycle_transform(printer, env);
 
-  if(debug_typecheck) fprintf(stderr, "collecting dependands\n");
+  if(debug_typecheck) cerr << "collecting dependands" << endl;
   CollectDepExprs(printer, env, modules);
-  if(debug_typecheck) fprintf(stderr, "outputting type families\n");
+  if(debug_typecheck) cerr << "outputting type families" << endl;
   output_type_families(printer, depfun);
-  if (debug_typecheck) fprintf(stderr, "Generating input invariant assumptions\n");
-  makeAssumptions(this, printer, env);  
-  if(debug_typecheck) fprintf(stderr, "collecting dependent invariants\n");
+  if(debug_typecheck) cerr << "generating input invariant assumptions" << endl;
+  makeAssumptions(this, printer, env);
+  if(debug_typecheck) cerr << "collecting dependent invariants" << endl;
   CollectDepInvariants(printer, env);
+
+  //TODO probably delete this
   // remove an invariant if some variable does not show up
-  if(debug_typecheck) fprintf(stderr, "optimizing invariants\n");
+  if(debug_typecheck) cerr << "optimizing invariants" << endl;
   for (set<Equality*>::iterator invite = env.invariants->invariants.begin();
        invite != env.invariants->invariants.end();) {
     set<perm_string> vars, diff;
@@ -771,6 +767,8 @@ void Module::typecheck(SexpPrinter&printer, TypeEnv& env,
       }
     }
   }
+  //end TODO of delete
+  
   printer.lineBreak();
   printer.startList("echo");
   printer << "\"base conditions are satisfiable? (should be sat)\"";
@@ -780,7 +778,7 @@ void Module::typecheck(SexpPrinter&printer, TypeEnv& env,
   printer.lineBreak();
   printer.addComment("assertions to be verified");
 
-  if(debug_typecheck) fprintf(stderr, "checking generates\n");
+  if(debug_typecheck) cerr << "checking generates" << endl;
   typedef list<PGenerate*>::const_iterator genscheme_iter_t;
   for (genscheme_iter_t cur = generate_schemes.begin();
        cur != generate_schemes.end(); cur++) {
@@ -788,26 +786,30 @@ void Module::typecheck(SexpPrinter&printer, TypeEnv& env,
   }
 
   // Dump the task definitions.
-  if(debug_typecheck) fprintf(stderr, "dump tasks\n");
-  typedef map<perm_string, PTask*>::const_iterator task_iter_t;
-  for (task_iter_t cur = tasks.begin(); cur != tasks.end(); cur++) {
-    cerr << "PTask ignored" << endl;
+  if(debug_typecheck) {
+    cerr << "dump tasks" << endl;
+    typedef map<perm_string, PTask*>::const_iterator task_iter_t;
+    for (task_iter_t cur = tasks.begin(); cur != tasks.end(); cur++) {
+      cerr << "PTask ignored" << endl;
+    }
   }
 
   // Dump the function definitions.
-  if(debug_typecheck) fprintf(stderr, "dump functions\n");
-  typedef map<perm_string, PFunction*>::const_iterator func_iter_t;
-  for (func_iter_t cur = funcs.begin(); cur != funcs.end(); cur++) {
-    cerr << "PFunction" << endl;
+  if(debug_typecheck) {
+    cerr << "dump functions" << endl;
+    typedef map<perm_string, PFunction*>::const_iterator func_iter_t;
+    for (func_iter_t cur = funcs.begin(); cur != funcs.end(); cur++) {
+      cerr << "PFunction" << endl;
+    }
   }
-
+  
   // Iterate through and display all the gates.
-  if(debug_typecheck) fprintf(stderr, "checking gates\n");
+  if(debug_typecheck) cerr << "checking gates" << endl;
   for (list<PGate*>::const_iterator gate = gates_.begin();
        gate != gates_.end(); gate++) {
     PGAssign* pgassign = dynamic_cast<PGAssign*>(*gate);
     PGModule* pgmodule = dynamic_cast<PGModule*>(*gate);
-
+    
     // make sure the parameters has same label as module declaration
     if (pgmodule != NULL) {
       pgmodule->typecheck(printer, env, modules);
@@ -819,22 +821,22 @@ void Module::typecheck(SexpPrinter&printer, TypeEnv& env,
 
   // The code above should collect a typing environment for all variables.
   // The following code performs intra-process type checking.
-  if(debug_typecheck) fprintf(stderr, "checking processes\n");
+  if(debug_typecheck) cerr << "checking processes" << endl;
   for (list<PProcess*>::const_iterator behav = behaviors.begin();
        behav != behaviors.end(); behav++) {
     (*behav)->typecheck(printer, env);
   }
 
-  if(debug_typecheck) fprintf(stderr, "checking AProcesses\n");
+  if(debug_typecheck) cerr << "checking AProcesses" << endl;
   for (list<AProcess*>::const_iterator idx = analog_behaviors.begin();
        idx != analog_behaviors.end(); idx++) {
-    throw "AProcess";
+    throw "Analog behaviors not supported";
   }
 
-  if(debug_typecheck) fprintf(stderr, "checking PSpecPaths\n");
+  if(debug_typecheck) cerr << "checking PSpecPaths" << endl;
   for (list<PSpecPath*>::const_iterator spec = specify_paths.begin();
        spec != specify_paths.end(); spec++) {
-    throw "PSpecPath";
+    throw "Specify paths not supported";
   }
 }
 
@@ -917,7 +919,7 @@ void typecheck_assignment(SexpPrinter&printer, PExpr* lhs, PExpr* rhs, TypeEnv* 
     //If ltype is sequential, substitute its free variables with the
     //next-cycle version of that variable.
     if(lbase->isNextType()){
-      ltype  = ltype->next_cycle(env);
+      ltype = ltype->next_cycle(env);
     }
     rtype = new JoinType(rhs->typecheck(printer, env->varsToType), env->pc);
     if (lident != NULL) {
@@ -1363,46 +1365,11 @@ void PCondit::typecheck(SexpPrinter&printer, TypeEnv& env, Predicate& pred) cons
 
   SecType* oldpc = env.pc;
   set<Hypothesis*> beforeif = pred.hypotheses;
-  set<perm_string> oldalive = env.aliveVars;
 
   // generate fresh variables for that used in the current pc
   SecType* etype = expr_->typecheck(printer, env.varsToType); //->freshVars(get_lineno(), subst);
   env.pc = new JoinType(etype, oldpc);
   env.pc = env.pc->simplify();
-
-  // the commented out code takes a snapshot of the pc environment before executing the commands
-  // in branches, in the hope of improving expressiveness. However, this feature seems useless
-  // in real applications.
-  //	for (map<perm_string, perm_string>::iterator ite=subst.begin(); ite != subst.end(); ite++) {
-  //		perm_string oldname = (*ite).first;
-  //		perm_string newname = (*ite).second;
-  //    	out << "(declare-fun " << newname << " () Int)" << endl;
-  //    	map<perm_string,PWire*>::const_iterator cur = env.module->wires.find(oldname);
-  //    	if (cur != env.module->wires.end()) {
-  //    		PWire* def = (*cur).second;
-  //    		out << "(assert (<= 0  " << newname << "))" << endl;
-  //    		out << "(assert (<= " << newname << " " << pow(2,def->getRange()+1)-1 << "))" << endl;
-  //        }
-  //	}
-
-  // calculate the alternative modified variables for if and else branch
-  set<PExpr*, ExprComparator> modified;
-
-  mustmodify(modified, env.dep_exprs);
-
-  for (set<perm_string>::iterator depite = env.dep_exprs.begin();
-       depite != env.dep_exprs.end(); depite++) {
-    bool add = true;
-    for (set<PExpr*, ExprComparator>::iterator exprite = modified.begin();
-	 exprite != modified.end(); exprite++) {
-      if ((*exprite)->get_name() == *depite) {
-	add = false;
-	break;
-      }
-    }
-    if (add)
-      env.aliveVars.insert(*depite);
-  }
 
   if (if_) {
     absintp(pred, env, true, false);
@@ -1419,7 +1386,6 @@ void PCondit::typecheck(SexpPrinter&printer, TypeEnv& env, Predicate& pred) cons
   Predicate afterelse = pred;
   // at the merge point, we assume no assumptions are valid anymore
   env.pc = oldpc;
-  env.aliveVars = oldalive;
   pred.hypotheses.clear();
   merge(afterif, afterelse, pred);
   
@@ -1760,17 +1726,14 @@ void typecheck(map<perm_string, Module*> modules,
     // checking typing rules have the form \G, \A |- C, where
     // \G is a map from Verilog vars to security lables, and
     // \A is a conjunction of predicates on PWire
-    map<perm_string, SecType*> *varsToType =
-      new map<perm_string, SecType*>();
-    map<perm_string, BaseType*> *varsToBase=
-      new map<perm_string, BaseType*>();
+    map<perm_string, SecType*>  *varsToType = new map<perm_string, SecType*>();
+    map<perm_string, BaseType*> *varsToBase = new map<perm_string, BaseType*>();
     TypeEnv* env = new TypeEnv(*varsToType, *varsToBase, ConstType::BOT, rmod);
 
     ofstream z3file;
     string z3filename = string(rmod->file_name().str());
     size_t pos = z3filename.find_first_of('.');
-    if (pos != string::npos)
-      z3filename = z3filename.substr(0, pos);
+    if (pos != string::npos) { z3filename = z3filename.substr(0, pos); }
     z3file.open((z3filename + ".z3").c_str());
     output_lattice(z3file, lattice_file_name);
     SexpPrinter printer(z3file, 80);

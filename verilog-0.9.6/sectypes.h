@@ -450,28 +450,27 @@ struct Invariant {
 };
 
 struct TypeEnv {
-	map<perm_string, SecType*> varsToType;
+    map<perm_string, SecType*> varsToType;
     map<perm_string, BaseType*> varsToBase;
-	SecType* pc;
+    SecType* pc;
     set<perm_string> dep_exprs; // a list of expressions where a dependent type may depend on
-    set<perm_string> aliveVars;
     set<perm_string> seqVars;
     Invariant* invariants;
     Module* module;
 
-	TypeEnv(map<perm_string, SecType*>& m, map<perm_string, BaseType*>& b,
+    TypeEnv(map<perm_string, SecType*>& m, map<perm_string, BaseType*>& b,
             SecType* pclabel, Module* modu) {
-		varsToType = m;
-        varsToBase = b;
-		pc = pclabel;
-		module = modu;
-		invariants = new Invariant();
-	}
+      varsToType = m;
+      varsToBase = b;
+      pc = pclabel;
+      module = modu;
+      invariants = new Invariant();
+    }
 
-	void addInvariant(Equality* inv) {
-		invariants->invariants.insert(inv);
-	}
-
+    void addInvariant(Equality* inv) {
+      invariants->invariants.insert(inv);
+    }
+  
     TypeEnv& operator= (const TypeEnv&);
 };
 
