@@ -78,25 +78,23 @@ void LexicalScope::typecheck_localparams_(SexpPrinter&printer, TypeEnv& env) con
 
     if(dynamic_cast<const PScope*>(this)) {
       const PScope* ps = dynamic_cast<const PScope*>(this);
-      fprintf(stderr, "typecheck_localparams for %s\n", ps->pscope_name().str());
+      cerr << "typecheck_localparams for " << ps->pscope_name() << endl;
     } else {
-      fprintf(stderr, "checking localparams for a non-pscope lexscope\n");
+      cerr << "checking localparams for a non-pscope lexscope" << endl;
     }
-    std::stringstream tmp;
     for (parm_iter_t cur = localparams.begin();
 	 cur != localparams.end();
 	 cur++) {
-      tmp << "check localparam ";
+      cerr << "check localparam ";
       if ((*cur).second.msb)
-	tmp << "[" << *(*cur).second.msb << ":" << *(*cur).second.lsb
+	cerr << "[" << *(*cur).second.msb << ":" << *(*cur).second.lsb
 	    << "] ";
-      tmp << (*cur).first << " = ";
+      cerr << (*cur).first << " = ";
       if ((*cur).second.expr)
-	tmp << *(*cur).second.expr << ";" << endl;
+	cerr << *(*cur).second.expr << ";" << endl;
       else
-       tmp << "/* ERROR */;" << endl;
+       cerr << "/* ERROR */;" << endl;
     }
-    printer.writeRawLine(tmp.str());
   }
   for (parm_iter_t cur = localparams.begin();
        cur != localparams.end(); cur++) {
@@ -117,8 +115,9 @@ void Module::next_cycle_transform(SexpPrinter&printer, TypeEnv&env) {
   // assignments to next-cycle objects.
   for (list<PProcess*>::const_iterator behav = behaviors.begin();
        behav != behaviors.end(); behav++) {
-    if(debug_typecheck) 
-      fprintf(stderr, "NextCycleTransform:: %s\n", typeid(*behav).name());
+    if(debug_typecheck) {
+      cerr << "NextCycleTransform:: " << typeid(*behav).name() << endl;
+    }
     (*behav)->next_cycle_transform(printer, env);
   }
   typedef set<perm_string>::const_iterator seqvar_iter_t;
@@ -150,22 +149,19 @@ PProcess* Module::gen_assign_next_block(perm_string id){
 
 void PProcess::next_cycle_transform(SexpPrinter&printer, TypeEnv&env) const {
   if(statement_ == NULL) return;
-  if(debug_typecheck)
-    fprintf(stderr, "NextCycleTransform:: %s\n", typeid(*statement_).name());
+  if(debug_typecheck) cerr << "NextCycleTransform:: " << typeid(*statement_).name() << endl;
   statement_->next_cycle_transform(printer, env);
 }
 
 bool PProcess::collect_dep_invariants(SexpPrinter&printer, TypeEnv&env, Predicate&pred) {
   if(statement_ == NULL) return false;
-  if(debug_typecheck)
-    fprintf(stderr, "collect_dep_invariants:: %s\n", typeid(*statement_).name());
+  if(debug_typecheck) cerr << "collect_dep_invariants:: " << typeid(*statement_).name() << endl;
   return statement_->collect_dep_invariants(printer, env, pred);
 }
 
 void PProcess::collect_index_exprs(set<perm_string>&exprs, map<perm_string, SecType*>&env) {
   if(statement_ == NULL) return;
-  if(debug_typecheck)
-    fprintf(stderr, "collect_index_exprs:: %s\n", typeid(*statement_).name());
+  if(debug_typecheck) cerr << "collect_index_exprs:: " << typeid(*statement_).name() << endl;
   statement_->collect_index_exprs(exprs, env);
 }
 
@@ -187,19 +183,19 @@ Statement* PEventStatement::next_cycle_transform(SexpPrinter&printer, TypeEnv&en
 }
 
 void PEventStatement::collect_index_exprs(set<perm_string>& exprs, map<perm_string, SecType*>&env) {
-  if (debug_typecheck) fprintf(stderr, "collect_index_exprs:: %s\n", typeid(*statement_).name());  
+  if (debug_typecheck) cerr << "collect_index_exprs:: " << typeid(*statement_).name() << endl;
   statement_->collect_index_exprs(exprs, env);
 }
 
 bool PEventStatement::collect_dep_invariants(SexpPrinter&printer, TypeEnv&env, Predicate&pred) {
-  if (debug_typecheck) fprintf(stderr, "collect_dep_invariants:: %s\n", typeid(*statement_).name());
+  if (debug_typecheck) cerr << "collect_dep_invariants:: " << typeid(*statement_).name() << endl;
   return statement_->collect_dep_invariants(printer, env, pred);
 }
 
 Statement* PBlock::next_cycle_transform(SexpPrinter&printer, TypeEnv&env) {
   for(uint i=0; i<list_.count(); i++) {
     if(debug_typecheck) 
-      fprintf(stderr, "NextCycleTransform:: %s\n", typeid(list_[i]).name());
+      cerr << "NextCycleTransform:: " << typeid(list_[i]).name() << endl;
     list_[i]=list_[i]->next_cycle_transform(printer, env);
   }
   return this;
@@ -207,8 +203,7 @@ Statement* PBlock::next_cycle_transform(SexpPrinter&printer, TypeEnv&env) {
 
 void PBlock::collect_index_exprs(set<perm_string>& exprs, map<perm_string, SecType*>&env) {
   for(uint i=0; i<list_.count(); i++) {
-    if(debug_typecheck) 
-      fprintf(stderr, "collect_index_exprs:: %s\n", typeid(list_[i]).name());
+    if(debug_typecheck) cerr << "collect_index_exprs:: " << typeid(list_[i]).name() << endl;
     list_[i]->collect_index_exprs(exprs, env);
   }
 }
@@ -216,8 +211,7 @@ void PBlock::collect_index_exprs(set<perm_string>& exprs, map<perm_string, SecTy
 bool PBlock::collect_dep_invariants(SexpPrinter&printer, TypeEnv&env, Predicate&pred) {
   bool result = false;
   for(uint i=0; i<list_.count(); i++) {
-    if(debug_typecheck) 
-      fprintf(stderr, "collect_dep_invariants:: %s\n", typeid(list_[i]).name());
+    if(debug_typecheck) cerr << "collect_dep_invariants:: " << typeid(list_[i]).name() << endl;
     result |= list_[i]->collect_dep_invariants(printer, env, pred);
   }
   return result;
@@ -232,7 +226,7 @@ Statement* PCondit::next_cycle_transform(SexpPrinter&printer, TypeEnv&env) {
 }
 
 void PCondit::collect_index_exprs(set<perm_string>& exprs, map<perm_string, SecType*>&env) {
-  if (debug_typecheck) fprintf(stderr, "collect_index_exprs on if\n");
+  if (debug_typecheck) cerr << "collect_index_exprs on if" << endl;
   if (if_ != NULL) {
     if_->collect_index_exprs(exprs, env);
   }
@@ -243,7 +237,7 @@ void PCondit::collect_index_exprs(set<perm_string>& exprs, map<perm_string, SecT
 }
 
 bool PCondit::collect_dep_invariants(SexpPrinter&printer, TypeEnv&env, Predicate&pred) {
-  if (debug_typecheck) fprintf(stderr, "collect_dep_invariants on if\n");
+  if (debug_typecheck) cerr << "collect_dep_invariants on if" << endl;
   Predicate oldPred = pred;
   bool result = false;
   if (if_ != NULL) {
@@ -263,11 +257,11 @@ bool PCondit::collect_dep_invariants(SexpPrinter&printer, TypeEnv&env, Predicate
 }
 
 void PCAssign::collect_index_exprs(set<perm_string>& exprs, map<perm_string, SecType*>&env) {
-  if (debug_typecheck) fprintf(stderr, "skipping collect_index_exprs on pcassign\n");  
+  if (debug_typecheck) cerr << "skipping collect_index_exprs on pcassign" << endl;
 }
 
 bool PCAssign::collect_dep_invariants(SexpPrinter&, TypeEnv&env, Predicate&pred) {
-  if (debug_typecheck) fprintf(stderr, "skipping collect_dep_invariants on pcassign\n");
+  if (debug_typecheck) cerr << "skipping collect_dep_invariants on pcassign" << endl;
   return false;
 }
 
@@ -280,16 +274,16 @@ Statement* PAssignNB::next_cycle_transform(SexpPrinter&printer, TypeEnv&env) {
 }
 
 void PAssign_::collect_index_exprs(set<perm_string>& exprs, map<perm_string, SecType*>&env) {
-  if (debug_typecheck) fprintf(stderr, "collect_index_exprs on passign\n");
   if (debug_typecheck) {
-    cout << "on " << *rval() << " gets " << *lval() << endl;
+    cerr <<  "collect_index_exprs on passign" << endl;
+    cerr << "on " << *rval() << " gets " << *lval() << endl;    
   }
   rval()->collect_index_exprs(exprs, env);
   lval()->collect_index_exprs(exprs, env);
 }
 
 bool PAssign_::collect_dep_invariants(SexpPrinter&printer, TypeEnv&env, Predicate&pred) {
-  if (debug_typecheck) fprintf(stderr, "collect_dep_invariants on passign\n");  
+  if (debug_typecheck) cerr << "collect_dep_invariants on passign" << endl;
   PEIdent* rident = dynamic_cast<PEIdent*>(rval());
   bool isNextAssign = false;
   if (rident != NULL) {
@@ -336,10 +330,9 @@ PExpr* PEIdent::next_cycle_transform(SexpPrinter&printer, TypeEnv&env) {
   
   BaseType*bt = check_base_type(printer, env.varsToBase);
   if(bt == NULL) {
-    fprintf(stderr, "WARN: null basetype: %s",
-	    peek_tail_name(path()).str());
-    assert(bt);     
+    cerr << "WARN: null basetype: " << peek_tail_name(path()).str() << endl;
   }
+  assert(bt);  
   // if bt is seqtype, make it into next cycle version  
   if(bt->isSeqType()) {
     name_component_t topName = path().back();
@@ -364,8 +357,7 @@ PExpr* PEIdent::next_cycle_transform(SexpPrinter&printer, TypeEnv&env) {
 void PGenerate::next_cycle_transform(SexpPrinter&printer, TypeEnv env) {
   for (list<PProcess*>::const_iterator behav = behaviors.begin();
        behav != behaviors.end(); behav++) {
-    if(debug_typecheck) 
-      fprintf(stderr, "NextCycleTransform:: %s\n", typeid(*behav).name());
+    if(debug_typecheck) cerr << "NextCycleTransform:: " << typeid(*behav).name() << endl;
     (*behav)->next_cycle_transform(printer, env);
   }  
 }
@@ -479,8 +471,7 @@ void PWire::typecheck(SexpPrinter&printer, map<perm_string, SecType*>& varsToTyp
   varsToType[basename()] = sectype_;
   varsToBase[basename()] = basetype_;
   if(sectype_ == NULL) {
-    fprintf(stderr, "WARN: Found NULL sectype for %s, using BOT",
-	    basename().str());
+    cerr << "WARN: Found NULL sectype for " << basename().str() << ", using BOT" << endl;
     varsToType[basename()] = ConstType::BOT;
   }
   if(debug_typecheck) {
@@ -676,9 +667,7 @@ PExpr* Module::getAssumptions() const {
 void makeAssumptions(Module* mod, SexpPrinter&printer, TypeEnv& env) {
   PExpr* assumeAttr = mod->getAssumptions();
   if (assumeAttr) {
-    if (debug_typecheck) {
-      fprintf(stderr, "Found assume attribute in module\n");
-    }
+    if (debug_typecheck) cerr << "Found assume attribute in module" << endl;
     printer.addComment("Input module assertions");
     printer.startList("assert");
     assumeAttr->dumpz3(printer);
@@ -935,14 +924,14 @@ void typecheck_assignment(SexpPrinter&printer, PExpr* lhs, PExpr* rhs, TypeEnv* 
 
 
     if(debug_typecheck){
-      cout << "line no" << lineno << endl;
-      cout << "ltype: " << *ltype << endl;
-      cout << "rtype: " << *rtype << endl;
-      cout << "lbase: " << lbase->name() << endl;
-      cout << "lhs: " << *lhs << endl;
-      cout << "rhs: " << *rhs << endl;
-      cout << "precond: " << precond << endl;
-      cout << "postcond: " << postcond << endl;
+      cerr << "line no" << lineno << endl;
+      cerr << "ltype: " << *ltype << endl;
+      cerr << "rtype: " << *rtype << endl;
+      cerr << "lbase: " << lbase->name() << endl;
+      cerr << "lhs: " << *lhs << endl;
+      cerr << "rhs: " << *rhs << endl;
+      cerr << "precond: " << precond << endl;
+      cerr << "postcond: " << postcond << endl;
     }
 
     // we used to treat recursive labels differently
@@ -962,7 +951,7 @@ void PGAssign::collect_index_exprs(set<perm_string>& exprs, map<perm_string, Sec
 }
 
 bool PGAssign::collect_dep_invariants(SexpPrinter&printer, TypeEnv&env) {
-  if (debug_typecheck) fprintf(stderr, "collect_dep_invariants on pgassign\n");
+  if (debug_typecheck) cerr << "collect_dep_invariants on pgassign" << endl;
   PExpr* l = pin(0);
   PEIdent* lval = dynamic_cast<PEIdent*>(l);
   PExpr* rval = pin(1);
