@@ -1,13 +1,14 @@
-#include "PExpr.h"
-#include "StringHeap.h"
 #ifndef __PATH_ASSIGN_H__
 #define __PATH_ASSIGN_H__ 1
+#include "PExpr.h"
+#include "StringHeap.h"
+#include "sectypes.h"
 
 #include <map>
 #include <vector>
 
 
-using PathAnalysis = std::map<perm_string, std::vector<PExpr>>;
+using PathAnalysis = std::map<perm_string, std::vector<Predicate>>;
 
 
 /**
@@ -15,7 +16,7 @@ using PathAnalysis = std::map<perm_string, std::vector<PExpr>>;
  * @return A map from variable names to expressions that represent the conditions
  * under which each variable is assigned during a given clock cycle.
  */
-PathAnalysis get_paths(Module &m);
+PathAnalysis get_paths(Module &m, TypeEnv &env);
 //TODO you'll probably need to pass some typing information to this analysis also
 
 

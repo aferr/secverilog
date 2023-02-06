@@ -27,7 +27,8 @@
 # include  "PExpr.h"
 # include  "PScope.h"
 # include  "HName.h"
-# include  "LineInfo.h"
+#include "LineInfo.h"
+#include "path_assign.h"
 class PExpr;
 class Statement;
 class PEventStatement;
@@ -65,8 +66,7 @@ class PProcess : public LineInfo {
       virtual void typecheck(SexpPrinter&printer, TypeEnv& env) const;
       virtual void next_cycle_transform(SexpPrinter&printer, TypeEnv& env) const;
       virtual bool collect_dep_invariants(SexpPrinter&printer, TypeEnv& env, Predicate& pred);
-      virtual void collect_index_exprs(set<perm_string>&exprs, map<perm_string, SecType*>&env);            
-      
+      virtual void collect_index_exprs(set<perm_string>&exprs, map<perm_string, SecType*>&env);
     private:
       ivl_process_type_t type_;
       Statement*statement_;
@@ -92,6 +92,7 @@ class Statement : public LineInfo {
       virtual Statement* next_cycle_transform(SexpPrinter&printer, TypeEnv& env);
       virtual bool collect_dep_invariants(SexpPrinter&printer, TypeEnv& env, Predicate& pred);
       virtual void collect_index_exprs(set<perm_string>&exprs, map<perm_string, SecType*>&env);
+  virtual void collect_assign_paths(PathAnalysis &paths, TypeEnv &env, Predicate &pred);
       map<perm_string,PExpr*> attributes;
 };
 
@@ -109,7 +110,8 @@ class PAssign_  : public Statement {
 
       virtual bool collect_dep_invariants(SexpPrinter&printer, TypeEnv& env, Predicate& pred);
       virtual void collect_index_exprs(set<perm_string>&exprs, map<perm_string, SecType*>&env);      
-      
+  virtual void collect_assign_paths(PathAnalysis &paths, TypeEnv &env, Predicate &pred);
+  
       PExpr* lval() const  { return lval_; }
       PExpr* rval() const  { return rval_; }
 
@@ -197,7 +199,8 @@ class PBlock  : public PScope, public Statement {
       virtual Statement* next_cycle_transform(SexpPrinter&printer, TypeEnv&env);
       virtual bool collect_dep_invariants(SexpPrinter&out, TypeEnv& env, Predicate& pred);      
       virtual void collect_index_exprs(set<perm_string>&exprs, map<perm_string, SecType*>&env);            
-      
+  virtual void collect_assign_paths(PathAnalysis &paths, TypeEnv &env, Predicate &pred);
+  
     private:
       const BL_TYPE bl_type_;
       svector<Statement*>list_;
@@ -277,7 +280,8 @@ class PCAssign  : public Statement {
       virtual void typecheck(SexpPrinter&printer, TypeEnv& env, Predicate& pred) const;
       virtual Statement* next_cycle_transform(SexpPrinter&printer, TypeEnv&env);
       virtual bool collect_dep_invariants(SexpPrinter&out, TypeEnv& env, Predicate& pred);
-      virtual void collect_index_exprs(set<perm_string>&exprs, map<perm_string, SecType*>&env);                  
+      virtual void collect_index_exprs(set<perm_string>&exprs, map<perm_string, SecType*>&env);
+  virtual void collect_assign_paths(PathAnalysis &paths, TypeEnv &env, Predicate &pred);
       void absintp(Predicate&, TypeEnv&) const;
 
     private:
@@ -299,7 +303,9 @@ class PCondit  : public Statement {
       virtual void mustmodify(set<PExpr*, ExprComparator>& vars, set<perm_string>) const;
       virtual Statement* next_cycle_transform(SexpPrinter&printer, TypeEnv&env);
       virtual bool collect_dep_invariants(SexpPrinter&out, TypeEnv& env, Predicate& pred);
-      virtual void collect_index_exprs(set<perm_string>&exprs, map<perm_string, SecType*>&env);                        
+      virtual void collect_index_exprs(set<perm_string>&exprs, map<perm_string, SecType*>&env);
+  virtual void collect_assign_paths(PathAnalysis &paths, TypeEnv &env, Predicate &pred);
+  
       void absintp(Predicate& pred, TypeEnv&, bool istrue, bool useAllVars = false) const;
       void merge(Predicate&, Predicate&, Predicate&) const;
 
@@ -396,8 +402,9 @@ class PEventStatement  : public Statement {
       virtual void elaborate_sig(Design*des, NetScope*scope) const;
       virtual Statement* next_cycle_transform(SexpPrinter&printer, TypeEnv&env);
       virtual bool collect_dep_invariants(SexpPrinter&out, TypeEnv& env, Predicate& pred);
-      virtual void collect_index_exprs(set<perm_string>&exprs, map<perm_string, SecType*>&env);                              
-
+      virtual void collect_index_exprs(set<perm_string>&exprs, map<perm_string, SecType*>&env);
+  virtual void collect_assign_paths(PathAnalysis &paths, TypeEnv &env, Predicate &pred);
+  
       void absintp(Predicate&, TypeEnv&) const;
       bool has_aa_term(Design*des, NetScope*scope);
 
