@@ -294,8 +294,7 @@ bool PAssign_::collect_dep_invariants(SexpPrinter&printer, TypeEnv&env, Predicat
   }
   BaseType *ltyp = lval()->check_base_type(printer, env.varsToBase);
   //if lhs appears in dependent type, and  this is not the generated assignment (x = x_next_)
-  if ((env.dep_exprs.find(lval()->get_name()) != env.dep_exprs.end()) && !isNextAssign) {
-    
+  if ((env.dep_exprs.find(lval()->get_name()) != env.dep_exprs.end()) && !isNextAssign) {    
     bool hasPreds = !pred.hypotheses.empty();
     printer.startList("assert");
     if (hasPreds) {
@@ -923,8 +922,9 @@ void typecheck_assignment(SexpPrinter&printer, PExpr* lhs, PExpr* rhs, TypeEnv* 
     }
 
 
-    if(debug_typecheck){
+    if(debug_typecheck) {
       cerr << "line no" << lineno << endl;
+      cerr << "pctype: " << *env->pc << endl;
       cerr << "ltype: " << *ltype << endl;
       cerr << "rtype: " << *rtype << endl;
       cerr << "lbase: " << lbase->name() << endl;
@@ -1436,10 +1436,12 @@ void PEventStatement::typecheck(SexpPrinter&printer, TypeEnv& env,
     if (expr_.count() == 0) {
       cerr << "PEventStatement::check " << "@* ";
     } else {
-      cerr << "PEventStatement::check" << "@(" << *(expr_[0]);
-      if (expr_.count() > 1)
-	for (unsigned idx = 1; idx < expr_.count(); idx += 1)
+      cerr << "PEventStatement::check " << "@(" << *(expr_[0]);
+      if (expr_.count() > 1) {
+	for (unsigned idx = 1; idx < expr_.count(); idx += 1) {
 	  cerr << " or " << *(expr_[idx]);
+	}
+      }
       cerr << ")";
     }
 
@@ -1458,6 +1460,9 @@ void PEventStatement::typecheck(SexpPrinter&printer, TypeEnv& env,
     for (unsigned idx = 1; idx < expr_.count(); idx += 1)
       env.pc = new JoinType(env.pc,
 			    expr_[idx]->expr()->typecheck(printer, env.varsToType));
+  }
+  if (debug_typecheck) {
+    cerr << "New PC is: " << *env.pc << endl;
   }
   statement_->typecheck(printer, env, pred);
   env.pc = oldpc;
@@ -1503,13 +1508,13 @@ void PForStatement::typecheck(SexpPrinter&printer, TypeEnv& env,
 void PGenerate::typecheck(SexpPrinter&printer, TypeEnv env,
 			  map<perm_string, Module*> modules) {
   if (debug_typecheck) {
-    dump(cout, 0);
+    dump(cerr, 0);
   }
 
   typecheck_parameters_(printer, env);
   typecheck_localparams_(printer, env);
   if (defparms.size() > 0) {
-    cout << "PGenerate::defparms are ignored" << endl;
+    cerr << "PGenerate::defparms are ignored" << endl;
   }
   typecheck_events_(printer, env);
   // Iterate through and display all the wires (including registers).
@@ -1517,6 +1522,10 @@ void PGenerate::typecheck(SexpPrinter&printer, TypeEnv env,
   printer.lineBreak();
   printer.addComment("assertions to be verified");
   printer.lineBreak();
+
+  if (debug_typecheck) {
+    cerr << "Current PC is: " << *env.pc << endl;
+  }
 
   for (list<PGate*>::const_iterator gate = gates.begin(); gate != gates.end();
        gate++) {
