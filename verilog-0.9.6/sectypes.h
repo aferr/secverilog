@@ -503,7 +503,7 @@ inline ostream &operator<<(ostream &o, SecType &t)
 }
 
 
-inline SexpPrinter& operator << (SexpPrinter&printer, Predicate& pred)
+inline SexpPrinter& operator << (SexpPrinter&printer, const Predicate& pred)
 {
   auto l = pred.hypotheses;
   auto i = l.begin();

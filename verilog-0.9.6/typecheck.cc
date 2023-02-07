@@ -28,6 +28,7 @@
 # include  <sstream>
 # include  <fstream>
 # include  <algorithm>
+#include "path_assign.h"
 # include  "pform.h"
 # include  "PEvent.h"
 # include  "PGenerate.h"
@@ -680,6 +681,8 @@ void makeAssumptions(Module* mod, SexpPrinter&printer, TypeEnv& env) {
  */
 void Module::typecheck(SexpPrinter&printer, TypeEnv& env,
 		       map<perm_string, Module*> modules, char* depfun) {
+
+  
   if (debug_typecheck) {
     cerr << "Module::check " << mod_name() << endl;
     for (unsigned idx = 0; idx < ports.size(); idx += 1) {
@@ -724,9 +727,15 @@ void Module::typecheck(SexpPrinter&printer, TypeEnv& env,
   if(debug_typecheck) cerr << "typechecking wires" << endl;
   typecheck_wires_(printer, env);
 
+  auto anal = get_paths(*this, env);
+  
   if(debug_typecheck) cerr << "next-cycle transform" << endl;
   next_cycle_transform(printer, env);
 
+
+  
+
+  
   if(debug_typecheck) cerr << "collecting dependands" << endl;
   CollectDepExprs(printer, env, modules);
   if(debug_typecheck) cerr << "outputting type families" << endl;
@@ -736,6 +745,11 @@ void Module::typecheck(SexpPrinter&printer, TypeEnv& env,
   if(debug_typecheck) cerr << "collecting dependent invariants" << endl;
   CollectDepInvariants(printer, env);
 
+  
+  dump_no_overlap_anal(printer, anal);
+
+
+  
   //TODO probably delete this
   // remove an invariant if some variable does not show up
   if(debug_typecheck) cerr << "optimizing invariants" << endl;

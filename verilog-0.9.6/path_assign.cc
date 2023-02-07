@@ -1,6 +1,7 @@
 #include "path_assign.h"
 #include "Module.h"
 #include "Statement.h"
+#include "sexp_printer.h"
 
 PathAnalysis
 get_paths(Module &m, TypeEnv &env)
@@ -14,7 +15,7 @@ get_paths(Module &m, TypeEnv &env)
 
 
   // debug printing of paths
-  for(auto &p : paths)
+  for (auto &p : paths)
     {
       std::cout << p.first << ":\n";
       for(auto &pred : p.second)
@@ -22,9 +23,44 @@ get_paths(Module &m, TypeEnv &env)
 	  std::cout << pred;
 	}
     }
-  
   return paths;
 }
+
+
+void dump_no_overlap_anal(SexpPrinter &p, PathAnalysis &paths)
+{
+  for (auto &[var, paths] : paths)
+    {
+      p.singleton("push");
+      p.startList("assert");
+      p.startList("or");
+      if (paths.size() == 1)
+	p.printAtom("false");
+      for (auto i = paths.cbegin(); i != paths.cend(); ++i)
+	{
+	  for (auto j = i + 1; j != paths.cend(); ++j)
+	    {
+	      //p.startList("not");
+	      p.startList("and");
+	      p << *i << *j;
+	      //p.endList();
+	      p.endList();
+	    }
+	}
+      p.endList();
+      p.endList();
+      p.startList("echo");
+      std::string msg = std::string("\"checking paths of ") + var.str() + "\"";
+      p.printAtom(msg);
+      p.endList();
+      p.singleton("check-sat");
+      p.singleton("pop");
+    }
+}
+
+
+
+
 
 
 
