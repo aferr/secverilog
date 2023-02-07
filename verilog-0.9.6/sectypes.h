@@ -258,6 +258,7 @@ class QuantType : public SecType {
   ~QuantType();
 
   void collect_dep_expr(set<perm_string>& m);
+  virtual SecType* next_cycle(TypeEnv*env);  
   void dump(SexpPrinter&printer) {
     _sectype->dump(printer);
   }
