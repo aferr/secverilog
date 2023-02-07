@@ -153,7 +153,7 @@ parse.o parse_misc.o pform.o pform_analog.o pform_disciplines.o \
 pform_dump.o pform_types.o \
 QESubVisitor.o QuantExpr.o QEVisitor.o \
 sectypes.o set_width.o symbol_search.o sync.o sys_funcs.o \
-basetypes.o sexp_printer.o \
+basetypes.o sexp_printer.o path_assign.o \
 typecheck.o verinum.o verireal.o target.o \
 Attrib.o HName.o LineInfo.o Module.o PDelays.o PEvent.o \
 PExpr.o PGate.o PGenerate.o PScope.o PSpec.o \
