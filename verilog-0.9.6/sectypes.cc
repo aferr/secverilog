@@ -570,6 +570,11 @@ void QuantType::collect_dep_expr(set<perm_string>& m) {
     }
   }
 }
+
+SecType* QuantType::next_cycle(TypeEnv*env)
+{
+  return new QuantType(_index_var, _sectype->next_cycle(env));
+}
 //----------------------------------------------
 // Policy Type
 //----------------------------------------------

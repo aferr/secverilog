@@ -195,11 +195,6 @@ class JoinType : public SecType {
 	comp1_->dump(printer);
 	comp2_->dump(printer);
 	printer.endList();
-          // o << "(join ";
-          // comp1_->dump(o);
-          // o << " ";
-          // comp2_->dump(o);
-          // o << ")";
       }
       SecType* getFirst();
       SecType* getSecond();
@@ -234,11 +229,6 @@ class MeetType : public SecType {
 	comp1_->dump(printer);
 	comp2_->dump(printer);
 	printer.endList();
-          // o << "(meet ";
-          // comp1_->dump(o);
-          // o << " ";
-          // comp2_->dump(o);
-          // o << ")";
       }
       SecType* getFirst();
       SecType* getSecond();
@@ -268,6 +258,7 @@ class QuantType : public SecType {
   ~QuantType();
 
   void collect_dep_expr(set<perm_string>& m);
+  virtual SecType* next_cycle(TypeEnv*env);  
   void dump(SexpPrinter&printer) {
     _sectype->dump(printer);
   }
@@ -349,26 +340,37 @@ class PolicyType : public SecType {
     _lower->dump(printer);
     printer.startList();
     printer << _cond_name.str();
-    // o << "(Policy ";
-    // _lower->dump(o);
-    // o << " (";
-    // o << _cond_name << " ";
-    // for (list<perm_string>::iterator it = _static.begin(); it != _static.end(); ++it) {
-    //   o << *it << " ";
-    // }
-    // for (list<perm_string>::iterator it = _dynamic.begin(); it != _dynamic.end(); ++it) {
-    //   o << *it << " ";
-    // }
-    // o << ") ";
-    // _upper->dump(o);
-    // o << ")";
+    for (list<perm_string>::iterator it = _static.begin(); it != _static.end(); ++it) {
+      printer << it->str();
+    }
+    for (list<perm_string>::iterator it = _dynamic.begin(); it != _dynamic.end(); ++it) {
+      printer << it->str();
+    }
+    printer.endList();
+    _upper->dump(printer);
+    printer.endList();
   }
   
   SecType* apply_index(perm_string index_var, perm_string index_val) {
     SecType* nlower = _lower->apply_index(index_var, index_val);
     SecType* nupper = _upper->apply_index(index_var, index_val);
-    SecType* result = new PolicyType(nlower, _cond_name, _static, _dynamic, nupper);
-    //TODO apply to the condition as well
+    list<perm_string> nstatic;
+    list<perm_string> ndynamic;
+    for (auto& s: _static) {
+      if (s == index_var) {
+	nstatic.push_back(index_val);
+      } else {
+	nstatic.push_back(s);
+      }
+    }
+    for (auto& s: _dynamic) {
+      if (s == index_var) {
+	ndynamic.push_back(index_val);
+      } else {
+	ndynamic.push_back(s);
+      }
+    }
+    SecType* result = new PolicyType(nlower, _cond_name, nstatic, ndynamic, nupper);
     return result;
   };
 
