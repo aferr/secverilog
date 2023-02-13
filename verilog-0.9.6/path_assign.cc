@@ -2,15 +2,18 @@
 #include "Module.h"
 #include "PExpr.h"
 #include "Statement.h"
+#include "ivl_target.h"
 #include "sectypes.h"
 #include "sexp_printer.h"
 
 PathAnalysis get_paths(Module &m, TypeEnv &env) {
   PathAnalysis paths;
   for (auto b : m.behaviors) {
-    Predicate emptyPred;
-    emptyPred.hypotheses.insert(new Hypothesis(new PEBoolean(false)));
-    b->statement()->collect_assign_paths(paths, env, emptyPred);
+    if (b->type() != IVL_PR_INITIAL) {
+      Predicate emptyPred;
+      emptyPred.hypotheses.insert(new Hypothesis(new PEBoolean(true)));
+      b->statement()->collect_assign_paths(paths, env, emptyPred);
+    }
   }
 
   // debug printing of paths
