@@ -35,13 +35,14 @@ void remember_signal(ivl_signal_t sig, vhdl_scope *scope);
 void rename_signal(ivl_signal_t sig, const std::string &renamed);
 vhdl_scope *find_scope_for_signal(ivl_signal_t sig);
 const std::string &get_renamed_signal(ivl_signal_t sig);
-ivl_signal_t find_signal_named(const std::string &name, const vhdl_scope *scope);
+ivl_signal_t find_signal_named(const std::string &name,
+                               const vhdl_scope *scope);
 
 // Manage the set of VHDL entities
 void remember_entity(vhdl_entity *ent, ivl_scope_t scope);
-vhdl_entity* find_entity(ivl_scope_t scope);
-vhdl_entity* find_entity(const std::string& name);
-void emit_all_entities(std::ostream& os, int max_depth);
+vhdl_entity *find_entity(ivl_scope_t scope);
+vhdl_entity *find_entity(const std::string &name);
+void emit_all_entities(std::ostream &os, int max_depth);
 void free_all_vhdl_objects();
 
 // Get and set the active entity
@@ -52,4 +53,4 @@ void set_active_entity(vhdl_entity *ent);
 bool is_default_scope_instance(ivl_scope_t s);
 bool seen_this_scope_type(ivl_scope_t s);
 
-#endif  // #ifndef INC_VHDL_STATE_HH
+#endif // #ifndef INC_VHDL_STATE_HH

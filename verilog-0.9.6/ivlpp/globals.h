@@ -19,19 +19,19 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  <stdio.h>
+#include <stdio.h>
 
-extern void reset_lexor(FILE*out, char*paths[]);
+extern void reset_lexor(FILE *out, char *paths[]);
 extern void destroy_lexor();
-extern void load_precompiled_defines(FILE*src);
-extern void define_macro(const char*name, const char*value, int keyword,
+extern void load_precompiled_defines(FILE *src);
+extern void define_macro(const char *name, const char *value, int keyword,
                          int argc);
 extern void free_macros();
-extern void dump_precompiled_defines(FILE*out);
+extern void dump_precompiled_defines(FILE *out);
 
 /* These variables contain the include directories to be searched when
    an include directive in encountered. */
-extern char**include_dir;
+extern char **include_dir;
 extern unsigned include_cnt;
 
 extern int relative_include;

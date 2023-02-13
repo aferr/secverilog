@@ -20,33 +20,32 @@
  */
 
 // This for the perm_string type.
-# include  "StringHeap.h"
-# include  <iostream>
-# include  <list>
+#include "StringHeap.h"
+#include <iostream>
+#include <list>
 
 /*
  * parse-form types.
  */
 
 struct index_component_t {
-      enum ctype_t { SEL_NONE, SEL_BIT, SEL_PART, SEL_IDX_UP, SEL_IDX_DO };
+  enum ctype_t { SEL_NONE, SEL_BIT, SEL_PART, SEL_IDX_UP, SEL_IDX_DO };
 
-      index_component_t() : sel(SEL_NONE), msb(0), lsb(0) { };
-      ~index_component_t() { }
+  index_component_t() : sel(SEL_NONE), msb(0), lsb(0){};
+  ~index_component_t() {}
 
-      ctype_t sel;
-      class PExpr*msb;
-      class PExpr*lsb;
+  ctype_t sel;
+  class PExpr *msb;
+  class PExpr *lsb;
 };
 
 struct name_component_t {
-      explicit name_component_t(perm_string n) : name(n) { }
-      ~name_component_t() { }
+  explicit name_component_t(perm_string n) : name(n) {}
+  ~name_component_t() {}
 
-      perm_string name;
-      std::list<index_component_t>index;
+  perm_string name;
+  std::list<index_component_t> index;
 };
-
 
 /*
  * The pform_name_t is the general form for a hierarchical
@@ -76,19 +75,18 @@ struct name_component_t {
  */
 typedef std::list<name_component_t> pform_name_t;
 
-
-inline perm_string peek_head_name(const pform_name_t&that)
-{
-      return that.front().name;
+inline perm_string peek_head_name(const pform_name_t &that) {
+  return that.front().name;
 }
 
-inline perm_string peek_tail_name(const pform_name_t&that)
-{
-      return that.back().name;
+inline perm_string peek_tail_name(const pform_name_t &that) {
+  return that.back().name;
 }
 
-extern std::ostream& operator<< (std::ostream&out, const pform_name_t&);
-extern std::ostream& operator<< (std::ostream&out, const name_component_t&that);
-extern std::ostream& operator<< (std::ostream&out, const index_component_t&that);
+extern std::ostream &operator<<(std::ostream &out, const pform_name_t &);
+extern std::ostream &operator<<(std::ostream &out,
+                                const name_component_t &that);
+extern std::ostream &operator<<(std::ostream &out,
+                                const index_component_t &that);
 
 #endif

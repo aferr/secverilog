@@ -17,90 +17,81 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include "config.h"
+#include "config.h"
 
-# include <iostream>
+#include <iostream>
 
-# include  <cassert>
-# include  <typeinfo>
-# include  "netlist.h"
-# include  "netmisc.h"
+#include "netlist.h"
+#include "netmisc.h"
+#include <cassert>
+#include <typeinfo>
 
-void NetProc::nex_output(NexusSet&out)
-{
-      cerr << get_fileline()
-	   << ": internal error: NetProc::nex_output not implemented"
-	   << endl;
-      cerr << get_fileline()
-	   << ":               : on object type " << typeid(*this).name()
-	   << endl;
+void NetProc::nex_output(NexusSet &out) {
+  cerr << get_fileline()
+       << ": internal error: NetProc::nex_output not implemented" << endl;
+  cerr << get_fileline() << ":               : on object type "
+       << typeid(*this).name() << endl;
 }
 
 /*
  * Assignments have as output all the bits of the concatenated signals
  * of the l-value.
  */
-void NetAssignBase::nex_output(NexusSet&out)
-{
-      for (NetAssign_*cur = lval_ ;  cur ;  cur = cur->more) {
-	    if (NetNet*lsig = cur->sig()) {
-		  out.add(lsig->pin(0).nexus());
-	    } else {
-		    /* Quoting from netlist.h comments for class NetMemory:
-		     * "This is not a node because memory objects can only be
-		     * accessed by behavioral code."
-		     */
-		  cerr << get_fileline() << ": internal error: "
-		       << "NetAssignBase::nex_output on unsupported lval ";
-		  dump_lval(cerr);
-		  cerr << endl;
-	    }
-      }
+void NetAssignBase::nex_output(NexusSet &out) {
+  for (NetAssign_ *cur = lval_; cur; cur = cur->more) {
+    if (NetNet *lsig = cur->sig()) {
+      out.add(lsig->pin(0).nexus());
+    } else {
+      /* Quoting from netlist.h comments for class NetMemory:
+       * "This is not a node because memory objects can only be
+       * accessed by behavioral code."
+       */
+      cerr << get_fileline() << ": internal error: "
+           << "NetAssignBase::nex_output on unsupported lval ";
+      dump_lval(cerr);
+      cerr << endl;
+    }
+  }
 }
 
-void NetBlock::nex_output(NexusSet&out)
-{
-      if (last_ == 0)
-	    return;
+void NetBlock::nex_output(NexusSet &out) {
+  if (last_ == 0)
+    return;
 
-      NetProc*cur = last_;
-      do {
-	    cur = cur->next_;
-	    cur->nex_output(out);
-      } while (cur != last_);
+  NetProc *cur = last_;
+  do {
+    cur = cur->next_;
+    cur->nex_output(out);
+  } while (cur != last_);
 }
 
-void NetCase::nex_output(NexusSet&out)
-{
-      for (unsigned idx = 0 ;  idx < nitems_ ;  idx += 1) {
+void NetCase::nex_output(NexusSet &out) {
+  for (unsigned idx = 0; idx < nitems_; idx += 1) {
 
-	      // Empty statements clearly have no output.
-	    if (items_[idx].statement == 0)
-		  continue;
+    // Empty statements clearly have no output.
+    if (items_[idx].statement == 0)
+      continue;
 
-	    assert(items_[idx].statement);
-	    items_[idx].statement->nex_output(out);
-      }
-
+    assert(items_[idx].statement);
+    items_[idx].statement->nex_output(out);
+  }
 }
 
-void NetCondit::nex_output(NexusSet&out)
-{
-      if (if_ != 0)
-	    if_->nex_output(out);
-      if (else_ != 0)
-	    else_->nex_output(out);
+void NetCondit::nex_output(NexusSet &out) {
+  if (if_ != 0)
+    if_->nex_output(out);
+  if (else_ != 0)
+    else_->nex_output(out);
 }
 
-void NetEvWait::nex_output(NexusSet&out)
-{
-      assert(statement_);
-      statement_->nex_output(out);
+void NetEvWait::nex_output(NexusSet &out) {
+  assert(statement_);
+  statement_->nex_output(out);
 }
 
-void NetPDelay::nex_output(NexusSet&out)
-{
-      if (statement_) statement_->nex_output(out);
+void NetPDelay::nex_output(NexusSet &out) {
+  if (statement_)
+    statement_->nex_output(out);
 }
 
 /*
@@ -108,21 +99,16 @@ void NetPDelay::nex_output(NexusSet&out)
  * all. This is OK because most system tasks are not synthesizable in
  * the first place.
  */
-void NetSTask::nex_output(NexusSet&out)
-{
-}
+void NetSTask::nex_output(NexusSet &out) {}
 
 /*
-* Consider a task call to not have any outputs. This is not quite
-* right, we should be listing as outputs all the output ports, but for
-* the purposes that this method is used, this will do for now.
-*/
-void NetUTask::nex_output(NexusSet&out)
-{
-}
+ * Consider a task call to not have any outputs. This is not quite
+ * right, we should be listing as outputs all the output ports, but for
+ * the purposes that this method is used, this will do for now.
+ */
+void NetUTask::nex_output(NexusSet &out) {}
 
-void NetWhile::nex_output(NexusSet&out)
-{
-      if (proc_ != 0)
-	    proc_->nex_output(out);
+void NetWhile::nex_output(NexusSet &out) {
+  if (proc_ != 0)
+    proc_->nex_output(out);
 }

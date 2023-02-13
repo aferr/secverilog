@@ -19,14 +19,14 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  "netlist.h"
-# include  "LineInfo.h"
-# include  <map>
-# include  "svector.h"
-# include  "StringHeap.h"
+#include "LineInfo.h"
+#include "StringHeap.h"
+#include "netlist.h"
+#include "svector.h"
+#include <map>
 
 #ifdef HAVE_IOSFWD
-# include  <iosfwd>
+#include <iosfwd>
 #else
 class ostream;
 #endif
@@ -40,7 +40,7 @@ class SexpPrinter;
 /*
  * The different type of PWire::set_range() calls.
  */
-enum PWSRType {SR_PORT, SR_NET, SR_BOTH};
+enum PWSRType { SR_PORT, SR_NET, SR_BOTH };
 
 /*
  * Wires include nets, registers and ports. A net or register becomes
@@ -55,86 +55,82 @@ enum PWSRType {SR_PORT, SR_NET, SR_BOTH};
  */
 class PWire : public LineInfo {
 
-    public:
-      PWire(perm_string name,
-	    NetNet::Type t,
-	    NetNet::PortType pt,
-	    SecType* st,
-	    BaseType* bt,
-	    ivl_variable_type_t dt);
+public:
+  PWire(perm_string name, NetNet::Type t, NetNet::PortType pt, SecType *st,
+        BaseType *bt, ivl_variable_type_t dt);
 
-	// Return a hierarchical name.
-      perm_string basename() const;
+  // Return a hierarchical name.
+  perm_string basename() const;
 
-      NetNet::Type get_wire_type() const;
-      bool set_wire_type(NetNet::Type);
-      SecType* get_sec_type() const;
-      BaseType* get_base_type() const;
-      bool set_sec_type(SecType*);
-      bool set_base_type(BaseType*);
+  NetNet::Type get_wire_type() const;
+  bool set_wire_type(NetNet::Type);
+  SecType *get_sec_type() const;
+  BaseType *get_base_type() const;
+  bool set_sec_type(SecType *);
+  bool set_base_type(BaseType *);
 
-      NetNet::PortType get_port_type() const;
-      bool set_port_type(NetNet::PortType);
+  NetNet::PortType get_port_type() const;
+  bool set_port_type(NetNet::PortType);
 
-      void set_signed(bool flag);
-      bool get_signed() const;
-      bool get_isint() const;
-      bool get_scalar() const;
-      bool get_isarray() const;
-      
-      bool set_data_type(ivl_variable_type_t dt);
-      ivl_variable_type_t get_data_type() const;
+  void set_signed(bool flag);
+  bool get_signed() const;
+  bool get_isint() const;
+  bool get_scalar() const;
+  bool get_isarray() const;
 
-      void set_range(PExpr*msb, PExpr*lsb, PWSRType type, bool is_scalar);
+  bool set_data_type(ivl_variable_type_t dt);
+  ivl_variable_type_t get_data_type() const;
 
-      void set_memory_idx(PExpr*ldx, PExpr*rdx);
+  void set_range(PExpr *msb, PExpr *lsb, PWSRType type, bool is_scalar);
 
-      void set_discipline(ivl_discipline_t);
-      ivl_discipline_t get_discipline(void) const;
+  void set_memory_idx(PExpr *ldx, PExpr *rdx);
 
-      map<perm_string,PExpr*> attributes;
+  void set_discipline(ivl_discipline_t);
+  ivl_discipline_t get_discipline(void) const;
 
-	// Write myself to the specified stream.
-      void dump(ostream&out, unsigned ind=4) const;
+  map<perm_string, PExpr *> attributes;
 
-      void typecheck(SexpPrinter&, map<perm_string, SecType*>&varsToType,
-              map<perm_string, BaseType*>&varsToBase,
-              set<perm_string>&seqVars) const;
+  // Write myself to the specified stream.
+  void dump(ostream &out, unsigned ind = 4) const;
 
-      NetNet* elaborate_sig(Design*, NetScope*scope) const;
-      long getRange() const;
+  void typecheck(SexpPrinter &, map<perm_string, SecType *> &varsToType,
+                 map<perm_string, BaseType *> &varsToBase,
+                 set<perm_string> &seqVars) const;
 
-    private:
-      perm_string name_;
-      NetNet::Type type_;
-      NetNet::PortType port_type_;
-      SecType* sectype_;
-      BaseType* basetype_;
-      ivl_variable_type_t data_type_;
-      bool signed_;
-      bool isint_;		// original type of integer
+  NetNet *elaborate_sig(Design *, NetScope *scope) const;
+  long getRange() const;
 
-	// These members hold expressions for the bit width of the
-	// wire. If they do not exist, the wire is 1 bit wide.
-      PExpr*port_msb_;
-      PExpr*port_lsb_;
-      bool port_set_;
-      PExpr*net_msb_;
-      PExpr*net_lsb_;
-      bool net_set_;
-      bool is_scalar_;
-      unsigned error_cnt_;
+private:
+  perm_string name_;
+  NetNet::Type type_;
+  NetNet::PortType port_type_;
+  SecType *sectype_;
+  BaseType *basetype_;
+  ivl_variable_type_t data_type_;
+  bool signed_;
+  bool isint_; // original type of integer
 
-	// If this wire is actually a memory, these indices will give
-	// me the size and address range of the memory.
-      PExpr*lidx_;
-      PExpr*ridx_;
+  // These members hold expressions for the bit width of the
+  // wire. If they do not exist, the wire is 1 bit wide.
+  PExpr *port_msb_;
+  PExpr *port_lsb_;
+  bool port_set_;
+  PExpr *net_msb_;
+  PExpr *net_lsb_;
+  bool net_set_;
+  bool is_scalar_;
+  unsigned error_cnt_;
 
-      ivl_discipline_t discipline_;
+  // If this wire is actually a memory, these indices will give
+  // me the size and address range of the memory.
+  PExpr *lidx_;
+  PExpr *ridx_;
 
-    private: // not implemented
-      PWire(const PWire&);
-      PWire& operator= (const PWire&);
+  ivl_discipline_t discipline_;
+
+private: // not implemented
+  PWire(const PWire &);
+  PWire &operator=(const PWire &);
 };
 
 #endif

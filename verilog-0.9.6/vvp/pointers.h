@@ -25,7 +25,7 @@
  * manipulate those pointers.
  */
 
-# include  "config.h"
+#include "config.h"
 
 /*
  * The vvp_ipoint_t is a 32bit integer that encodes the address of a
@@ -35,7 +35,7 @@
  * type that is big enough. The config.h header file has the defines
  * needed for the following pre-processor magic to work.
  */
-# if SIZEOF_UNSIGNED >= 4
+#if SIZEOF_UNSIGNED >= 4
 typedef unsigned vvp_ipoint_t;
 #elif SIZEOF_UNSIGNED_LONG >= 4
 typedef unsigned long vvp_ipoint_t;
@@ -54,36 +54,30 @@ typedef struct functor_s *functor_t;
  * functor. The The result points to the same functor as the input
  * pointer, but addresses the supplied port instead.
  */
-inline vvp_ipoint_t ipoint_make(vvp_ipoint_t func, unsigned port)
-{
-      return (func & ~3) | (port & 3);
+inline vvp_ipoint_t ipoint_make(vvp_ipoint_t func, unsigned port) {
+  return (func & ~3) | (port & 3);
 }
 
 /*
  * This implements pointer arithmetic for vvp_point_t pointers. Add
  * the given index to the functor part of the pointer.
  */
-inline vvp_ipoint_t ipoint_index(vvp_ipoint_t base, unsigned idx)
-{
-      return base + (idx<<2);
+inline vvp_ipoint_t ipoint_index(vvp_ipoint_t base, unsigned idx) {
+  return base + (idx << 2);
 }
 
 /*
  * Return the ipoint of an input into a multi-functor input vector.
  */
-inline vvp_ipoint_t ipoint_input_index(vvp_ipoint_t base, unsigned idx)
-{
-      return (base & ~3) + idx;
+inline vvp_ipoint_t ipoint_input_index(vvp_ipoint_t base, unsigned idx) {
+  return (base & ~3) + idx;
 }
 
 /*
  * This function returns the port index of a functor given a complete
  * vvp_ipoint_t pointer.
  */
-inline unsigned ipoint_port(vvp_ipoint_t func)
-{
-      return func & 3;
-}
+inline unsigned ipoint_port(vvp_ipoint_t func) { return func & 3; }
 
 /*
  * The functor event mode uses a pointer of this type to point to the
@@ -91,9 +85,7 @@ inline unsigned ipoint_port(vvp_ipoint_t func)
  */
 typedef struct event_functor_s *vvp_event_t;
 
-
-typedef struct vthread_s*vthread_t;
-
+typedef struct vthread_s *vthread_t;
 
 /* vector of functors */
 

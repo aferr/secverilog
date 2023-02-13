@@ -17,31 +17,21 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include "config.h"
+#include "config.h"
 
-# include  <typeinfo>
-# include  <cstdlib>
-# include  <climits>
-# include  "compiler.h"
-# include  "netlist.h"
-# include  "netmisc.h"
-# include  "ivl_assert.h"
+#include "compiler.h"
+#include "ivl_assert.h"
+#include "netlist.h"
+#include "netmisc.h"
+#include <climits>
+#include <cstdlib>
+#include <typeinfo>
 
-NetContribution::NetContribution(NetEAccess*l, NetExpr*r)
-: lval_(l), rval_(r)
-{
-}
+NetContribution::NetContribution(NetEAccess *l, NetExpr *r)
+    : lval_(l), rval_(r) {}
 
-NetContribution::~NetContribution()
-{
-}
+NetContribution::~NetContribution() {}
 
-const NetEAccess* NetContribution::lval() const
-{
-      return lval_;
-}
+const NetEAccess *NetContribution::lval() const { return lval_; }
 
-const NetExpr* NetContribution::rval() const
-{
-      return rval_;
-}
+const NetExpr *NetContribution::rval() const { return rval_; }

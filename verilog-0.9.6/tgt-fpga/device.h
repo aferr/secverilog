@@ -22,7 +22,7 @@
 #ident "$Id: device.h,v 1.15 2007/02/26 19:49:49 steve Exp $"
 #endif
 
-# include  <ivl_target.h>
+#include <ivl_target.h>
 
 /*
  * This code generator supports a variety of device types. It does
@@ -35,37 +35,37 @@
  *
  * If a device does not support the method, then the pointer is null.
  */
-typedef const struct device_s* device_t;
+typedef const struct device_s *device_t;
 
 struct device_s {
-	/* These methods draw leading and trailing format text. */
-      void (*show_header)(ivl_design_t des);
-      void (*show_footer)(ivl_design_t des);
-	/* Draw scopes marked by ivl_synthesis_cell */
-      void (*show_cell_scope)(ivl_scope_t net);
-	/* Draw pads connected to the specified signal. */
-      void (*show_pad)(ivl_signal_t sig, const char*str);
-	/* Draw basic logic devices. */
-      void (*show_logic)(ivl_net_logic_t net);
-	/* This method emits a D type Flip-Flop */
-      void (*show_dff)(ivl_lpm_t net);
-	/* These methods show various comparators */
-      void (*show_cmp_eq)(ivl_lpm_t net);
-      void (*show_cmp_ne)(ivl_lpm_t net);
-      void (*show_cmp_ge)(ivl_lpm_t net);
-      void (*show_cmp_gt)(ivl_lpm_t net);
-	/* This method draws MUX devices */
-      void (*show_mux)(ivl_lpm_t net);
-	/* This method draws ADD devices */
-      void (*show_add)(ivl_lpm_t net);
-      void (*show_sub)(ivl_lpm_t net);
-	/* These methods draw SHIFT devices */
-      void (*show_shiftl)(ivl_lpm_t net);
-      void (*show_shiftr)(ivl_lpm_t net);
-	/* Multipliers */
-      void (*show_mult)(ivl_lpm_t net);
-	/* Constants */
-      void (*show_constant)(ivl_net_const_t net);
+  /* These methods draw leading and trailing format text. */
+  void (*show_header)(ivl_design_t des);
+  void (*show_footer)(ivl_design_t des);
+  /* Draw scopes marked by ivl_synthesis_cell */
+  void (*show_cell_scope)(ivl_scope_t net);
+  /* Draw pads connected to the specified signal. */
+  void (*show_pad)(ivl_signal_t sig, const char *str);
+  /* Draw basic logic devices. */
+  void (*show_logic)(ivl_net_logic_t net);
+  /* This method emits a D type Flip-Flop */
+  void (*show_dff)(ivl_lpm_t net);
+  /* These methods show various comparators */
+  void (*show_cmp_eq)(ivl_lpm_t net);
+  void (*show_cmp_ne)(ivl_lpm_t net);
+  void (*show_cmp_ge)(ivl_lpm_t net);
+  void (*show_cmp_gt)(ivl_lpm_t net);
+  /* This method draws MUX devices */
+  void (*show_mux)(ivl_lpm_t net);
+  /* This method draws ADD devices */
+  void (*show_add)(ivl_lpm_t net);
+  void (*show_sub)(ivl_lpm_t net);
+  /* These methods draw SHIFT devices */
+  void (*show_shiftl)(ivl_lpm_t net);
+  void (*show_shiftr)(ivl_lpm_t net);
+  /* Multipliers */
+  void (*show_mult)(ivl_lpm_t net);
+  /* Constants */
+  void (*show_constant)(ivl_net_const_t net);
 };
 
 /*
@@ -75,8 +75,7 @@ struct device_s {
  * This function is used if the user specifies the architecture
  * explicitly, with the -parch=name flag.
  */
-extern device_t device_from_arch(const char*arch);
-
+extern device_t device_from_arch(const char *arch);
 
 /*
  * $Log: device.h,v $

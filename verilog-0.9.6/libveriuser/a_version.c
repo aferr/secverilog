@@ -20,16 +20,16 @@
 #ident "$Id: a_version.c,v 1.2 2002/08/12 01:35:02 steve Exp $"
 #endif
 
-# include  <vpi_user.h>
-# include  <acc_user.h>
+#include <acc_user.h>
+#include <vpi_user.h>
 
-char *acc_version(void)
-{
-      s_vpi_vlog_info info;
+char *acc_version(void) {
+  s_vpi_vlog_info info;
 
-      if (! vpi_get_vlog_info(&info)) return (char *)0;
+  if (!vpi_get_vlog_info(&info))
+    return (char *)0;
 
-      return info.version;
+  return info.version;
 }
 
 /*

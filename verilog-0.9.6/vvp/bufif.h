@@ -19,7 +19,7 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  "vvp_net.h"
+#include "vvp_net.h"
 
 /*
  * The vvp_fun_bufif functor implements the logic of bufif0/1 and
@@ -31,22 +31,20 @@
  * strengths to the buffered value, and sends H/L in response to
  * unknown enable bits.
  */
-class vvp_fun_bufif  : public vvp_net_fun_t {
+class vvp_fun_bufif : public vvp_net_fun_t {
 
-    public:
-      vvp_fun_bufif(bool en_invert, bool out_invert,
-		    unsigned str0, unsigned str1);
+public:
+  vvp_fun_bufif(bool en_invert, bool out_invert, unsigned str0, unsigned str1);
 
-      void recv_vec4(vvp_net_ptr_t port, const vvp_vector4_t&bit,
-                     vvp_context_t);
+  void recv_vec4(vvp_net_ptr_t port, const vvp_vector4_t &bit, vvp_context_t);
 
-    private:
-      vvp_vector4_t bit_;
-      vvp_vector4_t en_;
-      unsigned pol_ : 1;
-      unsigned inv_ : 1;
-      unsigned drive0_ : 8;
-      unsigned drive1_ : 8;
+private:
+  vvp_vector4_t bit_;
+  vvp_vector4_t en_;
+  unsigned pol_ : 1;
+  unsigned inv_ : 1;
+  unsigned drive0_ : 8;
+  unsigned drive1_ : 8;
 };
 
 #endif

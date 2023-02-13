@@ -19,10 +19,10 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  <cstdio>
-# include  "StringHeap.h"
-# include  <string>
-# include  <map>
+#include "StringHeap.h"
+#include <cstdio>
+#include <map>
+#include <string>
 
 class Module;
 class PUdp;
@@ -32,8 +32,8 @@ class PUdp;
  * Verilog source into pform for elaboration. The parser adds modules
  * to these maps as it compiles modules in the Verilog source.
  */
-extern map<perm_string,Module*> pform_modules;
-extern map<perm_string,PUdp*>   pform_primitives;
+extern map<perm_string, Module *> pform_modules;
+extern map<perm_string, PUdp *> pform_primitives;
 
 /*
  * This code actually invokes the parser to make modules. The first
@@ -42,11 +42,11 @@ extern map<perm_string,PUdp*>   pform_primitives;
  * the descriptor is 0 (or skipped) then the function will attempt to
  * open the file on its own.
  */
-extern int  pform_parse(const char*path, FILE*file =0);
+extern int pform_parse(const char *path, FILE *file = 0);
 
 extern string vl_file;
 
-extern void pform_set_timescale(int units, int prec, const char*file,
+extern void pform_set_timescale(int units, int prec, const char *file,
                                 unsigned lineno);
 extern int def_ts_units;
 extern int def_ts_prec;

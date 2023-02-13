@@ -20,57 +20,52 @@
 #ident "$Id: io_print.c,v 1.4 2002/12/19 21:37:04 steve Exp $"
 #endif
 
-# include  <vpi_user.h>
-# include  <veriuser.h>
+#include <veriuser.h>
+#include <vpi_user.h>
 
 /*
  * io_printf implemented using VPI interface
  */
-void io_printf(const char *fmt, ...)
-{
-      va_list ap;
-      va_start(ap, fmt);
-      vpi_vprintf(fmt, ap);
-      va_end(ap);
+void io_printf(const char *fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+  vpi_vprintf(fmt, ap);
+  va_end(ap);
 }
 
-void tf_warning(const char *fmt, ...)
-{
-      va_list ap;
+void tf_warning(const char *fmt, ...) {
+  va_list ap;
 
-      vpi_printf("warning! ");
+  vpi_printf("warning! ");
 
-      va_start(ap, fmt);
-      vpi_vprintf(fmt, ap);
-      va_end(ap);
+  va_start(ap, fmt);
+  vpi_vprintf(fmt, ap);
+  va_end(ap);
 }
 
-void tf_error(const char *fmt, ...)
-{
-      va_list ap;
+void tf_error(const char *fmt, ...) {
+  va_list ap;
 
-      vpi_printf("error! ");
+  vpi_printf("error! ");
 
-      va_start(ap, fmt);
-      vpi_vprintf(fmt, ap);
-      va_end(ap);
+  va_start(ap, fmt);
+  vpi_vprintf(fmt, ap);
+  va_end(ap);
 }
 
-PLI_INT32 tf_message(PLI_INT32 level, char*facility,
-		     char*messno, char*fmt, ...)
-{
-      va_list ap;
+PLI_INT32 tf_message(PLI_INT32 level, char *facility, char *messno, char *fmt,
+                     ...) {
+  va_list ap;
 
-      vpi_printf("%s[%s] ", facility, messno);
+  vpi_printf("%s[%s] ", facility, messno);
 
-      va_start(ap, fmt);
-      vpi_vprintf(fmt, ap);
-      va_end(ap);
+  va_start(ap, fmt);
+  vpi_vprintf(fmt, ap);
+  va_end(ap);
 
-      vpi_printf("\n");
-      return 0;
+  vpi_printf("\n");
+  return 0;
 }
-
 
 /*
  * $Log: io_print.c,v $

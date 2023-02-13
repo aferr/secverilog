@@ -17,16 +17,14 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include "config.h"
+#include "config.h"
 
-# include  <cstdlib>
-# include  "netlist.h"
-# include  "netmisc.h"
-# include  "functor.h"
-# include  "compiler.h"
-# include  "ivl_assert.h"
-
-
+#include "compiler.h"
+#include "functor.h"
+#include "ivl_assert.h"
+#include "netlist.h"
+#include "netmisc.h"
+#include <cstdlib>
 
 /*
  * The cprop function below invokes constant propagation where
@@ -35,43 +33,37 @@
  * may even be able to replace nets with a new constant.
  */
 
-struct cprop_functor  : public functor_t {
+struct cprop_functor : public functor_t {
 
-      unsigned count;
+  unsigned count;
 
-      virtual void signal(Design*des, NetNet*obj);
-      virtual void lpm_add_sub(Design*des, NetAddSub*obj);
-      virtual void lpm_compare(Design*des, NetCompare*obj);
-      virtual void lpm_compare_eq_(Design*des, NetCompare*obj);
-      virtual void lpm_ff(Design*des, NetFF*obj);
-      virtual void lpm_logic(Design*des, NetLogic*obj);
-      virtual void lpm_mux(Design*des, NetMux*obj);
+  virtual void signal(Design *des, NetNet *obj);
+  virtual void lpm_add_sub(Design *des, NetAddSub *obj);
+  virtual void lpm_compare(Design *des, NetCompare *obj);
+  virtual void lpm_compare_eq_(Design *des, NetCompare *obj);
+  virtual void lpm_ff(Design *des, NetFF *obj);
+  virtual void lpm_logic(Design *des, NetLogic *obj);
+  virtual void lpm_mux(Design *des, NetMux *obj);
 };
 
-void cprop_functor::signal(Design*des, NetNet*obj)
-{
+void cprop_functor::signal(Design *des, NetNet *obj) {}
+
+void cprop_functor::lpm_add_sub(Design *des, NetAddSub *obj) {}
+
+void cprop_functor::lpm_compare(Design *des, NetCompare *obj) {
+  if (obj->pin_AEB().is_linked()) {
+    assert(!obj->pin_AGB().is_linked());
+    assert(!obj->pin_AGEB().is_linked());
+    assert(!obj->pin_ALB().is_linked());
+    assert(!obj->pin_ALEB().is_linked());
+    assert(!obj->pin_AGB().is_linked());
+    assert(!obj->pin_ANEB().is_linked());
+    lpm_compare_eq_(des, obj);
+    return;
+  }
 }
 
-void cprop_functor::lpm_add_sub(Design*des, NetAddSub*obj)
-{
-}
-
-void cprop_functor::lpm_compare(Design*des, NetCompare*obj)
-{
-      if (obj->pin_AEB().is_linked()) {
-	    assert( ! obj->pin_AGB().is_linked() );
-	    assert( ! obj->pin_AGEB().is_linked() );
-	    assert( ! obj->pin_ALB().is_linked() );
-	    assert( ! obj->pin_ALEB().is_linked() );
-	    assert( ! obj->pin_AGB().is_linked() );
-	    assert( ! obj->pin_ANEB().is_linked() );
-	    lpm_compare_eq_(des, obj);
-	    return;
-      }
-}
-
-void cprop_functor::lpm_compare_eq_(Design*des, NetCompare*obj)
-{
+void cprop_functor::lpm_compare_eq_(Design *des, NetCompare *obj) {
 #if 0
 	/* XXXX Need to reimplement this code to account for vectors. */
       NetScope*scope = obj->scope();
@@ -195,30 +187,26 @@ void cprop_functor::lpm_compare_eq_(Design*des, NetCompare*obj)
 #endif
 }
 
-void cprop_functor::lpm_ff(Design*des, NetFF*obj)
-{
-	// Look for and count unlinked FF outputs. Note that if the
-	// Data and Q pins are connected together, they can be removed
-	// from the circuit, since it doesn't do anything.
+void cprop_functor::lpm_ff(Design *des, NetFF *obj) {
+  // Look for and count unlinked FF outputs. Note that if the
+  // Data and Q pins are connected together, they can be removed
+  // from the circuit, since it doesn't do anything.
 
-      if (connected(obj->pin_Data(), obj->pin_Q())
-	  && (! obj->pin_Sclr().is_linked())
-	  && (! obj->pin_Sset().is_linked())
-	  && (! obj->pin_Aclr().is_linked())
-	  && (! obj->pin_Aset().is_linked())) {
-	    obj->pin_Data().unlink();
-	    obj->pin_Q().unlink();
-	    delete obj;
-      }
+  if (connected(obj->pin_Data(), obj->pin_Q()) &&
+      (!obj->pin_Sclr().is_linked()) && (!obj->pin_Sset().is_linked()) &&
+      (!obj->pin_Aclr().is_linked()) && (!obj->pin_Aset().is_linked())) {
+    obj->pin_Data().unlink();
+    obj->pin_Q().unlink();
+    delete obj;
+  }
 }
 
-void cprop_functor::lpm_logic(Design*des, NetLogic*obj)
-{
+void cprop_functor::lpm_logic(Design *des, NetLogic *obj) {
 #if 0
       NetScope*scope = obj->scope();
 #endif
 
-      switch (obj->type()) {
+  switch (obj->type()) {
 #if 0
 	      /* XXXX This old code assumed that the individual bit
 		 slices could be replaced with different gates. They
@@ -734,9 +722,9 @@ v		}
 		break;
 	    }
 #endif
-	  default:
-	    break;
-      }
+  default:
+    break;
+  }
 }
 
 #if 0
@@ -788,12 +776,11 @@ static void replace_with_mos(Design*des, NetMux*obj, NetLogic::TYPE type)
  * Vz. In this case, replace the device with a mos with the sel
  * input used to enable the output.
  */
-void cprop_functor::lpm_mux(Design*des, NetMux*obj)
-{
-      if (obj->size() != 2)
-	    return;
-      if (obj->sel_width() != 1)
-	    return;
+void cprop_functor::lpm_mux(Design *des, NetMux *obj) {
+  if (obj->size() != 2)
+    return;
+  if (obj->sel_width() != 1)
+    return;
 
 #if 0
 /*
@@ -821,35 +808,36 @@ void cprop_functor::lpm_mux(Design*des, NetMux*obj)
       }
 #endif
 
-	/* If the select input is constant, then replace with a BUFZ */
-      bool flag = obj->pin_Sel().nexus()->drivers_constant();
-	/* Note that this cannot be constant if there are assignments
-	   to this nexus. (Assignments include "force" to nets.) */
-      flag &= !obj->pin_Sel().nexus()->assign_lval();
+  /* If the select input is constant, then replace with a BUFZ */
+  bool flag = obj->pin_Sel().nexus()->drivers_constant();
+  /* Note that this cannot be constant if there are assignments
+     to this nexus. (Assignments include "force" to nets.) */
+  flag &= !obj->pin_Sel().nexus()->assign_lval();
 
-      verinum::V sel_val = flag? obj->pin_Sel().nexus()->driven_value() : verinum::Vx;
-      if ((sel_val != verinum::Vz) && (sel_val != verinum::Vx)) {
-	    NetBUFZ*tmp = new NetBUFZ(obj->scope(), obj->name(), obj->width());
-	    tmp->set_line(*obj);
+  verinum::V sel_val =
+      flag ? obj->pin_Sel().nexus()->driven_value() : verinum::Vx;
+  if ((sel_val != verinum::Vz) && (sel_val != verinum::Vx)) {
+    NetBUFZ *tmp = new NetBUFZ(obj->scope(), obj->name(), obj->width());
+    tmp->set_line(*obj);
 
-	    if (debug_optimizer)
-		  cerr << obj->get_fileline() << ": debug: "
-		       << "Replace binary MUX with constant select=" << sel_val
-		       << " with a BUFZ to the selected input." << endl;
+    if (debug_optimizer)
+      cerr << obj->get_fileline() << ": debug: "
+           << "Replace binary MUX with constant select=" << sel_val
+           << " with a BUFZ to the selected input." << endl;
 
-	    tmp->rise_time(obj->rise_time());
-	    tmp->fall_time(obj->fall_time());
-	    tmp->decay_time(obj->decay_time());
+    tmp->rise_time(obj->rise_time());
+    tmp->fall_time(obj->fall_time());
+    tmp->decay_time(obj->decay_time());
 
-	    connect(tmp->pin(0), obj->pin_Result());
-	    if (sel_val == verinum::V1)
-		  connect(tmp->pin(1), obj->pin_Data(1));
-	    else
-		  connect(tmp->pin(1), obj->pin_Data(0));
-	    delete obj;
-	    des->add_node(tmp);
-	    count += 1;
-      }
+    connect(tmp->pin(0), obj->pin_Result());
+    if (sel_val == verinum::V1)
+      connect(tmp->pin(1), obj->pin_Data(1));
+    else
+      connect(tmp->pin(1), obj->pin_Data(0));
+    delete obj;
+    des->add_node(tmp);
+    count += 1;
+  }
 }
 
 /*
@@ -858,114 +846,109 @@ void cprop_functor::lpm_mux(Design*des, NetMux*obj)
  * the now useless signals. This functor is applied after the regular
  * functor to clean up dangling constants that might be left behind.
  */
-struct cprop_dc_functor  : public functor_t {
+struct cprop_dc_functor : public functor_t {
 
-      virtual void lpm_const(Design*des, NetConst*obj);
+  virtual void lpm_const(Design *des, NetConst *obj);
 };
 
-void cprop_dc_functor::lpm_const(Design*des, NetConst*obj)
-{
-	// 'bz constant values drive high impedance to whatever is
-	// connected to it. In other words, it is a noop. But that is
-	// only true if *all* the bits of the vectors.
-      { unsigned tmp = 0;
-	ivl_assert(*obj, obj->pin_count()==1);
-	for (unsigned idx = 0 ;  idx < obj->width() ;  idx += 1) {
-	      if (obj->value(idx) == verinum::Vz) {
-		    tmp += 1;
-	      }
-	}
-
-	if (tmp == obj->width()) {
-	      delete obj;
-	      return;
-	}
+void cprop_dc_functor::lpm_const(Design *des, NetConst *obj) {
+  // 'bz constant values drive high impedance to whatever is
+  // connected to it. In other words, it is a noop. But that is
+  // only true if *all* the bits of the vectors.
+  {
+    unsigned tmp = 0;
+    ivl_assert(*obj, obj->pin_count() == 1);
+    for (unsigned idx = 0; idx < obj->width(); idx += 1) {
+      if (obj->value(idx) == verinum::Vz) {
+        tmp += 1;
       }
+    }
 
-	// For each bit, if this is the only driver, then set the
-	// initial value of all the signals to this value.
-      for (unsigned idx = 0 ;  idx < obj->pin_count() ;  idx += 1) {
-	    if (count_outputs(obj->pin(idx)) > 1)
-		  continue;
-
-	    Nexus*nex = obj->pin(idx).nexus();
-	    for (Link*clnk = nex->first_nlink()
-		       ; clnk ; clnk = clnk->next_nlink()) {
-
-		  NetPins*cur;
-		  unsigned pin;
-		  clnk->cur_link(cur, pin);
-
-		  NetNet*tmp = dynamic_cast<NetNet*>(cur);
-		  if (tmp == 0)
-			continue;
-
-		  tmp->pin(pin).set_init(obj->value(idx));
-	    }
-      }
-
-	// If there are any links that take input, the constant is
-	// used structurally somewhere.
-      for (unsigned idx = 0 ;  idx < obj->pin_count() ;  idx += 1)
-	    if (count_inputs(obj->pin(idx)) > 0)
-		  return;
-
-	// Look for signals that have NetESignal nodes attached to
-	// them. If I find any, then this constant is used by a
-	// behavioral expression somewhere.
-      for (unsigned idx = 0 ;  idx < obj->pin_count() ;  idx += 1) {
-	    Nexus*nex = obj->pin(idx).nexus();
-	    for (Link*clnk = nex->first_nlink()
-		       ; clnk ; clnk = clnk->next_nlink()) {
-
-		  NetPins*cur;
-		  unsigned pin;
-		  clnk->cur_link(cur, pin);
-
-		  NetNet*tmp = dynamic_cast<NetNet*>(cur);
-		  if (tmp == 0)
-			continue;
-
-		  assert(tmp->scope());
-
-		    // If the net is a signal name from the source,
-		    // then users will probably want to see it in the
-		    // waveform dump, so unhooking the constant will
-		    // make it look wrong.
-		  if (! tmp->local_flag())
-			return;
-
-		    // If the net has an eref, then there is an
-		    // expression somewhere that reads this signal. So
-		    // the constant does get read.
-		  if (tmp->peek_eref() > 0)
-			return;
-
-		    // If the net is a port of the root module, then
-		    // the constant may be driving something outside
-		    // the design, so do not eliminate it.
-		  if ((tmp->port_type() != NetNet::NOT_A_PORT)
-		      && (tmp->scope()->parent() == 0))
-			return;
-
-	    }
-      }
-
-	// Done. Delete me.
+    if (tmp == obj->width()) {
       delete obj;
+      return;
+    }
+  }
+
+  // For each bit, if this is the only driver, then set the
+  // initial value of all the signals to this value.
+  for (unsigned idx = 0; idx < obj->pin_count(); idx += 1) {
+    if (count_outputs(obj->pin(idx)) > 1)
+      continue;
+
+    Nexus *nex = obj->pin(idx).nexus();
+    for (Link *clnk = nex->first_nlink(); clnk; clnk = clnk->next_nlink()) {
+
+      NetPins *cur;
+      unsigned pin;
+      clnk->cur_link(cur, pin);
+
+      NetNet *tmp = dynamic_cast<NetNet *>(cur);
+      if (tmp == 0)
+        continue;
+
+      tmp->pin(pin).set_init(obj->value(idx));
+    }
+  }
+
+  // If there are any links that take input, the constant is
+  // used structurally somewhere.
+  for (unsigned idx = 0; idx < obj->pin_count(); idx += 1)
+    if (count_inputs(obj->pin(idx)) > 0)
+      return;
+
+  // Look for signals that have NetESignal nodes attached to
+  // them. If I find any, then this constant is used by a
+  // behavioral expression somewhere.
+  for (unsigned idx = 0; idx < obj->pin_count(); idx += 1) {
+    Nexus *nex = obj->pin(idx).nexus();
+    for (Link *clnk = nex->first_nlink(); clnk; clnk = clnk->next_nlink()) {
+
+      NetPins *cur;
+      unsigned pin;
+      clnk->cur_link(cur, pin);
+
+      NetNet *tmp = dynamic_cast<NetNet *>(cur);
+      if (tmp == 0)
+        continue;
+
+      assert(tmp->scope());
+
+      // If the net is a signal name from the source,
+      // then users will probably want to see it in the
+      // waveform dump, so unhooking the constant will
+      // make it look wrong.
+      if (!tmp->local_flag())
+        return;
+
+      // If the net has an eref, then there is an
+      // expression somewhere that reads this signal. So
+      // the constant does get read.
+      if (tmp->peek_eref() > 0)
+        return;
+
+      // If the net is a port of the root module, then
+      // the constant may be driving something outside
+      // the design, so do not eliminate it.
+      if ((tmp->port_type() != NetNet::NOT_A_PORT) &&
+          (tmp->scope()->parent() == 0))
+        return;
+    }
+  }
+
+  // Done. Delete me.
+  delete obj;
 }
 
+void cprop(Design *des) {
+  // Continually propagate constants until a scan finds nothing
+  // to do.
+  cprop_functor prop;
+  do {
+    prop.count = 0;
+    des->functor(&prop);
+  } while (prop.count > 0);
 
-void cprop(Design*des)
-{
-	// Continually propagate constants until a scan finds nothing
-	// to do.
-      cprop_functor prop;
-      do {
-	    prop.count = 0;
-	    des->functor(&prop);
-      } while (prop.count > 0);
-
-      cprop_dc_functor dc;
-      des->functor(&dc);
+  cprop_dc_functor dc;
+  des->functor(&dc);
 }

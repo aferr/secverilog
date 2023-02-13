@@ -17,111 +17,109 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include "config.h"
+#include "config.h"
 
-# include  "priv.h"
-# include  <stdio.h>
-# include  <stdlib.h>
-# include  <assert.h>
+#include "priv.h"
+#include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-static void draw_macrocell_modes(FILE*jfd)
-{
-      unsigned idx;
-      unsigned cfuses;
-      unsigned mode, mcnt;
+static void draw_macrocell_modes(FILE *jfd) {
+  unsigned idx;
+  unsigned cfuses;
+  unsigned mode, mcnt;
 
-      for (idx = 0 ;  idx < pins ;  idx += 1) {
-	    char*str;
-	    unsigned ffirst, flast, tmp;
-	    struct pal_bind_s*cur = bind_pin + idx;
-	    if (cur->sop == 0)
-		  continue;
+  for (idx = 0; idx < pins; idx += 1) {
+    char *str;
+    unsigned ffirst, flast, tmp;
+    struct pal_bind_s *cur = bind_pin + idx;
+    if (cur->sop == 0)
+      continue;
 
-	    cfuses = pal_sop_cfuses(cur->sop);
-	    mcnt = 1 << pal_sop_cfuses(cur->sop);
-	    mode = 0;
-	    for (mode = 0 ;  mode < mcnt ;  mode += 1) {
+    cfuses = pal_sop_cfuses(cur->sop);
+    mcnt   = 1 << pal_sop_cfuses(cur->sop);
+    mode   = 0;
+    for (mode = 0; mode < mcnt; mode += 1) {
 
-		  pal_sop_set_mode(cur->sop, mode);
-		  if (cur->reg && !pal_sop_is_register(cur->sop))
-			continue;
+      pal_sop_set_mode(cur->sop, mode);
+      if (cur->reg && !pal_sop_is_register(cur->sop))
+        continue;
 
-		  if (!cur->reg && pal_sop_is_register(cur->sop))
-			continue;
+      if (!cur->reg && pal_sop_is_register(cur->sop))
+        continue;
 
-		  if (cur->sop_inv && !pal_sop_is_invert(cur->sop))
-			continue;
+      if (cur->sop_inv && !pal_sop_is_invert(cur->sop))
+        continue;
 
-		  if (!cur->sop_inv && pal_sop_is_invert(cur->sop))
-			continue;
+      if (!cur->sop_inv && pal_sop_is_invert(cur->sop))
+        continue;
 
-		  break;
-	    }
+      break;
+    }
 
-	    assert(mode < mcnt);
+    assert(mode < mcnt);
 
-	    ffirst = pal_sop_cfuse(cur->sop, 0);
-	    flast  = pal_sop_cfuse(cur->sop, 0);
-	    for (tmp = 1 ;  tmp < cfuses ;  tmp += 1) {
-		  unsigned f = pal_sop_cfuse(cur->sop, tmp);
-		  if (f < ffirst)
-			ffirst = f;
-		  if (f > flast)
-			flast = f;
-	    }
-	    assert(flast == (ffirst + cfuses - 1));
+    ffirst = pal_sop_cfuse(cur->sop, 0);
+    flast  = pal_sop_cfuse(cur->sop, 0);
+    for (tmp = 1; tmp < cfuses; tmp += 1) {
+      unsigned f = pal_sop_cfuse(cur->sop, tmp);
+      if (f < ffirst)
+        ffirst = f;
+      if (f > flast)
+        flast = f;
+    }
+    assert(flast == (ffirst + cfuses - 1));
 
-	    str = malloc(cfuses+1);
-	    str[cfuses] = 0;
-	    for (tmp = 0 ;  tmp < cfuses ;  tmp += 1) {
-		  if (mode & (1 << (cfuses-tmp-1)))
-			str[pal_sop_cfuse(cur->sop, tmp)-ffirst] = '1';
-		  else
-			str[pal_sop_cfuse(cur->sop, tmp)-ffirst] = '0';
-	    }
+    str         = malloc(cfuses + 1);
+    str[cfuses] = 0;
+    for (tmp = 0; tmp < cfuses; tmp += 1) {
+      if (mode & (1 << (cfuses - tmp - 1)))
+        str[pal_sop_cfuse(cur->sop, tmp) - ffirst] = '1';
+      else
+        str[pal_sop_cfuse(cur->sop, tmp) - ffirst] = '0';
+    }
 
+    fprintf(jfd, "L%05u %s* Note: ", ffirst, str);
+    if (cur->nexus)
+      fprintf(jfd, "%s ", ivl_nexus_name(cur->nexus));
 
-	    fprintf(jfd, "L%05u %s* Note: ", ffirst, str);
-	    if (cur->nexus)
-		  fprintf(jfd, "%s ", ivl_nexus_name(cur->nexus));
+    {
+      int pin = pal_sop_pin(cur->sop);
+      if (pin > 0)
+        fprintf(jfd, "pin %d: ", pin);
+    }
+    if (pal_sop_is_register(cur->sop))
+      fprintf(jfd, "<registered");
+    else
+      fprintf(jfd, "<unregistered");
 
-	    { int pin = pal_sop_pin(cur->sop);
-	      if (pin > 0)
-		    fprintf(jfd, "pin %d: ", pin);
-	    }
-	    if (pal_sop_is_register(cur->sop))
-		  fprintf(jfd, "<registered");
-	    else
-		  fprintf(jfd, "<unregistered");
+    if (pal_sop_is_invert(cur->sop))
+      fprintf(jfd, ", invert");
 
-	    if (pal_sop_is_invert(cur->sop))
-		  fprintf(jfd, ", invert");
+    fprintf(jfd, "> *\n");
 
-	    fprintf(jfd, "> *\n");
-
-	    free(str);
-      }
+    free(str);
+  }
 }
 
-int emit_jedec(const char*path)
-{
-      FILE*jfd;
+int emit_jedec(const char *path) {
+  FILE *jfd;
 
-      jfd = fopen(path, "w");
-      if (jfd == 0) {
-	    fprintf(stderr, "unable to open ``%s'' for output.\n", path);
-	    return -1;
-      }
+  jfd = fopen(path, "w");
+  if (jfd == 0) {
+    fprintf(stderr, "unable to open ``%s'' for output.\n", path);
+    return -1;
+  }
 
-      fprintf(jfd, "\002This file created by Icarus Verilog/PAL\n");
-      fprintf(jfd, "*\n");
+  fprintf(jfd, "\002This file created by Icarus Verilog/PAL\n");
+  fprintf(jfd, "*\n");
 
-      fprintf(jfd, "QF%u*  Number of fuses*\n", pal_fuses(pal));
-      fprintf(jfd, "F0*  Note: Default fuse set to 0*\n");
-      fprintf(jfd, "G0*  Note: Security fuse NOT blown.*\n");
+  fprintf(jfd, "QF%u*  Number of fuses*\n", pal_fuses(pal));
+  fprintf(jfd, "F0*  Note: Default fuse set to 0*\n");
+  fprintf(jfd, "G0*  Note: Security fuse NOT blown.*\n");
 
-      draw_macrocell_modes(jfd);
+  draw_macrocell_modes(jfd);
 
-      fclose(jfd);
-      return 0;
+  fclose(jfd);
+  return 0;
 }

@@ -20,35 +20,35 @@
 #ident "$Id: a_handle_by_name.c,v 1.2 2003/06/17 16:55:07 steve Exp $"
 #endif
 
-# include  <acc_user.h>
-# include  <vpi_user.h>
-# include  "priv.h"
-# include  <assert.h>
-# include  <string.h>
+#include "priv.h"
+#include <acc_user.h>
+#include <assert.h>
+#include <string.h>
+#include <vpi_user.h>
 
 /*
  * acc_handle_by_name implemented using VPI interface
  */
-handle acc_handle_by_name(const char*obj_name, handle scope)
-{
-      vpiHandle sys_h;
-      vpiHandle res;
+handle acc_handle_by_name(const char *obj_name, handle scope) {
+  vpiHandle sys_h;
+  vpiHandle res;
 
-      /* if no scope provided, use tasks scope */
-      if (!scope) {
-	    sys_h = vpi_handle(vpiSysTfCall, 0 /* NULL */);
-	    scope = vpi_handle(vpiScope, sys_h);
-      }
+  /* if no scope provided, use tasks scope */
+  if (!scope) {
+    sys_h = vpi_handle(vpiSysTfCall, 0 /* NULL */);
+    scope = vpi_handle(vpiScope, sys_h);
+  }
 
-      res = vpi_handle_by_name(obj_name, scope);
+  res = vpi_handle_by_name(obj_name, scope);
 
-      if (pli_trace) {
-	    fprintf(pli_trace, "acc_handle_by_name(\"%s\", scope=%s) "
-		    " --> %p\n", obj_name,
-		    vpi_get_str(vpiFullName, scope), (void*) res);
-      }
+  if (pli_trace) {
+    fprintf(pli_trace,
+            "acc_handle_by_name(\"%s\", scope=%s) "
+            " --> %p\n",
+            obj_name, vpi_get_str(vpiFullName, scope), (void *)res);
+  }
 
-      return res;
+  return res;
 }
 
 /*

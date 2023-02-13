@@ -17,91 +17,72 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include "config.h"
+#include "config.h"
 
-# include  "Module.h"
-# include  "PGate.h"
-# include  "PWire.h"
-# include  <cassert>
+#include "Module.h"
+#include "PGate.h"
+#include "PWire.h"
+#include <cassert>
 
 /* n is a permallocated string. */
-Module::Module(perm_string n, perm_string f)
-: PScope(n)
-{
-      file = f;
-      library_flag = false;
-      is_cell = false;
-      uc_drive = UCD_NONE;
-      default_nettype = NetNet::NONE;
-      timescale_warn_done = false;
+Module::Module(perm_string n, perm_string f) : PScope(n) {
+  file                = f;
+  library_flag        = false;
+  is_cell             = false;
+  uc_drive            = UCD_NONE;
+  default_nettype     = NetNet::NONE;
+  timescale_warn_done = false;
 }
 
-Module::~Module()
-{
-}
+Module::~Module() {}
 
-void Module::add_gate(PGate*gate)
-{
-      gates_.push_back(gate);
-}
+void Module::add_gate(PGate *gate) { gates_.push_back(gate); }
 
-unsigned Module::port_count() const
-{
-      return ports.size();
-}
+unsigned Module::port_count() const { return ports.size(); }
 
 /*
  * Return the array of PEIdent object that are at this port of the
  * module. If the port is internally unconnected, return an empty
  * array.
  */
-const vector<PEIdent*>& Module::get_port(unsigned idx) const
-{
-      assert(idx < ports.size());
-      static const vector<PEIdent*> zero;
+const vector<PEIdent *> &Module::get_port(unsigned idx) const {
+  assert(idx < ports.size());
+  static const vector<PEIdent *> zero;
 
-      if (ports[idx])
-	    return ports[idx]->expr;
-      else
-	    return zero;
+  if (ports[idx])
+    return ports[idx]->expr;
+  else
+    return zero;
 }
 
-unsigned Module::find_port(const char*name) const
-{
-      assert(name != 0);
-      for (unsigned idx = 0 ;  idx < ports.size() ;  idx += 1) {
-	    if (ports[idx] == 0) {
-		    /* It is possible to have undeclared ports. These
-		       are ports that are skipped in the declaration,
-		       for example like so: module foo(x ,, y); The
-		       port between x and y is unnamed and thus
-		       inaccessible to binding by name. */
-		  continue;
-	    }
-	    assert(ports[idx]);
-	    if (ports[idx]->name == name)
-		  return idx;
-      }
+unsigned Module::find_port(const char *name) const {
+  assert(name != 0);
+  for (unsigned idx = 0; idx < ports.size(); idx += 1) {
+    if (ports[idx] == 0) {
+      /* It is possible to have undeclared ports. These
+         are ports that are skipped in the declaration,
+         for example like so: module foo(x ,, y); The
+         port between x and y is unnamed and thus
+         inaccessible to binding by name. */
+      continue;
+    }
+    assert(ports[idx]);
+    if (ports[idx]->name == name)
+      return idx;
+  }
 
-      return ports.size();
+  return ports.size();
 }
 
+PGate *Module::get_gate(perm_string name) {
+  for (list<PGate *>::iterator cur = gates_.begin(); cur != gates_.end();
+       cur++) {
 
-PGate* Module::get_gate(perm_string name)
-{
-      for (list<PGate*>::iterator cur = gates_.begin()
-		 ; cur != gates_.end()
-		 ; cur ++ ) {
+    if ((*cur)->get_name() == name)
+      return *cur;
+  }
 
-	    if ((*cur)->get_name() == name)
-		  return *cur;
-      }
-
-      return 0;
+  return 0;
 }
 
-const list<PGate*>& Module::get_gates() const
-{
-      return gates_;
-}
-
+const list<PGate *> &Module::get_gates() const { return gates_; }

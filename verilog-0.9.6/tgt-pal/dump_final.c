@@ -20,41 +20,36 @@
 #ident "$Id: dump_final.c,v 1.4 2003/02/26 01:24:35 steve Exp $"
 #endif
 
-# include "config.h"
+#include "config.h"
 
-# include  "priv.h"
-# include  <stdio.h>
+#include "priv.h"
+#include <stdio.h>
 
+void dump_final_design(FILE *out) {
+  unsigned idx;
+  for (idx = 0; idx < pins; idx += 1) {
+    struct pal_bind_s *pin = bind_pin + idx;
 
-void dump_final_design(FILE*out)
-{
-      unsigned idx;
-      for (idx = 0 ;  idx < pins ;  idx += 1) {
-	    struct pal_bind_s*pin = bind_pin + idx;
+    if (bind_pin[idx].sop) {
+      fprintf(out, "Output pin %u:\n", idx + 1);
+      fprintf(out, "    pin nexus=%s\n",
+              pin->nexus ? ivl_nexus_name(pin->nexus) : "");
+      fprintf(out, "    pin enable=%s\n",
+              pin->enable ? ivl_logic_name(pin->enable) : "1");
 
-	    if (bind_pin[idx].sop) {
-		  fprintf(out, "Output pin %u:\n", idx+1);
-		  fprintf(out, "    pin nexus=%s\n",
-			  pin->nexus? ivl_nexus_name(pin->nexus) : "");
-		  fprintf(out, "    pin enable=%s\n",
-			  pin->enable ? ivl_logic_name(pin->enable) : "1");
-
-		  if (pin->reg)
-			fprintf(out, "    pin ff=%s.%s.q%u\n",
-				ivl_scope_name(ivl_lpm_scope(pin->reg)),
-				ivl_lpm_basename(pin->reg),
-				pin->reg_q);
-		  else
-			fprintf(out, "    pin ff=*.q%u\n", pin->reg_q);
-	    } else {
-		  fprintf(out, "Input pin %u:\n", idx+1);
-		  fprintf(out, "    pin nexus=%s\n",
-			  pin->nexus? ivl_nexus_name(pin->nexus) : "");
-	    }
-      }
+      if (pin->reg)
+        fprintf(out, "    pin ff=%s.%s.q%u\n",
+                ivl_scope_name(ivl_lpm_scope(pin->reg)),
+                ivl_lpm_basename(pin->reg), pin->reg_q);
+      else
+        fprintf(out, "    pin ff=*.q%u\n", pin->reg_q);
+    } else {
+      fprintf(out, "Input pin %u:\n", idx + 1);
+      fprintf(out, "    pin nexus=%s\n",
+              pin->nexus ? ivl_nexus_name(pin->nexus) : "");
+    }
+  }
 }
-
-
 
 /*
  * $Log: dump_final.c,v $
@@ -72,4 +67,3 @@ void dump_final_design(FILE*out)
  *  Stuff registers into macrocells.
  *
  */
-

@@ -19,10 +19,10 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  <map>
-# include  "StringHeap.h"
-# include  "svector.h"
-# include  "verinum.h"
+#include "StringHeap.h"
+#include "svector.h"
+#include "verinum.h"
+#include <map>
 
 class PExpr;
 
@@ -49,30 +49,30 @@ class PExpr;
  */
 class PUdp {
 
-    public:
-      explicit PUdp(perm_string n, unsigned nports);
+public:
+  explicit PUdp(perm_string n, unsigned nports);
 
-      svector<string>ports;
-      unsigned find_port(const char*name);
+  svector<string> ports;
+  unsigned find_port(const char *name);
 
-      bool sequential;
+  bool sequential;
 
-      svector<string>tinput;
-      svector<char>  tcurrent;
-      svector<char>  toutput;
+  svector<string> tinput;
+  svector<char> tcurrent;
+  svector<char> toutput;
 
-      verinum::V initial;
+  verinum::V initial;
 
-      map<string,PExpr*> attributes;
+  map<string, PExpr *> attributes;
 
-      void dump(ostream&out) const;
+  void dump(ostream &out) const;
 
-      perm_string name_;
-    private:
+  perm_string name_;
 
-    private: // Not implemented
-      PUdp(const PUdp&);
-      PUdp& operator= (const PUdp&);
+private:
+private: // Not implemented
+  PUdp(const PUdp &);
+  PUdp &operator=(const PUdp &);
 };
 
 #endif

@@ -20,142 +20,137 @@
 #ident "$Id: fpga.c,v 1.10 2003/10/27 02:18:28 steve Exp $"
 #endif
 
-# include "config.h"
+#include "config.h"
 
 /*
  * This is the FPGA target module.
  */
 
-# include  <ivl_target.h>
-# include  <string.h>
-# include  "fpga_priv.h"
-# include  <assert.h>
+#include "fpga_priv.h"
+#include <assert.h>
+#include <ivl_target.h>
+#include <string.h>
 
 /* This is the opened xnf file descriptor. It is the output that this
    code generator writes to. */
-FILE*xnf = 0;
+FILE *xnf = 0;
 
-const char*part = 0;
-const char*arch = 0;
-device_t device = 0;
+const char *part = 0;
+const char *arch = 0;
+device_t device  = 0;
 
-int scope_has_attribute(ivl_scope_t s, const char *name)
-{
-      int i;
-      const struct ivl_attribute_s *a;
-      for (i=0; i<ivl_scope_attr_cnt(s); i++) {
-	      a = ivl_scope_attr_val(s, i);
-	      if (strcmp(a->key,name) == 0)
-		    return 1;
-      }
-      return 0;
+int scope_has_attribute(ivl_scope_t s, const char *name) {
+  int i;
+  const struct ivl_attribute_s *a;
+  for (i = 0; i < ivl_scope_attr_cnt(s); i++) {
+    a = ivl_scope_attr_val(s, i);
+    if (strcmp(a->key, name) == 0)
+      return 1;
+  }
+  return 0;
 }
 
-static int show_process(ivl_process_t net, void*x)
-{
-      ivl_scope_t scope = ivl_process_scope(net);
+static int show_process(ivl_process_t net, void *x) {
+  ivl_scope_t scope = ivl_process_scope(net);
 
-	/* Ignore processes that are within scopes that are cells. The
-	   cell_scope will generate a cell to represent the entire
-	   scope. */
-      if (scope_has_attribute(scope, "ivl_synthesis_cell"))
-	    return 0;
+  /* Ignore processes that are within scopes that are cells. The
+     cell_scope will generate a cell to represent the entire
+     scope. */
+  if (scope_has_attribute(scope, "ivl_synthesis_cell"))
+    return 0;
 
-      fprintf(stderr, "fpga target: unsynthesized behavioral code\n");
-      return 0;
+  fprintf(stderr, "fpga target: unsynthesized behavioral code\n");
+  return 0;
 }
 
-static void show_pads(ivl_scope_t scope)
-{
-      unsigned idx;
+static void show_pads(ivl_scope_t scope) {
+  unsigned idx;
 
-      if (device->show_pad == 0)
-	    return;
+  if (device->show_pad == 0)
+    return;
 
-      for (idx = 0 ;  idx < ivl_scope_sigs(scope) ;  idx += 1) {
-	    ivl_signal_t sig = ivl_scope_sig(scope, idx);
-	    const char*pad;
+  for (idx = 0; idx < ivl_scope_sigs(scope); idx += 1) {
+    ivl_signal_t sig = ivl_scope_sig(scope, idx);
+    const char *pad;
 
-	    if (ivl_signal_port(sig) == IVL_SIP_NONE)
-		  continue;
+    if (ivl_signal_port(sig) == IVL_SIP_NONE)
+      continue;
 
-	    pad = ivl_signal_attr(sig, "PAD");
-	    if (pad == 0)
-		  continue;
+    pad = ivl_signal_attr(sig, "PAD");
+    if (pad == 0)
+      continue;
 
-	    assert(device->show_pad);
-	    device->show_pad(sig, pad);
-      }
+    assert(device->show_pad);
+    device->show_pad(sig, pad);
+  }
 }
 
-static void show_constants(ivl_design_t des)
-{
-      unsigned idx;
+static void show_constants(ivl_design_t des) {
+  unsigned idx;
 
-      if (device->show_constant == 0)
-	    return;
+  if (device->show_constant == 0)
+    return;
 
-      for (idx = 0 ;  idx < ivl_design_consts(des) ;  idx += 1) {
-	    ivl_net_const_t con = ivl_design_const(des, idx);
-	    device->show_constant(con);
-      }
+  for (idx = 0; idx < ivl_design_consts(des); idx += 1) {
+    ivl_net_const_t con = ivl_design_const(des, idx);
+    device->show_constant(con);
+  }
 }
 
 /*
  * This is the main entry point that ivl uses to invoke me, the code
  * generator.
  */
-int target_design(ivl_design_t des)
-{
-      ivl_scope_t root = ivl_design_root(des);
-      const char*path = ivl_design_flag(des, "-o");
+int target_design(ivl_design_t des) {
+  ivl_scope_t root = ivl_design_root(des);
+  const char *path = ivl_design_flag(des, "-o");
 
-      xnf = fopen(path, "w");
-      if (xnf == 0) {
-	    perror(path);
-	    return -1;
-      }
+  xnf = fopen(path, "w");
+  if (xnf == 0) {
+    perror(path);
+    return -1;
+  }
 
-      part = ivl_design_flag(des, "part");
-      if (part && (part[0] == 0))
-	    part = 0;
+  part = ivl_design_flag(des, "part");
+  if (part && (part[0] == 0))
+    part = 0;
 
-      arch = ivl_design_flag(des, "arch");
-      if (arch && (arch[0] == 0))
-	    arch = 0;
+  arch = ivl_design_flag(des, "arch");
+  if (arch && (arch[0] == 0))
+    arch = 0;
 
-      if (arch == 0)
-	    arch = "lpm";
+  if (arch == 0)
+    arch = "lpm";
 
-      device = device_from_arch(arch);
-      if (device == 0) {
-	    fprintf(stderr, "Unknown architecture arch=%s\n", arch);
-	    return -1;
-      }
+  device = device_from_arch(arch);
+  if (device == 0) {
+    fprintf(stderr, "Unknown architecture arch=%s\n", arch);
+    return -1;
+  }
 
-	/* Call the device driver to generate the netlist header. */
-      device->show_header(des);
+  /* Call the device driver to generate the netlist header. */
+  device->show_header(des);
 
-	/* Catch any behavioral code that is left, and write warnings
-	   that it is not supported. */
-      ivl_design_process(des, show_process, 0);
+  /* Catch any behavioral code that is left, and write warnings
+     that it is not supported. */
+  ivl_design_process(des, show_process, 0);
 
-	/* Get the pads from the design, and draw them to connect to
-	   the associated signals. */
-      show_pads(root);
+  /* Get the pads from the design, and draw them to connect to
+     the associated signals. */
+  show_pads(root);
 
-	/* Scan the scopes, looking for gates to draw into the output
-	   netlist. */
-      show_scope_gates(root, 0);
+  /* Scan the scopes, looking for gates to draw into the output
+     netlist. */
+  show_scope_gates(root, 0);
 
-      show_constants(des);
+  show_constants(des);
 
-	/* Call the device driver to close out the file. */
-      device->show_footer(des);
+  /* Call the device driver to close out the file. */
+  device->show_footer(des);
 
-      fclose(xnf);
-      xnf = 0;
-      return 0;
+  fclose(xnf);
+  xnf = 0;
+  return 0;
 }
 
 /*
@@ -194,4 +189,3 @@ int target_design(ivl_design_t des)
  *  Add the fpga target.
  *
  */
-

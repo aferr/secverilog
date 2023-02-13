@@ -17,35 +17,31 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include "config.h"
+#include "config.h"
 
-# include  "functor.h"
-# include  "netlist.h"
-# include  "netmisc.h"
-# include  "compiler.h"
-# include  <cassert>
+#include "compiler.h"
+#include "functor.h"
+#include "netlist.h"
+#include "netmisc.h"
+#include <cassert>
 
-
-bool NetProc::synth_async(Design*des, NetScope*scope,
-			  const NetBus&nex_map, NetBus&nex_out)
-{
-      return false;
+bool NetProc::synth_async(Design *des, NetScope *scope, const NetBus &nex_map,
+                          NetBus &nex_out) {
+  return false;
 }
 
-bool NetProc::synth_sync(Design*des, NetScope*scope, NetFF*ff,
-			 const NetBus&nex_map, NetBus&nex_out,
-			 const svector<NetEvProbe*>&events)
-{
-      if (events.count() > 0) {
-	    cerr << get_fileline() << ": error: Events are unaccounted"
-		 << " for in process synthesis." << endl;
-	    des->errors += 1;
-      }
+bool NetProc::synth_sync(Design *des, NetScope *scope, NetFF *ff,
+                         const NetBus &nex_map, NetBus &nex_out,
+                         const svector<NetEvProbe *> &events) {
+  if (events.count() > 0) {
+    cerr << get_fileline() << ": error: Events are unaccounted"
+         << " for in process synthesis." << endl;
+    des->errors += 1;
+  }
 
-	/* Synthesize the input to the DFF. */
-      return synth_async(des, scope, nex_map, nex_out);
+  /* Synthesize the input to the DFF. */
+  return synth_async(des, scope, nex_map, nex_out);
 }
-
 
 /*
  * Async synthesis of assignments is done by synthesizing the rvalue
@@ -57,42 +53,41 @@ bool NetProc::synth_sync(Design*des, NetScope*scope, NetFF*ff,
  * however, is the set of nexa that are to actually get linked to the
  * r-value.
  */
-bool NetAssignBase::synth_async(Design*des, NetScope*scope,
-				const NetBus&nex_map, NetBus&nex_out)
-{
-      NetNet*rsig = rval_->synthesize(des, scope, rval_);
-      assert(rsig);
+bool NetAssignBase::synth_async(Design *des, NetScope *scope,
+                                const NetBus &nex_map, NetBus &nex_out) {
+  NetNet *rsig = rval_->synthesize(des, scope, rval_);
+  assert(rsig);
 
-      NetNet*lsig = lval_->sig();
-      if (!lsig) {
-	    cerr << get_fileline() << ": error: "
-		 << "NetAssignBase::synth_async on unsupported lval ";
-	    dump_lval(cerr);
-	    cerr << endl;
-	    des->errors += 1;
-	    return false;
-      }
-      assert(lval_->more == 0);
+  NetNet *lsig = lval_->sig();
+  if (!lsig) {
+    cerr << get_fileline() << ": error: "
+         << "NetAssignBase::synth_async on unsupported lval ";
+    dump_lval(cerr);
+    cerr << endl;
+    des->errors += 1;
+    return false;
+  }
+  assert(lval_->more == 0);
 
-      if (debug_synth2) {
-	    cerr << get_fileline() << ": debug: l-value signal is "
-		 << lsig->vector_width() << " bits, r-value signal is "
-		 << rsig->vector_width() << " bits." << endl;
-      }
+  if (debug_synth2) {
+    cerr << get_fileline() << ": debug: l-value signal is "
+         << lsig->vector_width() << " bits, r-value signal is "
+         << rsig->vector_width() << " bits." << endl;
+  }
 
-	/* For now, assume there is exactly one output. */
-      assert(nex_out.pin_count() == 1);
+  /* For now, assume there is exactly one output. */
+  assert(nex_out.pin_count() == 1);
 
-      connect(nex_out.pin(0), rsig->pin(0));
+  connect(nex_out.pin(0), rsig->pin(0));
 
-	/* This lval_ represents a reg that is a WIRE in the
-	   synthesized results. This function signals the destructor
-	   to change the REG that this l-value refers to into a
-	   WIRE. It is done then, at the last minute, so that pending
-	   synthesis can continue to work with it as a WIRE. */
-      lval_->turn_sig_to_wire_on_release();
+  /* This lval_ represents a reg that is a WIRE in the
+     synthesized results. This function signals the destructor
+     to change the REG that this l-value refers to into a
+     WIRE. It is done then, at the last minute, so that pending
+     synthesis can continue to work with it as a WIRE. */
+  lval_->turn_sig_to_wire_on_release();
 
-      return true;
+  return true;
 }
 
 /*
@@ -101,145 +96,141 @@ bool NetAssignBase::synth_async(Design*des, NetScope*scope,
  * nex_out for the block is the union of the nex_out for all the
  * substatements.
  */
-bool NetBlock::synth_async(Design*des, NetScope*scope,
-			   const NetBus&nex_map, NetBus&nex_out)
-{
-      if (last_ == 0) {
-	    return true;
-      }
+bool NetBlock::synth_async(Design *des, NetScope *scope, const NetBus &nex_map,
+                           NetBus &nex_out) {
+  if (last_ == 0) {
+    return true;
+  }
 
-      bool flag = true;
-      NetProc*cur = last_;
-      do {
-	    cur = cur->next_;
+  bool flag    = true;
+  NetProc *cur = last_;
+  do {
+    cur = cur->next_;
 
-	      /* Create a temporary map of the output only from this
-		 statement. */
-	    NexusSet tmp_set;
-	    cur->nex_output(tmp_set);
-	    NetBus tmp_map (scope, tmp_set.count());
-	    for (unsigned idx = 0 ;  idx < tmp_set.count() ;  idx += 1)
-		  connect(tmp_set[idx], tmp_map.pin(idx));
+    /* Create a temporary map of the output only from this
+       statement. */
+    NexusSet tmp_set;
+    cur->nex_output(tmp_set);
+    NetBus tmp_map(scope, tmp_set.count());
+    for (unsigned idx = 0; idx < tmp_set.count(); idx += 1)
+      connect(tmp_set[idx], tmp_map.pin(idx));
 
-	      /* Create also a temporary NetBus to collect the
-		 output from the synthesis. */
-	    NetBus tmp_out (scope, tmp_set.count());
+    /* Create also a temporary NetBus to collect the
+       output from the synthesis. */
+    NetBus tmp_out(scope, tmp_set.count());
 
-	    bool ok_flag = cur->synth_async(des, scope, tmp_map, tmp_out);
+    bool ok_flag = cur->synth_async(des, scope, tmp_map, tmp_out);
 
-	    flag = flag && ok_flag;
-	    if (ok_flag == false)
-		  continue;
+    flag = flag && ok_flag;
+    if (ok_flag == false)
+      continue;
 
-	      /* Now find the tmp_map pins in the nex_map global map,
-		 and use that to direct the connection to the nex_out
-		 output bus. Look for the nex_map pin that is linked
-		 to the tmp_map.pin(idx) pin, and link that to the
-		 tmp_out.pin(idx) output link. */
-	    for (unsigned idx = 0 ;  idx < tmp_out.pin_count() ;  idx += 1) {
-		  unsigned ptr = 0;
-		  while (ptr < nex_map.pin_count()
-			 && ! nex_map.pin(ptr).is_linked(tmp_map.pin(idx)))
-			ptr += 1;
+    /* Now find the tmp_map pins in the nex_map global map,
+       and use that to direct the connection to the nex_out
+       output bus. Look for the nex_map pin that is linked
+       to the tmp_map.pin(idx) pin, and link that to the
+       tmp_out.pin(idx) output link. */
+    for (unsigned idx = 0; idx < tmp_out.pin_count(); idx += 1) {
+      unsigned ptr = 0;
+      while (ptr < nex_map.pin_count() &&
+             !nex_map.pin(ptr).is_linked(tmp_map.pin(idx)))
+        ptr += 1;
 
-		  assert(ptr < nex_out.pin_count());
-		  connect(nex_out.pin(ptr), tmp_out.pin(idx));
-	    }
+      assert(ptr < nex_out.pin_count());
+      connect(nex_out.pin(ptr), tmp_out.pin(idx));
+    }
 
-      } while (cur != last_);
+  } while (cur != last_);
 
-      return flag;
+  return flag;
 }
 
-bool NetCase::synth_async(Design*des, NetScope*scope,
-			  const NetBus&nex_map, NetBus&nex_out)
-{
-	/* Synthesize the select expression. */
-      NetNet*esig = expr_->synthesize(des, scope, expr_);
+bool NetCase::synth_async(Design *des, NetScope *scope, const NetBus &nex_map,
+                          NetBus &nex_out) {
+  /* Synthesize the select expression. */
+  NetNet *esig = expr_->synthesize(des, scope, expr_);
 
-      unsigned sel_width = esig->vector_width();
-      assert(sel_width > 0);
+  unsigned sel_width = esig->vector_width();
+  assert(sel_width > 0);
 
-      unsigned mux_width = 0;
-      for (unsigned idx = 0 ;  idx < nex_out.pin_count() ;  idx += 1)
-	    mux_width += nex_out.pin(idx).nexus()->vector_width();
+  unsigned mux_width = 0;
+  for (unsigned idx = 0; idx < nex_out.pin_count(); idx += 1)
+    mux_width += nex_out.pin(idx).nexus()->vector_width();
 
-	/* Collect all the statements into a map of index to
-	   statement. The guard expression it evaluated to be the
-	   index of the mux value, and the statement is bound to that
-	   index. */
+  /* Collect all the statements into a map of index to
+     statement. The guard expression it evaluated to be the
+     index of the mux value, and the statement is bound to that
+     index. */
 
-      unsigned long max_guard_value = 0;
-      map<unsigned long,NetProc*>statement_map;
-      NetProc*statement_default = 0;
+  unsigned long max_guard_value = 0;
+  map<unsigned long, NetProc *> statement_map;
+  NetProc *statement_default = 0;
 
-      for (unsigned item = 0 ;  item < nitems_ ;  item += 1) {
-	    if (items_[item].guard == 0) {
-		  statement_default = items_[item].statement;
-		  continue;
-	    }
+  for (unsigned item = 0; item < nitems_; item += 1) {
+    if (items_[item].guard == 0) {
+      statement_default = items_[item].statement;
+      continue;
+    }
 
-	    NetEConst*ge = dynamic_cast<NetEConst*>(items_[item].guard);
-	    assert(ge);
-	    verinum gval = ge->value();
+    NetEConst *ge = dynamic_cast<NetEConst *>(items_[item].guard);
+    assert(ge);
+    verinum gval = ge->value();
 
-	    unsigned sel_idx = gval.as_ulong();
+    unsigned sel_idx = gval.as_ulong();
 
-	    assert(items_[item].statement);
-	    statement_map[sel_idx] = items_[item].statement;
+    assert(items_[item].statement);
+    statement_map[sel_idx] = items_[item].statement;
 
-	    if (sel_idx > max_guard_value)
-		  max_guard_value = sel_idx;
-      }
+    if (sel_idx > max_guard_value)
+      max_guard_value = sel_idx;
+  }
 
-      unsigned mux_size = max_guard_value + 1;
+  unsigned mux_size = max_guard_value + 1;
 
-      NetMux*mux = new NetMux(scope, scope->local_symbol(),
-			      mux_width, mux_size, sel_width);
-      des->add_node(mux);
+  NetMux *mux =
+      new NetMux(scope, scope->local_symbol(), mux_width, mux_size, sel_width);
+  des->add_node(mux);
 
-	/* The select signal is already synthesized. Simply hook it up. */
-      connect(mux->pin_Sel(), esig->pin(0));
+  /* The select signal is already synthesized. Simply hook it up. */
+  connect(mux->pin_Sel(), esig->pin(0));
 
-	/* For now, assume that the output is only 1 signal. */
-      assert(nex_out.pin_count() == 1);
-      connect(mux->pin_Result(), nex_out.pin(0));
+  /* For now, assume that the output is only 1 signal. */
+  assert(nex_out.pin_count() == 1);
+  connect(mux->pin_Result(), nex_out.pin(0));
 
-	/* For now, only support logic types. */
-      ivl_variable_type_t mux_data_type = IVL_VT_LOGIC;
+  /* For now, only support logic types. */
+  ivl_variable_type_t mux_data_type = IVL_VT_LOGIC;
 
-	/* Forgot to support default statements? */
-      assert(statement_default == 0);
+  /* Forgot to support default statements? */
+  assert(statement_default == 0);
 
-      NetNet*isig;
-      for (unsigned idx = 0 ;  idx < mux_size ;  idx += 1) {
+  NetNet *isig;
+  for (unsigned idx = 0; idx < mux_size; idx += 1) {
 
-	    NetProc*stmt = statement_map[idx];
-	    if (stmt == 0) {
-		  cerr << get_fileline() << ": error: case " << idx
-		       << " is not accounted for in asynchronous mux." << endl;
-		  des->errors += 1;
-		  continue;
-	    }
+    NetProc *stmt = statement_map[idx];
+    if (stmt == 0) {
+      cerr << get_fileline() << ": error: case " << idx
+           << " is not accounted for in asynchronous mux." << endl;
+      des->errors += 1;
+      continue;
+    }
 
-	    isig = new NetNet(scope, scope->local_symbol(),
-			      NetNet::TRI, mux_width);
-	    isig->local_flag(true);
-	    isig->data_type(mux_data_type);
+    isig = new NetNet(scope, scope->local_symbol(), NetNet::TRI, mux_width);
+    isig->local_flag(true);
+    isig->data_type(mux_data_type);
 
-	    connect(mux->pin_Data(idx), isig->pin(0));
+    connect(mux->pin_Data(idx), isig->pin(0));
 
-	    NetBus tmp (scope, 1);
-	    connect(tmp.pin(0), isig->pin(0));
-	    stmt->synth_async(des, scope, tmp, tmp);
-      }
+    NetBus tmp(scope, 1);
+    connect(tmp.pin(0), isig->pin(0));
+    stmt->synth_async(des, scope, tmp, tmp);
+  }
 
-      return true;
+  return true;
 }
 
-bool NetCondit::synth_async(Design*des, NetScope*scope,
-			    const NetBus&nex_map, NetBus&nex_out)
-{
+bool NetCondit::synth_async(Design *des, NetScope *scope, const NetBus &nex_map,
+                            NetBus &nex_out) {
 #if 0
       NetNet*ssig = expr_->synthesize(des);
       assert(ssig);
@@ -296,18 +287,17 @@ bool NetCondit::synth_async(Design*des, NetScope*scope,
       return true;
 
 #else
-      cerr << get_fileline() << ": sorry: "
-	   << "Forgot to implement NetCondit::synth_async" << endl;
-      des->errors += 1;
-      return false;
+  cerr << get_fileline() << ": sorry: "
+       << "Forgot to implement NetCondit::synth_async" << endl;
+  des->errors += 1;
+  return false;
 #endif
 }
 
-bool NetEvWait::synth_async(Design*des, NetScope*scope,
-			    const NetBus&nex_map, NetBus&nex_out)
-{
-      bool flag = statement_->synth_async(des, scope, nex_map, nex_out);
-      return flag;
+bool NetEvWait::synth_async(Design *des, NetScope *scope, const NetBus &nex_map,
+                            NetBus &nex_out) {
+  bool flag = statement_->synth_async(des, scope, nex_map, nex_out);
+  return flag;
 }
 
 /*
@@ -318,23 +308,22 @@ bool NetEvWait::synth_async(Design*des, NetScope*scope,
  * nex_out set, using the nex_map as a guide. Starting from the top,
  * the nex_map is the same as the nex_map.
  */
-bool NetProcTop::synth_async(Design*des)
-{
-      NexusSet nex_set;
-      statement_->nex_output(nex_set);
+bool NetProcTop::synth_async(Design *des) {
+  NexusSet nex_set;
+  statement_->nex_output(nex_set);
 
-      if (debug_synth2) {
-	    cerr << get_fileline() << ": debug: Process has "
-		 << nex_set.count() << " outputs." << endl;
-      }
+  if (debug_synth2) {
+    cerr << get_fileline() << ": debug: Process has " << nex_set.count()
+         << " outputs." << endl;
+  }
 
-      NetBus nex_q (scope(), nex_set.count());
-      for (unsigned idx = 0 ;  idx < nex_set.count() ;  idx += 1) {
-	    connect(nex_set[idx], nex_q.pin(idx));
-      }
+  NetBus nex_q(scope(), nex_set.count());
+  for (unsigned idx = 0; idx < nex_set.count(); idx += 1) {
+    connect(nex_set[idx], nex_q.pin(idx));
+  }
 
-      bool flag = statement_->synth_async(des, scope(), nex_q, nex_q);
-      return flag;
+  bool flag = statement_->synth_async(des, scope(), nex_q, nex_q);
+  return flag;
 }
 
 /*
@@ -351,13 +340,12 @@ bool NetProcTop::synth_async(Design*des)
  * This needs to be split into a DFF bank for each statement, because
  * the statements may each infer different reset and enable signals.
  */
-bool NetBlock::synth_sync(Design*des, NetScope*scope, NetFF*ff,
-			   const NetBus&nex_map, NetBus&nex_out,
-			   const svector<NetEvProbe*>&events_in)
-{
-      if (last_ == 0) {
-	    return true;
-      }
+bool NetBlock::synth_sync(Design *des, NetScope *scope, NetFF *ff,
+                          const NetBus &nex_map, NetBus &nex_out,
+                          const svector<NetEvProbe *> &events_in) {
+  if (last_ == 0) {
+    return true;
+  }
 
 #if 0
       bool flag = true;
@@ -504,11 +492,10 @@ bool NetBlock::synth_sync(Design*des, NetScope*scope, NetFF*ff,
       return flag;
 
 #else
-      cerr << get_fileline() << ": sorry: "
-	   << "Forgot to implement NetBlock::synth_sync"
-	   << endl;
-      des->errors += 1;
-      return false;
+  cerr << get_fileline() << ": sorry: "
+       << "Forgot to implement NetBlock::synth_sync" << endl;
+  des->errors += 1;
+  return false;
 #endif
 }
 
@@ -518,10 +505,9 @@ bool NetBlock::synth_sync(Design*des, NetScope*scope, NetFF*ff,
  * asynchronous set/reset, depending on whether the pin of the
  * expression is connected to an event, or not.
  */
-bool NetCondit::synth_sync(Design*des, NetScope*scope, NetFF*ff,
-			   const NetBus&nex_map, NetBus&nex_out,
-			   const svector<NetEvProbe*>&events_in)
-{
+bool NetCondit::synth_sync(Design *des, NetScope *scope, NetFF *ff,
+                           const NetBus &nex_map, NetBus &nex_out,
+                           const svector<NetEvProbe *> &events_in) {
 #if 0
 	/* First try to turn the condition expression into an
 	   asynchronous set/reset. If the condition expression has
@@ -727,88 +713,85 @@ bool NetCondit::synth_sync(Design*des, NetScope*scope, NetFF*ff,
       return flag;
 
 #else
-      cerr << get_fileline() << ": sorry: "
-	   << "Forgot to implement NetCondit::synth_sync" << endl;
-      des->errors += 1;
-      return false;
+  cerr << get_fileline() << ": sorry: "
+       << "Forgot to implement NetCondit::synth_sync" << endl;
+  des->errors += 1;
+  return false;
 #endif
 }
 
-bool NetEvWait::synth_sync(Design*des, NetScope*scope, NetFF*ff,
-			   const NetBus&nex_map, NetBus&nex_out,
-			   const svector<NetEvProbe*>&events_in)
-{
-      if (events_in.count() > 0) {
-	    cerr << get_fileline() << ": error: Events are unaccounted"
-		 << " for in process synthesis." << endl;
-	    des->errors += 1;
+bool NetEvWait::synth_sync(Design *des, NetScope *scope, NetFF *ff,
+                           const NetBus &nex_map, NetBus &nex_out,
+                           const svector<NetEvProbe *> &events_in) {
+  if (events_in.count() > 0) {
+    cerr << get_fileline() << ": error: Events are unaccounted"
+         << " for in process synthesis." << endl;
+    des->errors += 1;
+  }
+
+  assert(events_in.count() == 0);
+
+  /* This can't be other than one unless there are named events,
+     which I cannot synthesize. */
+  assert(nevents_ == 1);
+  NetEvent *ev = events_[0];
+
+  assert(ev->nprobe() >= 1);
+  svector<NetEvProbe *> events(ev->nprobe() - 1);
+
+  /* Get the input set from the substatement. This will be used
+     to figure out which of the probes is the clock. */
+  NexusSet *statement_input = statement_->nex_input();
+
+  /* Search for a clock input. The clock input is the edge event
+     that is not also an input to the substatement. */
+  NetEvProbe *pclk   = 0;
+  unsigned event_idx = 0;
+  for (unsigned idx = 0; idx < ev->nprobe(); idx += 1) {
+    NetEvProbe *tmp = ev->probe(idx);
+    assert(tmp->pin_count() == 1);
+
+    NexusSet tmp_nex;
+    tmp_nex.add(tmp->pin(0).nexus());
+
+    if (!statement_input->contains(tmp_nex)) {
+      if (pclk != 0) {
+        cerr << get_fileline() << ": error: Too many "
+             << "clocks for synchronous logic." << endl;
+        cerr << get_fileline() << ":      : Perhaps an"
+             << " asynchronous set/reset is misused?" << endl;
+        des->errors += 1;
       }
+      pclk = tmp;
 
-      assert(events_in.count() == 0);
+    } else {
+      events[event_idx++] = tmp;
+    }
+  }
 
-	/* This can't be other than one unless there are named events,
-	   which I cannot synthesize. */
-      assert(nevents_ == 1);
-      NetEvent*ev = events_[0];
+  if (pclk == 0) {
+    cerr << get_fileline() << ": error: None of the edges"
+         << " are valid clock inputs." << endl;
+    cerr << get_fileline() << ":      : Perhaps the clock"
+         << " is read by a statement or expression?" << endl;
+    return false;
+  }
 
-      assert(ev->nprobe() >= 1);
-      svector<NetEvProbe*>events (ev->nprobe() - 1);
+  connect(ff->pin_Clock(), pclk->pin(0));
+  if (pclk->edge() == NetEvProbe::NEGEDGE) {
+    perm_string polarity = perm_string::literal("Clock:LPM_Polarity");
+    ff->attribute(polarity, verinum("INVERT"));
 
-	/* Get the input set from the substatement. This will be used
-	   to figure out which of the probes is the clock. */
-      NexusSet*statement_input = statement_ -> nex_input();
+    if (debug_synth2) {
+      cerr << get_fileline() << ": debug: "
+           << "Detected a NEGEDGE clock for the synthesized ff." << endl;
+    }
+  }
 
-	/* Search for a clock input. The clock input is the edge event
-	   that is not also an input to the substatement. */
-      NetEvProbe*pclk = 0;
-      unsigned event_idx = 0;
-      for (unsigned idx = 0 ;  idx < ev->nprobe() ;  idx += 1) {
-	    NetEvProbe*tmp = ev->probe(idx);
-	    assert(tmp->pin_count() == 1);
+  /* Synthesize the input to the DFF. */
+  bool flag = statement_->synth_sync(des, scope, ff, nex_map, nex_out, events);
 
-	    NexusSet tmp_nex;
-	    tmp_nex .add( tmp->pin(0).nexus() );
-
-	    if (! statement_input ->contains(tmp_nex)) {
-		  if (pclk != 0) {
-			cerr << get_fileline() << ": error: Too many "
-			     << "clocks for synchronous logic." << endl;
-			cerr << get_fileline() << ":      : Perhaps an"
-			     << " asynchronous set/reset is misused?" << endl;
-			des->errors += 1;
-		  }
-		  pclk = tmp;
-
-	    } else {
-		  events[event_idx++] = tmp;
-	    }
-      }
-
-      if (pclk == 0) {
-	    cerr << get_fileline() << ": error: None of the edges"
-		 << " are valid clock inputs." << endl;
-	    cerr << get_fileline() << ":      : Perhaps the clock"
-		 << " is read by a statement or expression?" << endl;
-	    return false;
-      }
-
-      connect(ff->pin_Clock(), pclk->pin(0));
-      if (pclk->edge() == NetEvProbe::NEGEDGE) {
-	    perm_string polarity = perm_string::literal("Clock:LPM_Polarity");
-	    ff->attribute(polarity, verinum("INVERT"));
-
-	    if (debug_synth2) {
-		  cerr << get_fileline() << ": debug: "
-		       << "Detected a NEGEDGE clock for the synthesized ff."
-		       << endl;
-	    }
-      }
-
-	/* Synthesize the input to the DFF. */
-      bool flag = statement_->synth_sync(des, scope, ff,
-					 nex_map, nex_out, events);
-
-      return flag;
+  return flag;
 }
 
 /*
@@ -816,165 +799,162 @@ bool NetEvWait::synth_sync(Design*des, NetScope*scope, NetFF*ff,
  * synchronous. Create a NetFF device to hold the output from the
  * statement, and synthesize that statement in place.
  */
-bool NetProcTop::synth_sync(Design*des)
-{
-      if (debug_synth2) {
-	    cerr << get_fileline() << ": debug: "
-		 << "Process is apparently synchronous. Making NetFFs."
-		 << endl;
-      }
+bool NetProcTop::synth_sync(Design *des) {
+  if (debug_synth2) {
+    cerr << get_fileline() << ": debug: "
+         << "Process is apparently synchronous. Making NetFFs." << endl;
+  }
 
-      NexusSet nex_set;
-      statement_->nex_output(nex_set);
+  NexusSet nex_set;
+  statement_->nex_output(nex_set);
 
-	/* Make a model FF that will connect to the first item in the
-	   set, and will also take the initial connection of clocks
-	   and resets. */
+  /* Make a model FF that will connect to the first item in the
+     set, and will also take the initial connection of clocks
+     and resets. */
 
-      if (debug_synth2) {
-	    cerr << get_fileline() << ": debug: "
-		 << "Top level making a "
-		 << nex_set[0]->vector_width() << "-wide "
-		 << "NetFF device." << endl;
-      }
+  if (debug_synth2) {
+    cerr << get_fileline() << ": debug: "
+         << "Top level making a " << nex_set[0]->vector_width() << "-wide "
+         << "NetFF device." << endl;
+  }
 
-      NetFF*ff = new NetFF(scope(), scope()->local_symbol(),
-			   nex_set[0]->vector_width());
-      des->add_node(ff);
-      ff->attribute(perm_string::literal("LPM_FFType"), verinum("DFF"));
+  NetFF *ff =
+      new NetFF(scope(), scope()->local_symbol(), nex_set[0]->vector_width());
+  des->add_node(ff);
+  ff->attribute(perm_string::literal("LPM_FFType"), verinum("DFF"));
 
-      NetBus nex_d (scope(), nex_set.count());
-      NetBus nex_q (scope(), nex_set.count());
+  NetBus nex_d(scope(), nex_set.count());
+  NetBus nex_q(scope(), nex_set.count());
 
-	/* The Q of the NetFF devices is connected to the output that
-	   we are. The nex_q is a bundle of the outputs. We will also
-	   pass the nex_q as a map to the statement's synth_sync
-	   method to map it to the correct nex_d pin. */
-      for (unsigned idx = 0 ;  idx < nex_set.count() ;  idx += 1) {
-	    connect(nex_set[idx], nex_q.pin(idx));
-      }
+  /* The Q of the NetFF devices is connected to the output that
+     we are. The nex_q is a bundle of the outputs. We will also
+     pass the nex_q as a map to the statement's synth_sync
+     method to map it to the correct nex_d pin. */
+  for (unsigned idx = 0; idx < nex_set.count(); idx += 1) {
+    connect(nex_set[idx], nex_q.pin(idx));
+  }
 
-	// Connect the input later.
+  // Connect the input later.
 
-	/* Synthesize the input to the DFF. */
-      bool flag = statement_->synth_sync(des, scope(), ff,
-					 nex_q, nex_d,
-					 svector<NetEvProbe*>());
-      if (! flag) {
-	    delete ff;
-	    return false;
-      }
+  /* Synthesize the input to the DFF. */
+  bool flag = statement_->synth_sync(des, scope(), ff, nex_q, nex_d,
+                                     svector<NetEvProbe *>());
+  if (!flag) {
+    delete ff;
+    return false;
+  }
 
+  NetNet *tmp = nex_d.pin(0).nexus()->pick_any_net();
+  assert(tmp);
 
-      NetNet*tmp = nex_d.pin(0).nexus()->pick_any_net();
-      assert(tmp);
+  tmp = crop_to_width(des, tmp, ff->width());
+  connect(tmp->pin(0), ff->pin_Data());
+  connect(nex_q.pin(0), ff->pin_Q());
 
-      tmp = crop_to_width(des, tmp, ff->width());
-      connect(tmp->pin(0), ff->pin_Data());
-      connect(nex_q.pin(0), ff->pin_Q());
+  for (unsigned idx = 1; idx < nex_set.count(); idx += 1) {
+    NetFF *ff2 = new NetFF(scope(), scope()->local_symbol(),
+                           nex_set[idx]->vector_width());
+    des->add_node(ff2);
 
-      for (unsigned idx = 1 ;  idx < nex_set.count() ;  idx += 1) {
-	    NetFF*ff2 = new NetFF(scope(), scope()->local_symbol(),
-				  nex_set[idx]->vector_width());
-	    des->add_node(ff2);
+    tmp = nex_d.pin(idx).nexus()->pick_any_net();
+    assert(tmp);
 
-	    tmp = nex_d.pin(idx).nexus()->pick_any_net();
-	    assert(tmp);
+    tmp = crop_to_width(des, tmp, ff2->width());
 
-	    tmp = crop_to_width(des, tmp, ff2->width());
+    connect(nex_q.pin(idx), ff2->pin_Q());
+    connect(tmp->pin(0), ff2->pin_Data());
 
-	    connect(nex_q.pin(idx), ff2->pin_Q());
-	    connect(tmp->pin(0),    ff2->pin_Data());
+    connect(ff->pin_Clock(), ff2->pin_Clock());
+    if (ff->pin_Enable().is_linked())
+      connect(ff->pin_Enable(), ff2->pin_Enable());
+    if (ff->pin_Aset().is_linked())
+      connect(ff->pin_Aset(), ff2->pin_Aset());
+    if (ff->pin_Aclr().is_linked())
+      connect(ff->pin_Aclr(), ff2->pin_Aclr());
+    if (ff->pin_Sset().is_linked())
+      connect(ff->pin_Sset(), ff2->pin_Sset());
+    if (ff->pin_Sclr().is_linked())
+      connect(ff->pin_Sclr(), ff2->pin_Sclr());
+  }
 
-	    connect(ff->pin_Clock(), ff2->pin_Clock());
-	    if (ff->pin_Enable().is_linked())
-		  connect(ff->pin_Enable(), ff2->pin_Enable());
-	    if (ff->pin_Aset().is_linked())
-		  connect(ff->pin_Aset(), ff2->pin_Aset());
-	    if (ff->pin_Aclr().is_linked())
-		  connect(ff->pin_Aclr(), ff2->pin_Aclr());
-	    if (ff->pin_Sset().is_linked())
-		  connect(ff->pin_Sset(), ff2->pin_Sset());
-	    if (ff->pin_Sclr().is_linked())
-		  connect(ff->pin_Sclr(), ff2->pin_Sclr());
-      }
-
-      return true;
+  return true;
 }
 
-class synth2_f  : public functor_t {
+class synth2_f : public functor_t {
 
-    public:
-      void process(class Design*, class NetProcTop*);
+public:
+  void process(class Design *, class NetProcTop *);
 
-    private:
+private:
 };
-
 
 /*
  * Look at a process. If it is asynchronous, then synthesize it as an
  * asynchronous process and delete the process itself for its gates.
  */
-void synth2_f::process(class Design*des, class NetProcTop*top)
-{
-      if (top->attribute(perm_string::literal("ivl_synthesis_off")).as_ulong() != 0)
-	    return;
+void synth2_f::process(class Design *des, class NetProcTop *top) {
+  if (top->attribute(perm_string::literal("ivl_synthesis_off")).as_ulong() != 0)
+    return;
 
-	/* If the scope that contains this process as a cell attribute
-	   attached to it, then skip synthesis. */
-      if (top->scope()->attribute(perm_string::literal("ivl_synthesis_cell")).len() > 0)
-	    return;
+  /* If the scope that contains this process as a cell attribute
+     attached to it, then skip synthesis. */
+  if (top->scope()
+          ->attribute(perm_string::literal("ivl_synthesis_cell"))
+          .len() > 0)
+    return;
 
-      if (top->is_synchronous()) do {
-	    bool flag = top->synth_sync(des);
-	    if (! flag) {
-		  cerr << top->get_fileline() << ": error: "
-		       << "Unable to synthesize synchronous process." << endl;
-		  des->errors += 1;
-		  return;
-	    }
-	    des->delete_process(top);
-	    return;
-      } while (0);
-
-      if (! top->is_asynchronous()) {
-	    bool synth_error_flag = false;
-	    if (top->attribute(perm_string::literal("ivl_combinational")).as_ulong() != 0) {
-		  cerr << top->get_fileline() << ": error: "
-		       << "Process is marked combinational,"
-		       << " but isn't really." << endl;
-		  des->errors += 1;
-		  synth_error_flag = true;
-	    }
-
-	    if (top->attribute(perm_string::literal("ivl_synthesis_on")).as_ulong() != 0) {
-		  cerr << top->get_fileline() << ": error: "
-		       << "Process is marked for synthesis,"
-		       << " but I can't do it." << endl;
-		  des->errors += 1;
-		  synth_error_flag = true;
-	    }
-
-	    if (! synth_error_flag)
-		  cerr << top->get_fileline() << ": warning: "
-		       << "Process not synthesized." << endl;
-
-	    return;
+  if (top->is_synchronous())
+    do {
+      bool flag = top->synth_sync(des);
+      if (!flag) {
+        cerr << top->get_fileline() << ": error: "
+             << "Unable to synthesize synchronous process." << endl;
+        des->errors += 1;
+        return;
       }
-
-      if (! top->synth_async(des)) {
-	    cerr << top->get_fileline() << ": internal error: "
-		 << "is_asynchronous does not match "
-		 << "sync_async results." << endl;
-	    des->errors += 1;
-	    return;
-      }
-
       des->delete_process(top);
+      return;
+    } while (0);
+
+  if (!top->is_asynchronous()) {
+    bool synth_error_flag = false;
+    if (top->attribute(perm_string::literal("ivl_combinational")).as_ulong() !=
+        0) {
+      cerr << top->get_fileline() << ": error: "
+           << "Process is marked combinational,"
+           << " but isn't really." << endl;
+      des->errors += 1;
+      synth_error_flag = true;
+    }
+
+    if (top->attribute(perm_string::literal("ivl_synthesis_on")).as_ulong() !=
+        0) {
+      cerr << top->get_fileline() << ": error: "
+           << "Process is marked for synthesis,"
+           << " but I can't do it." << endl;
+      des->errors += 1;
+      synth_error_flag = true;
+    }
+
+    if (!synth_error_flag)
+      cerr << top->get_fileline() << ": warning: "
+           << "Process not synthesized." << endl;
+
+    return;
+  }
+
+  if (!top->synth_async(des)) {
+    cerr << top->get_fileline() << ": internal error: "
+         << "is_asynchronous does not match "
+         << "sync_async results." << endl;
+    des->errors += 1;
+    return;
+  }
+
+  des->delete_process(top);
 }
 
-void synth2(Design*des)
-{
-      synth2_f synth_obj;
-      des->functor(&synth_obj);
+void synth2(Design *des) {
+  synth2_f synth_obj;
+  des->functor(&synth_obj);
 }

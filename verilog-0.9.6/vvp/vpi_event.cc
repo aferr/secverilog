@@ -17,84 +17,78 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  "compile.h"
-# include  "vpi_priv.h"
-# include  <cstdio>
-# include  <cstdlib>
-# include  <cstring>
-# include  <cassert>
+#include "compile.h"
+#include "vpi_priv.h"
+#include <cassert>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
-static int named_event_get(int code, vpiHandle ref)
-{
-      assert((ref->vpi_type->type_code==vpiNamedEvent));
+static int named_event_get(int code, vpiHandle ref) {
+  assert((ref->vpi_type->type_code == vpiNamedEvent));
 
-      struct __vpiNamedEvent*obj = (struct __vpiNamedEvent*)ref;
+  struct __vpiNamedEvent *obj = (struct __vpiNamedEvent *)ref;
 
-      switch (code) {
+  switch (code) {
 
-	  case vpiAutomatic:
-	    return (int) obj->scope->is_automatic;
-      }
+  case vpiAutomatic:
+    return (int)obj->scope->is_automatic;
+  }
 
-      return 0;
+  return 0;
 }
 
-static char* named_event_get_str(int code, vpiHandle ref)
-{
-      assert((ref->vpi_type->type_code==vpiNamedEvent));
+static char *named_event_get_str(int code, vpiHandle ref) {
+  assert((ref->vpi_type->type_code == vpiNamedEvent));
 
-      struct __vpiNamedEvent*obj = (struct __vpiNamedEvent*)ref;
+  struct __vpiNamedEvent *obj = (struct __vpiNamedEvent *)ref;
 
-      if (code == vpiFile) {  // Not implemented for now!
-	    return simple_set_rbuf_str(file_names[0]);
-      }
-      return generic_get_str(code, &obj->scope->base, obj->name, NULL);
+  if (code == vpiFile) { // Not implemented for now!
+    return simple_set_rbuf_str(file_names[0]);
+  }
+  return generic_get_str(code, &obj->scope->base, obj->name, NULL);
 }
 
-static vpiHandle named_event_get_handle(int code, vpiHandle ref)
-{
-      assert((ref->vpi_type->type_code==vpiNamedEvent));
+static vpiHandle named_event_get_handle(int code, vpiHandle ref) {
+  assert((ref->vpi_type->type_code == vpiNamedEvent));
 
-      struct __vpiNamedEvent*obj = (struct __vpiNamedEvent*)ref;
+  struct __vpiNamedEvent *obj = (struct __vpiNamedEvent *)ref;
 
-      switch (code) {
-	  case vpiScope:
-	    return &obj->scope->base;
+  switch (code) {
+  case vpiScope:
+    return &obj->scope->base;
 
-	  case vpiModule:
-	    return vpip_module(obj->scope);
-      }
+  case vpiModule:
+    return vpip_module(obj->scope);
+  }
 
-      return 0;
+  return 0;
 }
 
-static const struct __vpirt vpip_named_event_rt = {
-      vpiNamedEvent,
+static const struct __vpirt vpip_named_event_rt = {vpiNamedEvent,
 
-      named_event_get,
-      named_event_get_str,
-      0,
-      0,
+                                                   named_event_get,
+                                                   named_event_get_str,
+                                                   0,
+                                                   0,
 
-      named_event_get_handle,
-      0,
-      0,
+                                                   named_event_get_handle,
+                                                   0,
+                                                   0,
 
-      0
-};
+                                                   0};
 
-vpiHandle vpip_make_named_event(const char*name, vvp_net_t*funct)
-{
-      struct __vpiNamedEvent*obj = (struct __vpiNamedEvent*)
-	    malloc(sizeof(struct __vpiNamedEvent));
+vpiHandle vpip_make_named_event(const char *name, vvp_net_t *funct) {
+  struct __vpiNamedEvent *obj =
+      (struct __vpiNamedEvent *)malloc(sizeof(struct __vpiNamedEvent));
 
-      obj->base.vpi_type = &vpip_named_event_rt;
-      obj->name = vpip_name_string(name);
-      obj->scope = vpip_peek_current_scope();
-      obj->funct = funct;
-      obj->callbacks = 0;
+  obj->base.vpi_type = &vpip_named_event_rt;
+  obj->name          = vpip_name_string(name);
+  obj->scope         = vpip_peek_current_scope();
+  obj->funct         = funct;
+  obj->callbacks     = 0;
 
-      return &obj->base;
+  return &obj->base;
 }
 
 /*
@@ -110,32 +104,31 @@ vpiHandle vpip_make_named_event(const char*name, vvp_net_t*funct)
  * We can not use vpi_free_object() here since it does not really
  * delete the callback.
  */
-void vpip_run_named_event_callbacks(vpiHandle ref)
-{
-      assert((ref->vpi_type->type_code==vpiNamedEvent));
+void vpip_run_named_event_callbacks(vpiHandle ref) {
+  assert((ref->vpi_type->type_code == vpiNamedEvent));
 
-      struct __vpiNamedEvent*obj = (struct __vpiNamedEvent*)ref;
+  struct __vpiNamedEvent *obj = (struct __vpiNamedEvent *)ref;
 
-      struct __vpiCallback*next = obj->callbacks;
-      struct __vpiCallback*prev = 0;
-      while (next) {
-	    struct __vpiCallback*cur = next;
-	    next = cur->next;
+  struct __vpiCallback *next = obj->callbacks;
+  struct __vpiCallback *prev = 0;
+  while (next) {
+    struct __vpiCallback *cur = next;
+    next                      = cur->next;
 
-	    if (cur->cb_data.cb_rtn != 0) {
-		  callback_execute(cur);
-		  prev = cur;
+    if (cur->cb_data.cb_rtn != 0) {
+      callback_execute(cur);
+      prev = cur;
 
-	    } else if (prev == 0) {
-		  obj->callbacks = next;
-		  cur->next = 0;
-		  delete cur;
+    } else if (prev == 0) {
+      obj->callbacks = next;
+      cur->next      = 0;
+      delete cur;
 
-	    } else {
-		  assert(prev->next == cur);
-		  prev->next = next;
-		  cur->next = 0;
-		  delete cur;
-	    }
-      }
+    } else {
+      assert(prev->next == cur);
+      prev->next = next;
+      cur->next  = 0;
+      delete cur;
+    }
+  }
 }

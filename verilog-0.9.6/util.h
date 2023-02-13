@@ -19,9 +19,9 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  <map>
-# include  "StringHeap.h"
-# include  "verinum.h"
+#include "StringHeap.h"
+#include "verinum.h"
+#include <map>
 
 class PExpr;
 class Design;
@@ -32,17 +32,15 @@ class NetScope;
  * looking for a plausible Verilog file to hold the module, and
  * invoking the parser to bring in that file's contents.
  */
-extern bool load_module(const char*type);
-
-
+extern bool load_module(const char *type);
 
 struct attrib_list_t {
-      perm_string key;
-      verinum val;
+  perm_string key;
+  verinum val;
 };
 
-extern attrib_list_t* evaluate_attributes(const map<perm_string,PExpr*>&att,
-					  unsigned&natt,
-					  Design*des, NetScope*scope);
+extern attrib_list_t *evaluate_attributes(const map<perm_string, PExpr *> &att,
+                                          unsigned &natt, Design *des,
+                                          NetScope *scope);
 
 #endif

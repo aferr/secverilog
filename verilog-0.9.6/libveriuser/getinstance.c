@@ -20,15 +20,14 @@
 #ident "$Id: getinstance.c,v 1.5 2005/09/20 18:34:01 steve Exp $"
 #endif
 
-#include  <veriuser.h>
-#include  <vpi_user.h>
+#include <veriuser.h>
+#include <vpi_user.h>
 
 /*
  * tf_getinstance implemented using VPI interface
  */
-PLI_BYTE8* tf_getinstance(void)
-{
-      return (PLI_BYTE8 *)vpi_handle(vpiSysTfCall, 0 /* NULL */);
+PLI_BYTE8 *tf_getinstance(void) {
+  return (PLI_BYTE8 *)vpi_handle(vpiSysTfCall, 0 /* NULL */);
 }
 
 /*

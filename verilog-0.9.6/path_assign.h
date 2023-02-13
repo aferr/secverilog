@@ -7,18 +7,16 @@
 #include <map>
 #include <vector>
 
-
 using PathAnalysis = std::map<perm_string, std::vector<Predicate>>;
-
 
 /**
  * @param m The module to analyze
- * @return A map from variable names to expressions that represent the conditions
- * under which each variable is assigned during a given clock cycle.
+ * @return A map from variable names to expressions that represent the
+ * conditions under which each variable is assigned during a given clock cycle.
  */
 PathAnalysis get_paths(Module &m, TypeEnv &env);
-//TODO you'll probably need to pass some typing information to this analysis also
-
+// TODO you'll probably need to pass some typing information to this analysis
+// also
 
 /**
  * @param paths a path analyis returned from get_paths
@@ -42,6 +40,7 @@ bool isDefinitelyAssigned(perm_string varname, PathAnalysis &paths);
  * @param paths The analysis to use
  * @return A set of index names
  */
-std::set<perm_string> getArrayIndices(perm_string array_name, PathAnalysis &paths);
+std::set<perm_string> getArrayIndices(perm_string array_name,
+                                      PathAnalysis &paths);
 
 #endif

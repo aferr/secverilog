@@ -20,22 +20,20 @@
 #ident "$Id: a_handle_simulated_net.c,v 1.1 2003/10/10 02:57:46 steve Exp $"
 #endif
 
-# include  <assert.h>
-# include  <ctype.h>
-# include  <acc_user.h>
-# include  <vpi_user.h>
-# include  "priv.h"
+#include "priv.h"
+#include <acc_user.h>
+#include <assert.h>
+#include <ctype.h>
+#include <vpi_user.h>
 
-handle acc_handle_simulated_net(handle obj)
-{
-      if (pli_trace) {
-	    fprintf(pli_trace, "acc_handle_simulated_set: returns argument\n");
-	    fflush(pli_trace);
-      }
+handle acc_handle_simulated_net(handle obj) {
+  if (pli_trace) {
+    fprintf(pli_trace, "acc_handle_simulated_set: returns argument\n");
+    fflush(pli_trace);
+  }
 
-      return obj;
+  return obj;
 }
-
 
 /*
  * $Log: a_handle_simulated_net.c,v $
@@ -43,4 +41,3 @@ handle acc_handle_simulated_net(handle obj)
  *  Some PLI1 stubs.
  *
  */
-

@@ -20,25 +20,20 @@
 #ident "$Id: a_handle_parent.c,v 1.2 2003/06/04 01:56:20 steve Exp $"
 #endif
 
-#include  <vpi_user.h>
-#include  <acc_user.h>
-#include  "priv.h"
+#include "priv.h"
+#include <acc_user.h>
+#include <vpi_user.h>
 
-handle acc_handle_parent(handle obj)
-{
-      vpiHandle scope = vpi_handle(vpiScope, obj);
+handle acc_handle_parent(handle obj) {
+  vpiHandle scope = vpi_handle(vpiScope, obj);
 
-      while (scope && (vpi_get(vpiType, scope) != vpiModule))
-	    scope = vpi_handle(vpiScope, scope);
+  while (scope && (vpi_get(vpiType, scope) != vpiModule))
+    scope = vpi_handle(vpiScope, scope);
 
-      return scope;
+  return scope;
 }
 
-
-handle acc_handle_scope(handle obj)
-{
-      return vpi_handle(vpiScope, obj);
-}
+handle acc_handle_scope(handle obj) { return vpi_handle(vpiScope, obj); }
 
 /*
  * $Log: a_handle_parent.c,v $
@@ -55,4 +50,3 @@ handle acc_handle_scope(handle obj)
  *  Add a bunch of new acc_ and tf_ functions.
  *
  */
-

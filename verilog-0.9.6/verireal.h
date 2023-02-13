@@ -19,9 +19,9 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  "config.h"
+#include "config.h"
 #ifdef HAVE_IOSFWD
-# include  <iosfwd>
+#include <iosfwd>
 #else
 class ostream;
 #endif
@@ -39,47 +39,47 @@ class verinum;
 
 class verireal {
 
-      friend ostream& operator<< (ostream&, const verireal&);
-      friend verireal operator+ (const verireal&, const verireal&);
-      friend verireal operator- (const verireal&, const verireal&);
-      friend verireal operator* (const verireal&, const verireal&);
-      friend verireal operator/ (const verireal&, const verireal&);
-      friend verireal operator/ (const verireal&, const verinum&);
-      friend verireal operator% (const verireal&, const verireal&);
-      friend verireal operator% (const verireal&, const verinum&);
-      friend verireal pow(const verireal&, const verireal&);
+  friend ostream &operator<<(ostream &, const verireal &);
+  friend verireal operator+(const verireal &, const verireal &);
+  friend verireal operator-(const verireal &, const verireal &);
+  friend verireal operator*(const verireal &, const verireal &);
+  friend verireal operator/(const verireal &, const verireal &);
+  friend verireal operator/(const verireal &, const verinum &);
+  friend verireal operator%(const verireal &, const verireal &);
+  friend verireal operator%(const verireal &, const verinum &);
+  friend verireal pow(const verireal &, const verireal &);
 
-	// Unary minus.
-      friend verireal operator- (const verireal&);
+  // Unary minus.
+  friend verireal operator-(const verireal &);
 
-    public:
-      explicit verireal();
-      explicit verireal(const char*text);
-      explicit verireal(long val);
-      explicit verireal(double val);
-      ~verireal();
+public:
+  explicit verireal();
+  explicit verireal(const char *text);
+  explicit verireal(long val);
+  explicit verireal(double val);
+  ~verireal();
 
-	/* Return the value of the floating point number as an
-	   integer, rounded as needed. The shift is the power of 10 to
-	   multiply the value before calculating the result. So for
-	   example if the value is 2.5 and shift == 1, the result
-	   is 25. */
-      long as_long(int shift =0) const;
-      int64_t as_long64(int shift =0) const;
+  /* Return the value of the floating point number as an
+     integer, rounded as needed. The shift is the power of 10 to
+     multiply the value before calculating the result. So for
+     example if the value is 2.5 and shift == 1, the result
+     is 25. */
+  long as_long(int shift = 0) const;
+  int64_t as_long64(int shift = 0) const;
 
-      double as_double() const;
+  double as_double() const;
 
-    private:
-      double value_;
+private:
+  double value_;
 };
 
-extern ostream& operator<< (ostream&, const verireal&);
-extern verireal operator* (const verireal&, const verireal&);
-extern verireal operator/ (const verireal&, const verireal&);
-extern verireal operator/ (const verireal&, const verinum&);
-extern verireal operator% (const verireal&, const verireal&);
-extern verireal operator% (const verireal&, const verinum&);
-extern verireal pow(const verireal&, const verireal&);
-extern verireal operator- (const verireal&);
+extern ostream &operator<<(ostream &, const verireal &);
+extern verireal operator*(const verireal &, const verireal &);
+extern verireal operator/(const verireal &, const verireal &);
+extern verireal operator/(const verireal &, const verinum &);
+extern verireal operator%(const verireal &, const verireal &);
+extern verireal operator%(const verireal &, const verinum &);
+extern verireal pow(const verireal &, const verireal &);
+extern verireal operator-(const verireal &);
 
 #endif

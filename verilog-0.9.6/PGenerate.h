@@ -19,15 +19,15 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  "LineInfo.h"
-# include  "StringHeap.h"
-# include  "HName.h"
-# include  "PScope.h"
-# include  <list>
-# include  <map>
-# include  <set>
-# include  <valarray>
-# include  "pform_types.h"
+#include "HName.h"
+#include "LineInfo.h"
+#include "PScope.h"
+#include "StringHeap.h"
+#include "pform_types.h"
+#include <list>
+#include <map>
+#include <set>
+#include <valarray>
 
 class Design;
 class NetScope;
@@ -55,96 +55,106 @@ class SexpPrinter;
  */
 class PGenerate : public LineInfo, public LexicalScope {
 
-    public:
-      explicit PGenerate(unsigned id_number);
-      ~PGenerate();
+public:
+  explicit PGenerate(unsigned id_number);
+  ~PGenerate();
 
-	// Generate schemes have an ID number, for when the scope is
-	// implicit.
-      const unsigned id_number;
-      perm_string scope_name;
+  // Generate schemes have an ID number, for when the scope is
+  // implicit.
+  const unsigned id_number;
+  perm_string scope_name;
 
-	// This is used during parsing to stack lexical scopes within
-	// this generate scheme.
-      PScope*lexical_scope;
+  // This is used during parsing to stack lexical scopes within
+  // this generate scheme.
+  PScope *lexical_scope;
 
-      enum scheme_t {GS_NONE, GS_LOOP, GS_CONDIT, GS_ELSE,
-		     GS_CASE, GS_CASE_ITEM, GS_NBLOCK};
-      scheme_t scheme_type;
+  enum scheme_t {
+    GS_NONE,
+    GS_LOOP,
+    GS_CONDIT,
+    GS_ELSE,
+    GS_CASE,
+    GS_CASE_ITEM,
+    GS_NBLOCK
+  };
+  scheme_t scheme_type;
 
-	// generate loops have an index variable and three
-	// expressions: for (index = <init>; <test>; index=<step>)
-      perm_string loop_index;
-      PExpr*loop_init;
-      PExpr*loop_test;
-      PExpr*loop_step;
-	// Case items may have multiple guard expression values. It is
-	// enough for any on of the guards to match the case statement
-	// test value.
-      std::valarray<PExpr*> item_test;
+  // generate loops have an index variable and three
+  // expressions: for (index = <init>; <test>; index=<step>)
+  perm_string loop_index;
+  PExpr *loop_init;
+  PExpr *loop_test;
+  PExpr *loop_step;
+  // Case items may have multiple guard expression values. It is
+  // enough for any on of the guards to match the case statement
+  // test value.
+  std::valarray<PExpr *> item_test;
 
-       // defparam assignments found in this scope.
-      typedef pair<pform_name_t,PExpr*> named_expr_t;
-      list<named_expr_t>defparms;
+  // defparam assignments found in this scope.
+  typedef pair<pform_name_t, PExpr *> named_expr_t;
+  list<named_expr_t> defparms;
 
-      list<PGate*> gates;
-      void add_gate(PGate*);
+  list<PGate *> gates;
+  void add_gate(PGate *);
 
-	// Tasks instantiated within this scheme.
-      map<perm_string,PTask*> tasks;
-      map<perm_string,PFunction*>funcs;
+  // Tasks instantiated within this scheme.
+  map<perm_string, PTask *> tasks;
+  map<perm_string, PFunction *> funcs;
 
-	// genvars declared within this scheme.
-      map<perm_string,LineInfo*> genvars;
+  // genvars declared within this scheme.
+  map<perm_string, LineInfo *> genvars;
 
-	// Generate schemes can contain further generate schemes.
-      list<PGenerate*> generate_schemes;
-      PGenerate*parent;
+  // Generate schemes can contain further generate schemes.
+  list<PGenerate *> generate_schemes;
+  PGenerate *parent;
 
-	// This method is called by the elaboration of a module to
-	// generate scopes. the container is the scope that is to
-	// contain the generated scope.
-      bool generate_scope(Design*des, NetScope*container);
+  // This method is called by the elaboration of a module to
+  // generate scopes. the container is the scope that is to
+  // contain the generated scope.
+  bool generate_scope(Design *des, NetScope *container);
 
-	// Elaborate signals within any of the generated scopes that
-	// were made by this generate block within the given container scope.
-      bool elaborate_sig(Design*des, NetScope*container) const;
-      bool elaborate(Design*des, NetScope*container) const;
+  // Elaborate signals within any of the generated scopes that
+  // were made by this generate block within the given container scope.
+  bool elaborate_sig(Design *des, NetScope *container) const;
+  bool elaborate(Design *des, NetScope *container) const;
 
-      void dump(ostream&out, unsigned indent) const;
-      void next_cycle_transform(SexpPrinter&, TypeEnv env);
-      void typecheck(SexpPrinter&, TypeEnv env, map<perm_string,Module*> modules);
-      void collect_index_exprs(set<perm_string>&exprs, map<perm_string, SecType*>&env);
-    private:
-      bool generate_scope_loop_(Design*des, NetScope*container);
-      bool generate_scope_condit_(Design*des, NetScope*container, bool else_flag);
-      bool generate_scope_case_(Design*des, NetScope*container);
-      bool generate_scope_nblock_(Design*des, NetScope*container);
+  void dump(ostream &out, unsigned indent) const;
+  void next_cycle_transform(SexpPrinter &, TypeEnv env);
+  void typecheck(SexpPrinter &, TypeEnv env,
+                 map<perm_string, Module *> modules);
+  void collect_index_exprs(set<perm_string> &exprs,
+                           map<perm_string, SecType *> &env);
 
-	// Call probe during elaborate_scope to calculate the
-	// direct_nested_ flag. It is OK to store the direct_nested_
-	// information here because "direct nested" is a property of
-	// the lexical generate code.
-      void probe_for_direct_nesting_(void);
-      bool direct_nested_;
+private:
+  bool generate_scope_loop_(Design *des, NetScope *container);
+  bool generate_scope_condit_(Design *des, NetScope *container, bool else_flag);
+  bool generate_scope_case_(Design *des, NetScope *container);
+  bool generate_scope_nblock_(Design *des, NetScope *container);
 
-	// Elaborate_scope within a generated scope.
-      void elaborate_subscope_(Design*des, NetScope*scope);
-      void elaborate_subscope_direct_(Design*des, NetScope*scope);
+  // Call probe during elaborate_scope to calculate the
+  // direct_nested_ flag. It is OK to store the direct_nested_
+  // information here because "direct nested" is a property of
+  // the lexical generate code.
+  void probe_for_direct_nesting_(void);
+  bool direct_nested_;
 
-	// These are the scopes created by generate_scope.
-      list<NetScope*>scope_list_;
-	// internal function called on each scope generated by this scheme.
-      bool elaborate_sig_(Design*des, NetScope*scope) const;
-      bool elaborate_sig_direct_(Design*des, NetScope*scope) const;
-      bool elaborate_(Design*des, NetScope*scope) const;
-      bool elaborate_direct_(Design*des, NetScope*scope) const;
+  // Elaborate_scope within a generated scope.
+  void elaborate_subscope_(Design *des, NetScope *scope);
+  void elaborate_subscope_direct_(Design *des, NetScope *scope);
 
-    private: // not implemented
-      PGenerate(const PGenerate&);
-      PGenerate& operator= (const PGenerate&);
+  // These are the scopes created by generate_scope.
+  list<NetScope *> scope_list_;
+  // internal function called on each scope generated by this scheme.
+  bool elaborate_sig_(Design *des, NetScope *scope) const;
+  bool elaborate_sig_direct_(Design *des, NetScope *scope) const;
+  bool elaborate_(Design *des, NetScope *scope) const;
+  bool elaborate_direct_(Design *des, NetScope *scope) const;
+
+private: // not implemented
+  PGenerate(const PGenerate &);
+  PGenerate &operator=(const PGenerate &);
 };
 
-extern std::ostream& operator << (std::ostream&, PGenerate::scheme_t);
+extern std::ostream &operator<<(std::ostream &, PGenerate::scheme_t);
 
 #endif

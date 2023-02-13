@@ -17,14 +17,14 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  <ivl_target.h>
-# include  <stdio.h>
+#include <ivl_target.h>
+#include <stdio.h>
 
 /*
  * This is the output file where the generated result should be
  * written.
  */
-extern FILE*out;
+extern FILE *out;
 
 /*
  * Keep a running count of errors that the stub detects. This will be
@@ -56,5 +56,5 @@ extern void show_statement(ivl_statement_t net, unsigned ind);
 extern void show_switch(ivl_switch_t net);
 
 /*
-*/
-extern const char*data_type_string(ivl_variable_type_t vtype);
+ */
+extern const char *data_type_string(ivl_variable_type_t vtype);

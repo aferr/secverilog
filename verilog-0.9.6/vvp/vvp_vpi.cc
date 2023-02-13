@@ -1,9 +1,5 @@
 
-#include <cstdarg>
 #include "vpi_user.h"
+#include <cstdarg>
 
-
-void vvp_vpi_init()
-{
-}
-
+void vvp_vpi_init() {}

@@ -19,39 +19,37 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  "vvp_net.h"
-# include  "schedule.h"
-# include  <cstddef>
+#include "schedule.h"
+#include "vvp_net.h"
+#include <cstddef>
 
 /*
  * vvp_fun_boolean_ is just a common hook for holding operands.
  */
 class vvp_fun_boolean_ : public vvp_net_fun_t, protected vvp_gen_event_s {
 
-    public:
-      explicit vvp_fun_boolean_(unsigned wid);
-      ~vvp_fun_boolean_();
+public:
+  explicit vvp_fun_boolean_(unsigned wid);
+  ~vvp_fun_boolean_();
 
-      void recv_vec4(vvp_net_ptr_t p, const vvp_vector4_t&bit,
-                     vvp_context_t);
-      void recv_vec4_pv(vvp_net_ptr_t p, const vvp_vector4_t&bit,
-			unsigned base, unsigned wid, unsigned vwid,
-                        vvp_context_t);
+  void recv_vec4(vvp_net_ptr_t p, const vvp_vector4_t &bit, vvp_context_t);
+  void recv_vec4_pv(vvp_net_ptr_t p, const vvp_vector4_t &bit, unsigned base,
+                    unsigned wid, unsigned vwid, vvp_context_t);
 
-    protected:
-      vvp_vector4_t input_[4];
-      vvp_net_t*net_;
+protected:
+  vvp_vector4_t input_[4];
+  vvp_net_t *net_;
 };
 
-class vvp_fun_and  : public vvp_fun_boolean_ {
+class vvp_fun_and : public vvp_fun_boolean_ {
 
-    public:
-      explicit vvp_fun_and(unsigned wid, bool invert);
-      ~vvp_fun_and();
+public:
+  explicit vvp_fun_and(unsigned wid, bool invert);
+  ~vvp_fun_and();
 
-    private:
-      void run_run();
-      bool invert_;
+private:
+  void run_run();
+  bool invert_;
 };
 
 /*
@@ -60,43 +58,40 @@ class vvp_fun_and  : public vvp_fun_boolean_ {
  * The retransmitted vector has all Z values changed to X, just like
  * the buf(Q,D) gate in Verilog.
  */
-class vvp_fun_buf: public vvp_net_fun_t, private vvp_gen_event_s {
+class vvp_fun_buf : public vvp_net_fun_t, private vvp_gen_event_s {
 
-    public:
-      explicit vvp_fun_buf();
-      virtual ~vvp_fun_buf();
+public:
+  explicit vvp_fun_buf();
+  virtual ~vvp_fun_buf();
 
-      void recv_vec4(vvp_net_ptr_t p, const vvp_vector4_t&bit,
-                     vvp_context_t);
+  void recv_vec4(vvp_net_ptr_t p, const vvp_vector4_t &bit, vvp_context_t);
 
-    private:
-      void run_run();
+private:
+  void run_run();
 
-    private:
-      vvp_vector4_t input_;
-      vvp_net_t*net_;
+private:
+  vvp_vector4_t input_;
+  vvp_net_t *net_;
 };
 
 /*
  * The vvp_fun_bufz is like the vvp_fun_buf, but it does not change
  * Z values to X -- it passes Z values unchanged.
  */
-class vvp_fun_bufz: public vvp_net_fun_t {
+class vvp_fun_bufz : public vvp_net_fun_t {
 
-    public:
-      explicit vvp_fun_bufz();
-      virtual ~vvp_fun_bufz();
+public:
+  explicit vvp_fun_bufz();
+  virtual ~vvp_fun_bufz();
 
-      void recv_vec4(vvp_net_ptr_t p, const vvp_vector4_t&bit,
-                     vvp_context_t);
-      void recv_vec8(vvp_net_ptr_t port, const vvp_vector8_t&bit);
-      void recv_real(vvp_net_ptr_t p, double bit,
-                     vvp_context_t);
+  void recv_vec4(vvp_net_ptr_t p, const vvp_vector4_t &bit, vvp_context_t);
+  void recv_vec8(vvp_net_ptr_t port, const vvp_vector8_t &bit);
+  void recv_real(vvp_net_ptr_t p, double bit, vvp_context_t);
 
-    private:
+private:
 };
 
-enum sel_type {SEL_PORT0, SEL_PORT1, SEL_BOTH};
+enum sel_type { SEL_PORT0, SEL_PORT1, SEL_BOTH };
 
 /*
  * The muxz functor is an A-B mux device, with the data inputs on
@@ -111,82 +106,78 @@ enum sel_type {SEL_PORT0, SEL_PORT1, SEL_BOTH};
  */
 class vvp_fun_muxz : public vvp_net_fun_t, private vvp_gen_event_s {
 
-    public:
-      explicit vvp_fun_muxz(unsigned width);
-      virtual ~vvp_fun_muxz();
+public:
+  explicit vvp_fun_muxz(unsigned width);
+  virtual ~vvp_fun_muxz();
 
-      void recv_vec4(vvp_net_ptr_t p, const vvp_vector4_t&bit,
-                     vvp_context_t);
+  void recv_vec4(vvp_net_ptr_t p, const vvp_vector4_t &bit, vvp_context_t);
 
-    private:
-      void run_run();
+private:
+  void run_run();
 
-    private:
-      vvp_vector4_t a_;
-      vvp_vector4_t b_;
-      vvp_net_t*net_;
-      sel_type select_;
-      bool has_run_;
+private:
+  vvp_vector4_t a_;
+  vvp_vector4_t b_;
+  vvp_net_t *net_;
+  sel_type select_;
+  bool has_run_;
 };
 
 class vvp_fun_muxr : public vvp_net_fun_t, private vvp_gen_event_s {
 
-    public:
-      explicit vvp_fun_muxr();
-      virtual ~vvp_fun_muxr();
+public:
+  explicit vvp_fun_muxr();
+  virtual ~vvp_fun_muxr();
 
-      void recv_vec4(vvp_net_ptr_t p, const vvp_vector4_t&bit,
-                     vvp_context_t);
-      void recv_real(vvp_net_ptr_t p, double bit,
-                     vvp_context_t);
+  void recv_vec4(vvp_net_ptr_t p, const vvp_vector4_t &bit, vvp_context_t);
+  void recv_real(vvp_net_ptr_t p, double bit, vvp_context_t);
 
-    private:
-      void run_run();
+private:
+  void run_run();
 
-    private:
-      double a_;
-      double b_;
-      vvp_net_t*net_;
-      sel_type select_;
+private:
+  double a_;
+  double b_;
+  vvp_net_t *net_;
+  sel_type select_;
 };
 
-class vvp_fun_not: public vvp_net_fun_t, private vvp_gen_event_s {
+class vvp_fun_not : public vvp_net_fun_t, private vvp_gen_event_s {
 
-    public:
-      explicit vvp_fun_not();
-      virtual ~vvp_fun_not();
+public:
+  explicit vvp_fun_not();
+  virtual ~vvp_fun_not();
 
-      void recv_vec4(vvp_net_ptr_t p, const vvp_vector4_t&bit,
-                     vvp_context_t);
+  void recv_vec4(vvp_net_ptr_t p, const vvp_vector4_t &bit, vvp_context_t);
 
-    private:
-      void run_run();
+private:
+  void run_run();
 
-    private:
-      vvp_vector4_t input_;
-      vvp_net_t*net_;
+private:
+  vvp_vector4_t input_;
+  vvp_net_t *net_;
 };
 
-class vvp_fun_or  : public vvp_fun_boolean_ {
+class vvp_fun_or : public vvp_fun_boolean_ {
 
-    public:
-      explicit vvp_fun_or(unsigned wid, bool invert);
-      ~vvp_fun_or();
+public:
+  explicit vvp_fun_or(unsigned wid, bool invert);
+  ~vvp_fun_or();
 
-    private:
-      void run_run();
-      bool invert_;
+private:
+  void run_run();
+  bool invert_;
 };
 
-class vvp_fun_xor  : public vvp_fun_boolean_ {
+class vvp_fun_xor : public vvp_fun_boolean_ {
 
-    public:
-      explicit vvp_fun_xor(unsigned wid, bool invert);
-      ~vvp_fun_xor();
+public:
+  explicit vvp_fun_xor(unsigned wid, bool invert);
+  ~vvp_fun_xor();
 
-    private:
-      void run_run();
-      bool invert_;
+private:
+  void run_run();
+  bool invert_;
 };
 
 #endif // __logic_H

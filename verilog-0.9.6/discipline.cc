@@ -17,23 +17,16 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  "discipline.h"
+#include "discipline.h"
 
 ivl_nature_s::ivl_nature_s(perm_string name__, perm_string access__)
-: name_(name__), access_(access__)
-{
-}
+    : name_(name__), access_(access__) {}
 
-ivl_nature_s::~ivl_nature_s()
-{
-}
+ivl_nature_s::~ivl_nature_s() {}
 
-ivl_discipline_s::ivl_discipline_s(perm_string name__, ivl_dis_domain_t domain__,
-				   ivl_nature_t pot, ivl_nature_t flow__)
-: name_(name__), domain_(domain__), potential_(pot), flow_(flow__)
-{
-}
+ivl_discipline_s::ivl_discipline_s(perm_string name__,
+                                   ivl_dis_domain_t domain__, ivl_nature_t pot,
+                                   ivl_nature_t flow__)
+    : name_(name__), domain_(domain__), potential_(pot), flow_(flow__) {}
 
-ivl_discipline_s::~ivl_discipline_s()
-{
-}
+ivl_discipline_s::~ivl_discipline_s() {}

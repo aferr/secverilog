@@ -21,49 +21,45 @@
 #ifndef INC_VHDL_HELPER_HH
 #define INC_VHDL_HELPER_HH
 
+#include <cassert>
 #include <fstream>
 #include <list>
-#include <cassert>
 
 template <class T>
-void emit_children(std::ostream &of,
-                   const std::list<T*> &children,
-                   int level, const char *delim = "",
-                   bool trailing_newline = true)
-{
-   // Don't indent if there are no children
-   if (children.size() == 0)
+void emit_children(std::ostream &of, const std::list<T *> &children, int level,
+                   const char *delim = "", bool trailing_newline = true) {
+  // Don't indent if there are no children
+  if (children.size() == 0)
+    newline(of, level);
+  else {
+    typename std::list<T *>::const_iterator it;
+    int sz = children.size();
+    for (it = children.begin(); it != children.end(); ++it) {
+      newline(of, indent(level));
+      (*it)->emit(of, indent(level));
+      if (--sz > 0)
+        of << delim;
+    }
+    if (trailing_newline)
       newline(of, level);
-   else {
-      typename std::list<T*>::const_iterator it;
-      int sz = children.size();
-      for (it = children.begin(); it != children.end(); ++it) {
-         newline(of, indent(level));
-         (*it)->emit(of, indent(level));
-         if (--sz > 0)
-            of << delim;
-      }
-      if (trailing_newline)
-         newline(of, level);
-   }
+  }
 }
 
-static inline char vl_to_vhdl_bit(char bit)
-{
-   switch (bit) {
-   case '0':
-   case 'Z':
-   case '1':
-      return bit;
-   case 'z':
-      return 'Z';
-   case 'x':
-   case 'X':
-      return 'U';
-   case '?':
-      return '-';
-   }
-   assert(false);
+static inline char vl_to_vhdl_bit(char bit) {
+  switch (bit) {
+  case '0':
+  case 'Z':
+  case '1':
+    return bit;
+  case 'z':
+    return 'Z';
+  case 'x':
+  case 'X':
+    return 'U';
+  case '?':
+    return '-';
+  }
+  assert(false);
 }
 
 #endif

@@ -19,15 +19,15 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  "vvp_config.h"
-# include  "ivl_target.h"
-# include  <stdio.h>
+#include "ivl_target.h"
+#include "vvp_config.h"
+#include <stdio.h>
 
 /*
  * The target_design entry opens the output file that receives the
  * compiled design, and sets the vvp_out to the descriptor.
  */
-extern FILE* vvp_out;
+extern FILE *vvp_out;
 
 /*
  * Keep a count of errors that would render the output unusable.
@@ -35,18 +35,18 @@ extern FILE* vvp_out;
 extern int vvp_errors;
 
 struct vector_info {
-      unsigned base;
-      unsigned wid;
+  unsigned base;
+  unsigned wid;
 };
 
 /*
  * Convenient constants...
  */
-  /* Width limit for typical immediate arguments. */
-# define IMM_WID 32
+/* Width limit for typical immediate arguments. */
+#define IMM_WID 32
 
-  /* The number of words available in a thread. */
-# define WORD_COUNT 16
+/* The number of words available in a thread. */
+#define WORD_COUNT 16
 
 /*
  * Mangle all non-symbol characters in an identifier, quotes in names
@@ -54,7 +54,7 @@ struct vector_info {
 extern const char *vvp_mangle_id(const char *);
 extern const char *vvp_mangle_name(const char *);
 
-extern char* draw_Cr_to_string(double value);
+extern char *draw_Cr_to_string(double value);
 
 /*
  * This generates a string from a signal that uniquely identifies
@@ -65,7 +65,7 @@ extern char* draw_Cr_to_string(double value);
  * to reference a signal needs to use the format V_%p, so the presence
  * of this function is just plain inconsistent.
  */
-extern const char* vvp_signal_label(ivl_signal_t sig);
+extern const char *vvp_signal_label(ivl_signal_t sig);
 
 extern unsigned width_of_nexus(ivl_nexus_t nex);
 extern ivl_variable_type_t data_type_of_nexus(ivl_nexus_t nex);
@@ -77,7 +77,7 @@ extern int can_elide_bufz(ivl_net_logic_t net, ivl_nexus_ptr_t nptr);
  * file. It normally returns 0, but returns !0 of there is some sort
  * of error.
  */
-extern int draw_process(ivl_process_t net, void*x);
+extern int draw_process(ivl_process_t net, void *x);
 
 extern int draw_task_definition(ivl_scope_t scope);
 extern int draw_func_definition(ivl_scope_t scope);
@@ -103,7 +103,7 @@ extern void pad_expr_in_place(ivl_expr_t expr, struct vector_info res,
  * Note: draw_modpath drive_label must be malloc'ed by the
  * caller. This function will free the string sometime in the future.
  */
-extern void draw_modpath(ivl_signal_t path_sig, char*drive_label);
+extern void draw_modpath(ivl_signal_t path_sig, char *drive_label);
 extern void cleanup_modpath(void);
 
 /*
@@ -114,8 +114,7 @@ extern void cleanup_modpath(void);
  */
 extern void draw_vpi_task_call(ivl_statement_t net);
 
-extern struct vector_info draw_vpi_func_call(ivl_expr_t expr,
-					     unsigned wid);
+extern struct vector_info draw_vpi_func_call(ivl_expr_t expr, unsigned wid);
 extern int draw_vpi_rfunc_call(ivl_expr_t expr);
 
 /*
@@ -125,16 +124,15 @@ extern void draw_switch_in_scope(ivl_switch_t sw);
 
 /* Draw_net_input and friends uses this. */
 struct vvp_nexus_data {
-	/* draw_net_input uses this */
-      const char*net_input;
-      unsigned drivers_count;
-      int flags;
-	/* draw_net_in_scope uses these to identify the controlling word. */
-      ivl_signal_t net;
-      unsigned net_word;
+  /* draw_net_input uses this */
+  const char *net_input;
+  unsigned drivers_count;
+  int flags;
+  /* draw_net_in_scope uses these to identify the controlling word. */
+  ivl_signal_t net;
+  unsigned net_word;
 };
 #define VVP_NEXUS_DATA_STR 0x0001
-
 
 /*
  * Given a nexus, draw a string that represents the functor output
@@ -144,19 +142,18 @@ struct vvp_nexus_data {
  * cached in the nexus, if there is one, or will generate a string and
  * cache it.
  */
-extern const char* draw_net_input(ivl_nexus_t nex);
+extern const char *draw_net_input(ivl_nexus_t nex);
 void EOC_cleanup_drivers();
 
 /*
  * See draw_net_input.c for details on draw_net_input_x. (It would be
  * nice if this can be made private.)
  */
-  /* Omit LPMPART_BI device pin-data(0) drivers. */
-# define OMIT_PART_BI_DATA 0x0001
+/* Omit LPMPART_BI device pin-data(0) drivers. */
+#define OMIT_PART_BI_DATA 0x0001
 struct vvp_nexus_data;
-extern char* draw_net_input_x(ivl_nexus_t nex,
-			      ivl_nexus_ptr_t omit_ptr, int omit_flags,
-			      struct vvp_nexus_data*nex_data);
+extern char *draw_net_input_x(ivl_nexus_t nex, ivl_nexus_ptr_t omit_ptr,
+                              int omit_flags, struct vvp_nexus_data *nex_data);
 
 /*
  * This function is different from draw_net_input in that it will
@@ -168,7 +165,7 @@ extern char* draw_net_input_x(ivl_nexus_t nex,
  * and will in those cases resort to the net input, or a non-local
  * signal if one exists for the nexus.
  */
-extern const char*draw_input_from_net(ivl_nexus_t nex);
+extern const char *draw_input_from_net(ivl_nexus_t nex);
 
 /*
  * The draw_eval_expr function writes out the code to evaluate a
@@ -200,7 +197,7 @@ extern const char*draw_input_from_net(ivl_nexus_t nex);
 
 extern struct vector_info draw_eval_expr(ivl_expr_t expr, int stuff_ok_flag);
 extern struct vector_info draw_eval_expr_wid(ivl_expr_t expr, unsigned w,
-					     int stuff_ok_flag);
+                                             int stuff_ok_flag);
 #define STUFF_OK_XZ 0x0001
 #define STUFF_OK_47 0x0002
 #define STUFF_OK_RO 0x0004
@@ -263,18 +260,17 @@ extern unsigned allocate_vector(unsigned wid);
 extern void clr_vector(struct vector_info vec);
 
 extern void clear_expression_lookaside(void);
-extern void save_expression_lookaside(unsigned addr,
-				      ivl_expr_t expr,
-				      unsigned wid);
-extern void save_signal_lookaside(unsigned addr,
-				  ivl_signal_t sig, unsigned use_word,
-				  unsigned wid);
+extern void save_expression_lookaside(unsigned addr, ivl_expr_t expr,
+                                      unsigned wid);
+extern void save_signal_lookaside(unsigned addr, ivl_signal_t sig,
+                                  unsigned use_word, unsigned wid);
 
 extern unsigned allocate_vector_exp(ivl_expr_t expr, unsigned wid,
-				    int exclusive_flag);
+                                    int exclusive_flag);
 
 extern int number_is_unknown(ivl_expr_t ex);
-extern int number_is_immediate(ivl_expr_t ex, unsigned lim_wid, int negative_is_ok);
+extern int number_is_immediate(ivl_expr_t ex, unsigned lim_wid,
+                               int negative_is_ok);
 extern long get_number_immediate(ivl_expr_t ex);
 extern uint64_t get_number_immediate64(ivl_expr_t ex);
 

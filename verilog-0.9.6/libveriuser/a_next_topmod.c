@@ -20,9 +20,9 @@
 #ident "$Id: a_next_topmod.c,v 1.2 2002/08/12 01:35:02 steve Exp $"
 #endif
 
-#include  <assert.h>
-#include  <vpi_user.h>
-#include  <acc_user.h>
+#include <acc_user.h>
+#include <assert.h>
+#include <vpi_user.h>
 
 #undef NULL
 #define NULL 0
@@ -30,21 +30,20 @@
 /*
  * acc_next_topmod implemented using VPI interface
  */
-handle acc_next_topmod(handle prev_topmod)
-{
-      static vpiHandle last = NULL;
-      static vpiHandle mod_i = NULL;
+handle acc_next_topmod(handle prev_topmod) {
+  static vpiHandle last  = NULL;
+  static vpiHandle mod_i = NULL;
 
-      if (!prev_topmod) {
-	    /* start over */
-	    mod_i = vpi_iterate(vpiModule, NULL);
-      } else {
-	    /* subsequent time through */
-	    assert(prev_topmod == last);
-      }
+  if (!prev_topmod) {
+    /* start over */
+    mod_i = vpi_iterate(vpiModule, NULL);
+  } else {
+    /* subsequent time through */
+    assert(prev_topmod == last);
+  }
 
-      last = vpi_scan(mod_i);
-      return last;
+  last = vpi_scan(mod_i);
+  return last;
 }
 
 /*

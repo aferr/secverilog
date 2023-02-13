@@ -20,19 +20,17 @@
 #ident "$Id: generic.c,v 1.3 2003/08/26 16:26:02 steve Exp $"
 #endif
 
-# include  "generic.h"
+#include "generic.h"
 
-edif_t edf = 0;
+edif_t edf           = 0;
 edif_xlibrary_t xlib = 0;
 
 edif_cell_t cell_0 = 0;
 edif_cell_t cell_1 = 0;
 
-edif_cell_t cell_ipad = 0;
-edif_cell_t cell_opad = 0;
+edif_cell_t cell_ipad  = 0;
+edif_cell_t cell_opad  = 0;
 edif_cell_t cell_iopad = 0;
-
-
 
 /*
  * $Log: generic.c,v $
@@ -46,4 +44,3 @@ edif_cell_t cell_iopad = 0;
  *  Virtex and Virtex2 share much code.
  *
  */
-

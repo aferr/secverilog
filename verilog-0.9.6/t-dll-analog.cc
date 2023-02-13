@@ -18,67 +18,65 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include "config.h"
+#include "config.h"
 
-# include  <iostream>
+#include <iostream>
 
-# include  <cstring>
-# include  "target.h"
-# include  "ivl_target.h"
-# include  "compiler.h"
-# include  "t-dll.h"
-# include  <cstdlib>
+#include "compiler.h"
+#include "ivl_target.h"
+#include "t-dll.h"
+#include "target.h"
+#include <cstdlib>
+#include <cstring>
 
-bool dll_target::process(const NetAnalogTop*net)
-{
-      bool rc_flag = true;
+bool dll_target::process(const NetAnalogTop *net) {
+  bool rc_flag = true;
 
-      ivl_process_t obj = (struct ivl_process_s*)
-	    calloc(1, sizeof(struct ivl_process_s));
+  ivl_process_t obj =
+      (struct ivl_process_s *)calloc(1, sizeof(struct ivl_process_s));
 
-      obj->type_ = net->type();
-      obj->analog_flag = 1;
+  obj->type_       = net->type();
+  obj->analog_flag = 1;
 
-      FILE_NAME(obj, net);
+  FILE_NAME(obj, net);
 
-	/* Save the scope of the process. */
-      obj->scope_ = lookup_scope_(net->scope());
+  /* Save the scope of the process. */
+  obj->scope_ = lookup_scope_(net->scope());
 
-      obj->nattr = net->attr_cnt();
-      obj->attr = fill_in_attributes(net);
+  obj->nattr = net->attr_cnt();
+  obj->attr  = fill_in_attributes(net);
 
-      assert(stmt_cur_ == 0);
-      stmt_cur_ = (struct ivl_statement_s*)calloc(1, sizeof*stmt_cur_);
-      assert(stmt_cur_);
-      rc_flag = net->statement()->emit_proc(this) && rc_flag;
+  assert(stmt_cur_ == 0);
+  stmt_cur_ = (struct ivl_statement_s *)calloc(1, sizeof *stmt_cur_);
+  assert(stmt_cur_);
+  rc_flag = net->statement()->emit_proc(this) && rc_flag;
 
-      assert(stmt_cur_);
-      obj->stmt_ = stmt_cur_;
-      stmt_cur_ = 0;
+  assert(stmt_cur_);
+  obj->stmt_ = stmt_cur_;
+  stmt_cur_  = 0;
 
-	/* Save the process in the design. */
-      obj->next_ = des_.threads_;
-      des_.threads_ = obj;
+  /* Save the process in the design. */
+  obj->next_    = des_.threads_;
+  des_.threads_ = obj;
 
-      return rc_flag;
+  return rc_flag;
 }
 
-bool dll_target::proc_contribution(const NetContribution*net)
-{
-      assert(stmt_cur_);
-      assert(stmt_cur_->type_ == IVL_ST_NONE);
-      FILE_NAME(stmt_cur_, net);
+bool dll_target::proc_contribution(const NetContribution *net) {
+  assert(stmt_cur_);
+  assert(stmt_cur_->type_ == IVL_ST_NONE);
+  FILE_NAME(stmt_cur_, net);
 
-      stmt_cur_->type_ = IVL_ST_CONTRIB;
+  stmt_cur_->type_ = IVL_ST_CONTRIB;
 
-      assert(expr_ == 0);
-      net->lval()->expr_scan(this);
-      stmt_cur_->u_.contrib_.lval = expr_;
-      expr_ = 0;
+  assert(expr_ == 0);
+  net->lval()->expr_scan(this);
+  stmt_cur_->u_.contrib_.lval = expr_;
+  expr_                       = 0;
 
-      net->rval()->expr_scan(this);
-      stmt_cur_->u_.contrib_.rval = expr_;
-      expr_ = 0;
+  net->rval()->expr_scan(this);
+  stmt_cur_->u_.contrib_.rval = expr_;
+  expr_                       = 0;
 
-      return true;
+  return true;
 }

@@ -17,64 +17,62 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-#include  <acc_user.h>
-#include  <vpi_user.h>
-#include  "priv.h"
-#include  <string.h>
+#include "priv.h"
+#include <acc_user.h>
+#include <string.h>
+#include <vpi_user.h>
 
-int acc_configure(PLI_INT32 config_param, const char*value)
-{
-      int rc;
-      switch (config_param) {
-	  case accDevelopmentVersion:
-	    vpi_printf("Request PLI Development Version %s\n", value);
-	    rc = 1;
+int acc_configure(PLI_INT32 config_param, const char *value) {
+  int rc;
+  switch (config_param) {
+  case accDevelopmentVersion:
+    vpi_printf("Request PLI Development Version %s\n", value);
+    rc = 1;
 
-	    if (pli_trace) {
-		  fprintf(pli_trace,
-			  "acc_configure(accDevelopmentVersion, %s)\n",
-			  value);
-	    }
-	    break;
+    if (pli_trace) {
+      fprintf(pli_trace, "acc_configure(accDevelopmentVersion, %s)\n", value);
+    }
+    break;
 
-	  case accEnableArgs:
+  case accEnableArgs:
 
-	    if (pli_trace) {
-		  fprintf(pli_trace, "acc_configure(accEnableArgs, %s)\n",
-			  value);
-	    }
+    if (pli_trace) {
+      fprintf(pli_trace, "acc_configure(accEnableArgs, %s)\n", value);
+    }
 
-	    rc = 1;
-	    if (strcmp(value,"acc_set_scope") == 0) {
-		  vpi_printf("XXXX acc_configure argument: Sorry: "
-			     "(accEnableArgs, %s\n", value);
-		  rc = 0;
+    rc = 1;
+    if (strcmp(value, "acc_set_scope") == 0) {
+      vpi_printf("XXXX acc_configure argument: Sorry: "
+                 "(accEnableArgs, %s\n",
+                 value);
+      rc = 0;
 
-	    } else if (strcmp(value,"no_acc_set_scope") == 0) {
-		  vpi_printf("XXXX acc_configure argument: Sorry: "
-			     "(accEnableArgs, %s\n", value);
-		  rc = 0;
+    } else if (strcmp(value, "no_acc_set_scope") == 0) {
+      vpi_printf("XXXX acc_configure argument: Sorry: "
+                 "(accEnableArgs, %s\n",
+                 value);
+      rc = 0;
 
-	    } else {
-		  vpi_printf("XXXX acc_configure argument error. "
-			     "(accEnableArgs, %s(invalid)\n", value);
-		  rc = 0;
-	    }
+    } else {
+      vpi_printf("XXXX acc_configure argument error. "
+                 "(accEnableArgs, %s(invalid)\n",
+                 value);
+      rc = 0;
+    }
 
-	    break;
+    break;
 
-	  default:
+  default:
 
-	    if (pli_trace) {
-		  fprintf(pli_trace, "acc_configure(config=%d, %s)\n",
-			  (int)config_param, value);
-	    }
+    if (pli_trace) {
+      fprintf(pli_trace, "acc_configure(config=%d, %s)\n", (int)config_param,
+              value);
+    }
 
-	    vpi_printf("XXXX acc_configure(%d, %s)\n", (int)config_param,
-	               value);
-	    rc = 0;
-	    break;
-      }
+    vpi_printf("XXXX acc_configure(%d, %s)\n", (int)config_param, value);
+    rc = 0;
+    break;
+  }
 
-      return rc;
+  return rc;
 }

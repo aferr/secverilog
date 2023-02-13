@@ -20,14 +20,13 @@
 #ident "$Id: a_fetch_location.c,v 1.1 2003/02/17 06:39:47 steve Exp $"
 #endif
 
-#include  <acc_user.h>
-#include  <vpi_user.h>
+#include <acc_user.h>
+#include <vpi_user.h>
 
-int acc_fetch_location(p_location loc, handle obj)
-{
-      loc->line_no = 0;
-      loc->filename = "<filename>";
-      return 1;
+int acc_fetch_location(p_location loc, handle obj) {
+  loc->line_no  = 0;
+  loc->filename = "<filename>";
+  return 1;
 }
 
 /*
@@ -41,4 +40,3 @@ int acc_fetch_location(p_location loc, handle obj)
  *  IEEE1364-2001 standard PLI type declarations.
  *
  */
-

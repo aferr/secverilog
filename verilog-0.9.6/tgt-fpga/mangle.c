@@ -17,42 +17,39 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  "fpga_priv.h"
-# include  <string.h>
-# include  <stdlib.h>
+#include "fpga_priv.h"
+#include <stdlib.h>
+#include <string.h>
 
-static size_t xnf_mangle_scope_name(ivl_scope_t net, char*buf, size_t nbuf)
-{
-      unsigned cnt = 0;
-      ivl_scope_t parent = ivl_scope_parent(net);
+static size_t xnf_mangle_scope_name(ivl_scope_t net, char *buf, size_t nbuf) {
+  unsigned cnt       = 0;
+  ivl_scope_t parent = ivl_scope_parent(net);
 
-      if (parent) {
-	    cnt = xnf_mangle_scope_name(parent, buf, nbuf);
-	    buf += cnt;
-	    nbuf -= cnt;
-	    *buf++ = '/';
-	    nbuf -= 1;
-	    cnt += 1;
-      }
+  if (parent) {
+    cnt = xnf_mangle_scope_name(parent, buf, nbuf);
+    buf += cnt;
+    nbuf -= cnt;
+    *buf++ = '/';
+    nbuf -= 1;
+    cnt += 1;
+  }
 
-      strcpy(buf, ivl_scope_basename(net));
-      cnt += strlen(buf);
+  strcpy(buf, ivl_scope_basename(net));
+  cnt += strlen(buf);
 
-      return cnt;
+  return cnt;
 }
 
-void xnf_mangle_logic_name(ivl_net_logic_t net, char*buf, size_t nbuf)
-{
-      size_t cnt = xnf_mangle_scope_name(ivl_logic_scope(net), buf, nbuf);
-      buf[cnt++] = '/';
-      strcpy(buf+cnt, ivl_logic_basename(net));
+void xnf_mangle_logic_name(ivl_net_logic_t net, char *buf, size_t nbuf) {
+  size_t cnt = xnf_mangle_scope_name(ivl_logic_scope(net), buf, nbuf);
+  buf[cnt++] = '/';
+  strcpy(buf + cnt, ivl_logic_basename(net));
 }
 
-void xnf_mangle_lpm_name(ivl_lpm_t net, char*buf, size_t nbuf)
-{
-      size_t cnt = xnf_mangle_scope_name(ivl_lpm_scope(net), buf, nbuf);
-      buf[cnt++] = '/';
-      strcpy(buf+cnt, ivl_lpm_basename(net));
+void xnf_mangle_lpm_name(ivl_lpm_t net, char *buf, size_t nbuf) {
+  size_t cnt = xnf_mangle_scope_name(ivl_lpm_scope(net), buf, nbuf);
+  buf[cnt++] = '/';
+  strcpy(buf + cnt, ivl_lpm_basename(net));
 }
 
 /*
@@ -65,27 +62,27 @@ void xnf_mangle_lpm_name(ivl_lpm_t net, char*buf, size_t nbuf)
  * nexus by using the private pointer. Every nexus is used at least
  * twice, so this cuts the mangling time in half at least.
  */
-const char* xnf_mangle_nexus_name(ivl_nexus_t net)
-{
-      char*name = ivl_nexus_get_private(net);
-      char*cp;
+const char *xnf_mangle_nexus_name(ivl_nexus_t net) {
+  char *name = ivl_nexus_get_private(net);
+  char *cp;
 
-      if (name != 0) {
-	    return name;
-      }
+  if (name != 0) {
+    return name;
+  }
 
-      name = malloc(strlen(ivl_nexus_name(net)) + 1);
-      strcpy(name, ivl_nexus_name(net));
+  name = malloc(strlen(ivl_nexus_name(net)) + 1);
+  strcpy(name, ivl_nexus_name(net));
 
-      for (cp = name ;  *cp ;  cp += 1) switch (*cp) {
+  for (cp = name; *cp; cp += 1)
+    switch (*cp) {
 
-	  case '.':
-	    *cp = '/';
-	    break;
-	  default:
-	    break;
-      }
+    case '.':
+      *cp = '/';
+      break;
+    default:
+      break;
+    }
 
-      ivl_nexus_set_private(net, name);
-      return name;
+  ivl_nexus_set_private(net, name);
+  return name;
 }

@@ -20,23 +20,20 @@
 #ident "$Id: finish.c,v 1.2 2002/08/12 01:35:02 steve Exp $"
 #endif
 
-# include  <vpi_user.h>
-# include  <veriuser.h>
-
+#include <veriuser.h>
+#include <vpi_user.h>
 
 /*
  * Implement tf_dofinish and tf_dostop using vpi functions.
  */
-int tf_dofinish(void)
-{
-      vpi_control(vpiFinish, 0);
-      return 0;
+int tf_dofinish(void) {
+  vpi_control(vpiFinish, 0);
+  return 0;
 }
 
-int tf_dostop(void)
-{
-      vpi_control(vpiStop, 0);
-      return 0;
+int tf_dostop(void) {
+  vpi_control(vpiStop, 0);
+  return 0;
 }
 
 /*
@@ -48,4 +45,3 @@ int tf_dostop(void)
  *  Start the libveriuser library.
  *
  */
-

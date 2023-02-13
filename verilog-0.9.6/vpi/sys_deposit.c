@@ -18,88 +18,84 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  "sys_priv.h"
-# include  <assert.h>
-# include  <string.h>
+#include "sys_priv.h"
+#include <assert.h>
+#include <string.h>
 
-static PLI_INT32 sys_deposit_compiletf(PLI_BYTE8 *name)
-{
-      vpiHandle callh = vpi_handle(vpiSysTfCall, 0);
-      vpiHandle argv = vpi_iterate(vpiArgument, callh);
-      vpiHandle target, value;
+static PLI_INT32 sys_deposit_compiletf(PLI_BYTE8 *name) {
+  vpiHandle callh = vpi_handle(vpiSysTfCall, 0);
+  vpiHandle argv  = vpi_iterate(vpiArgument, callh);
+  vpiHandle target, value;
 
-      /* Check that there are arguments. */
-      if (argv == 0) {
-	    vpi_printf("ERROR: %s:%d: ", vpi_get_str(vpiFile, callh),
-	               (int)vpi_get(vpiLineNo, callh));
-	    vpi_printf("%s requires two arguments.\n", name);
-	    vpi_control(vpiFinish, 1);
-	    return 0;
-      }
+  /* Check that there are arguments. */
+  if (argv == 0) {
+    vpi_printf("ERROR: %s:%d: ", vpi_get_str(vpiFile, callh),
+               (int)vpi_get(vpiLineNo, callh));
+    vpi_printf("%s requires two arguments.\n", name);
+    vpi_control(vpiFinish, 1);
+    return 0;
+  }
 
-      /* Check that there are at least two arguments. */
-      target = vpi_scan(argv);  /* This should never be zero. */
-      value = vpi_scan(argv);
-      if (value == 0) {
-	    vpi_printf("ERROR: %s:%d: ", vpi_get_str(vpiFile, callh),
-	               (int)vpi_get(vpiLineNo, callh));
-	    vpi_printf("%s requires two arguments.\n", name);
-	    vpi_control(vpiFinish, 1);
-	    return 0;
-      }
+  /* Check that there are at least two arguments. */
+  target = vpi_scan(argv); /* This should never be zero. */
+  value  = vpi_scan(argv);
+  if (value == 0) {
+    vpi_printf("ERROR: %s:%d: ", vpi_get_str(vpiFile, callh),
+               (int)vpi_get(vpiLineNo, callh));
+    vpi_printf("%s requires two arguments.\n", name);
+    vpi_control(vpiFinish, 1);
+    return 0;
+  }
 
-      assert(target);
+  assert(target);
 
-      /* Check the targets type. It must be a net or a register. */
-      switch (vpi_get(vpiType, target)) {
-            case vpiNet:
-            case vpiReg:
-                  break;
-            default:
-		  vpi_printf("ERROR: %s:%d: ", vpi_get_str(vpiFile, callh),
-		             (int)vpi_get(vpiLineNo, callh));
-		  vpi_printf("invalid target type (%s) for %s.\n",
-		             vpi_get_str(vpiType, target), name);
-		  vpi_control(vpiFinish, 1);
-      }
+  /* Check the targets type. It must be a net or a register. */
+  switch (vpi_get(vpiType, target)) {
+  case vpiNet:
+  case vpiReg:
+    break;
+  default:
+    vpi_printf("ERROR: %s:%d: ", vpi_get_str(vpiFile, callh),
+               (int)vpi_get(vpiLineNo, callh));
+    vpi_printf("invalid target type (%s) for %s.\n",
+               vpi_get_str(vpiType, target), name);
+    vpi_control(vpiFinish, 1);
+  }
 
-      /* Check that there is at most two arguments. */
-      check_for_extra_args(argv, callh, name, "two arguments", 0);
+  /* Check that there is at most two arguments. */
+  check_for_extra_args(argv, callh, name, "two arguments", 0);
 
-      return 0;
+  return 0;
 }
 
-static PLI_INT32 sys_deposit_calltf(PLI_BYTE8 *name)
-{
-      vpiHandle callh, argv, target, value;
-      s_vpi_value val;
+static PLI_INT32 sys_deposit_calltf(PLI_BYTE8 *name) {
+  vpiHandle callh, argv, target, value;
+  s_vpi_value val;
 
-      callh = vpi_handle(vpiSysTfCall, 0);
-      argv = vpi_iterate(vpiArgument, callh);
-      target = vpi_scan(argv);
-      assert(target);
-      value = vpi_scan(argv);
-      assert(value);
+  callh  = vpi_handle(vpiSysTfCall, 0);
+  argv   = vpi_iterate(vpiArgument, callh);
+  target = vpi_scan(argv);
+  assert(target);
+  value = vpi_scan(argv);
+  assert(value);
 
-      val.format = vpiIntVal;
-      vpi_get_value(value, &val);
+  val.format = vpiIntVal;
+  vpi_get_value(value, &val);
 
-      vpi_put_value(target, &val, 0, vpiNoDelay);
+  vpi_put_value(target, &val, 0, vpiNoDelay);
 
-      vpi_free_object(argv);
-      return 0;
+  vpi_free_object(argv);
+  return 0;
 }
 
-void sys_deposit_register()
-{
-      s_vpi_systf_data tf_data;
+void sys_deposit_register() {
+  s_vpi_systf_data tf_data;
 
-      tf_data.type      = vpiSysTask;
-      tf_data.tfname    = "$deposit";
-      tf_data.calltf    = sys_deposit_calltf;
-      tf_data.compiletf = sys_deposit_compiletf;
-      tf_data.sizetf    = 0;
-      tf_data.user_data = "$deposit";
-      vpi_register_systf(&tf_data);
+  tf_data.type      = vpiSysTask;
+  tf_data.tfname    = "$deposit";
+  tf_data.calltf    = sys_deposit_calltf;
+  tf_data.compiletf = sys_deposit_compiletf;
+  tf_data.sizetf    = 0;
+  tf_data.user_data = "$deposit";
+  vpi_register_systf(&tf_data);
 }
-

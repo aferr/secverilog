@@ -19,9 +19,9 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  "LineInfo.h"
-# include  "StringHeap.h"
-# include  <string>
+#include "LineInfo.h"
+#include "StringHeap.h"
+#include <string>
 
 class Design;
 class NetScope;
@@ -33,22 +33,22 @@ class NetScope;
  */
 class PEvent : public LineInfo {
 
-    public:
-	// The name is a perm-allocated string. It is the simple name
-	// of the event, without any scope.
-      explicit PEvent(perm_string name);
-      ~PEvent();
+public:
+  // The name is a perm-allocated string. It is the simple name
+  // of the event, without any scope.
+  explicit PEvent(perm_string name);
+  ~PEvent();
 
-      perm_string name() const;
+  perm_string name() const;
 
-      void elaborate_scope(Design*des, NetScope*scope) const;
+  void elaborate_scope(Design *des, NetScope *scope) const;
 
-    private:
-      perm_string name_;
+private:
+  perm_string name_;
 
-    private: // not implemented
-      PEvent(const PEvent&);
-      PEvent& operator= (const PEvent&);
+private: // not implemented
+  PEvent(const PEvent &);
+  PEvent &operator=(const PEvent &);
 };
 
 #endif

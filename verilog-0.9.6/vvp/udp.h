@@ -22,36 +22,35 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  "vvp_net.h"
-# include  "delay.h"
-# include  "schedule.h"
+#include "delay.h"
+#include "schedule.h"
+#include "vvp_net.h"
 
 struct udp_levels_table;
 
 struct vvp_udp_s {
 
-    public:
-      explicit vvp_udp_s(char*label, unsigned ports, vvp_bit4_t init,
-                         bool type);
-      virtual ~vvp_udp_s();
+public:
+  explicit vvp_udp_s(char *label, unsigned ports, vvp_bit4_t init, bool type);
+  virtual ~vvp_udp_s();
 
-	// Return the number of input ports for the defined UDP. This
-	// does *not* include the current output value for a
-	// sequential UDP.
-      unsigned port_count() const;
-      bool is_sequential() const {return seq_;};
+  // Return the number of input ports for the defined UDP. This
+  // does *not* include the current output value for a
+  // sequential UDP.
+  unsigned port_count() const;
+  bool is_sequential() const { return seq_; };
 
-	// Return the initial output value.
-      vvp_bit4_t get_init() const;
+  // Return the initial output value.
+  vvp_bit4_t get_init() const;
 
-      virtual vvp_bit4_t calculate_output(const udp_levels_table&cur,
-					  const udp_levels_table&prev,
-					  vvp_bit4_t cur_out) =0;
+  virtual vvp_bit4_t calculate_output(const udp_levels_table &cur,
+                                      const udp_levels_table &prev,
+                                      vvp_bit4_t cur_out) = 0;
 
-    private:
-      unsigned ports_;
-      vvp_bit4_t init_;
-      bool seq_;
+private:
+  unsigned ports_;
+  vvp_bit4_t init_;
+  bool seq_;
 };
 
 /*
@@ -104,34 +103,33 @@ struct vvp_udp_s {
  */
 
 struct udp_levels_table {
-      unsigned long mask0;
-      unsigned long mask1;
-      unsigned long maskx;
+  unsigned long mask0;
+  unsigned long mask1;
+  unsigned long maskx;
 };
-extern ostream& operator<< (ostream&o, const struct udp_levels_table&t);
+extern ostream &operator<<(ostream &o, const struct udp_levels_table &t);
 
 class vvp_udp_comb_s : public vvp_udp_s {
 
-    public:
-      vvp_udp_comb_s(char*label, char*name, unsigned ports);
-      ~vvp_udp_comb_s();
-      void compile_table(char**tab);
+public:
+  vvp_udp_comb_s(char *label, char *name, unsigned ports);
+  ~vvp_udp_comb_s();
+  void compile_table(char **tab);
 
-	// Test the cur table with the compiled rows, and return the
-	// bit value that matches.
-      vvp_bit4_t test_levels(const udp_levels_table&cur);
+  // Test the cur table with the compiled rows, and return the
+  // bit value that matches.
+  vvp_bit4_t test_levels(const udp_levels_table &cur);
 
-      vvp_bit4_t calculate_output(const udp_levels_table&cur,
-				  const udp_levels_table&prev,
-				  vvp_bit4_t cur_out);
+  vvp_bit4_t calculate_output(const udp_levels_table &cur,
+                              const udp_levels_table &prev, vvp_bit4_t cur_out);
 
-    private:
-      char*name_;
+private:
+  char *name_;
 
-	// Level sensitive rows of the device.
-      struct udp_levels_table*levels0_;
-      struct udp_levels_table*levels1_;
-      unsigned nlevels0_, nlevels1_;
+  // Level sensitive rows of the device.
+  struct udp_levels_table *levels0_;
+  struct udp_levels_table *levels1_;
+  unsigned nlevels0_, nlevels1_;
 };
 
 /*
@@ -169,49 +167,46 @@ class vvp_udp_comb_s : public vvp_udp_s {
  * edge_mask* bits the initial position of the bit.
  */
 struct udp_edges_table {
-      unsigned long edge_position : 8;
-      unsigned long edge_mask0 : 1;
-      unsigned long edge_mask1 : 1;
-      unsigned long edge_maskx : 1;
-      unsigned long mask0;
-      unsigned long mask1;
-      unsigned long maskx;
+  unsigned long edge_position : 8;
+  unsigned long edge_mask0 : 1;
+  unsigned long edge_mask1 : 1;
+  unsigned long edge_maskx : 1;
+  unsigned long mask0;
+  unsigned long mask1;
+  unsigned long maskx;
 };
 
 class vvp_udp_seq_s : public vvp_udp_s {
 
-    public:
-      vvp_udp_seq_s(char*label, char*name, unsigned ports, vvp_bit4_t init);
-      ~vvp_udp_seq_s();
+public:
+  vvp_udp_seq_s(char *label, char *name, unsigned ports, vvp_bit4_t init);
+  ~vvp_udp_seq_s();
 
-      void compile_table(char**tab);
+  void compile_table(char **tab);
 
-      vvp_bit4_t calculate_output(const udp_levels_table&cur,
-				  const udp_levels_table&prev,
-				  vvp_bit4_t cur_out);
+  vvp_bit4_t calculate_output(const udp_levels_table &cur,
+                              const udp_levels_table &prev, vvp_bit4_t cur_out);
 
-    private:
+private:
+  vvp_bit4_t init_;
 
-      vvp_bit4_t init_;
+  vvp_bit4_t test_levels_(const udp_levels_table &cur);
 
-      vvp_bit4_t test_levels_(const udp_levels_table&cur);
+  // Level sensitive rows of the device.
+  struct udp_levels_table *levels0_;
+  struct udp_levels_table *levels1_;
+  struct udp_levels_table *levelsx_;
+  struct udp_levels_table *levelsL_;
+  unsigned nlevels0_, nlevels1_, nlevelsx_, nlevelsL_;
 
-	// Level sensitive rows of the device.
-      struct udp_levels_table*levels0_;
-      struct udp_levels_table*levels1_;
-      struct udp_levels_table*levelsx_;
-      struct udp_levels_table*levelsL_;
-      unsigned nlevels0_, nlevels1_, nlevelsx_, nlevelsL_;
+  vvp_bit4_t test_edges_(const udp_levels_table &cur,
+                         const udp_levels_table &prev);
 
-      vvp_bit4_t test_edges_(const udp_levels_table&cur,
-			     const udp_levels_table&prev);
-
-	// Edge sensitive rows of the device
-      struct udp_edges_table*edges0_;
-      struct udp_edges_table*edges1_;
-      struct udp_edges_table*edgesL_;
-      unsigned nedges0_, nedges1_, nedgesL_;
-
+  // Edge sensitive rows of the device
+  struct udp_edges_table *edges0_;
+  struct udp_edges_table *edges1_;
+  struct udp_edges_table *edgesL_;
+  unsigned nedges0_, nedges1_, nedgesL_;
 };
 
 /*
@@ -226,20 +221,20 @@ struct vvp_udp_s *udp_find(const char *label);
  * the vvp_wide_fun_t objects and processes them to generate the
  * output to be sent.
  */
-class vvp_udp_fun_core  : public vvp_wide_fun_core, private vvp_gen_event_s {
+class vvp_udp_fun_core : public vvp_wide_fun_core, private vvp_gen_event_s {
 
-    public:
-      vvp_udp_fun_core(vvp_net_t*net, vvp_udp_s*def);
-      ~vvp_udp_fun_core();
+public:
+  vvp_udp_fun_core(vvp_net_t *net, vvp_udp_s *def);
+  ~vvp_udp_fun_core();
 
-      void recv_vec4_from_inputs(unsigned);
+  void recv_vec4_from_inputs(unsigned);
 
-    private:
-      void run_run();
+private:
+  void run_run();
 
-      vvp_udp_s*def_;
-      vvp_bit4_t cur_out_;
-      udp_levels_table current_;
+  vvp_udp_s *def_;
+  vvp_bit4_t cur_out_;
+  udp_levels_table current_;
 };
 
 #endif

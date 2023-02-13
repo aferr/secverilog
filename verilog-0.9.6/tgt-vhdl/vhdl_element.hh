@@ -23,8 +23,8 @@
 
 #include <iosfwd>
 #include <list>
-#include <string>
 #include <new>
+#include <string>
 #include <vector>
 
 typedef std::list<std::string> string_list_t;
@@ -44,29 +44,31 @@ typedef std::list<std::string> string_list_t;
 // between different parts of the AST.
 class vhdl_element {
 public:
-   virtual ~vhdl_element() {}
+  virtual ~vhdl_element() {}
 
-   void* operator new(size_t size);
-   void operator delete(void* ptr);
+  void *operator new(size_t size);
+  void operator delete(void *ptr);
 
-   virtual void emit(std::ostream &of, int level=0) const = 0;
-   void print() const;
+  virtual void emit(std::ostream &of, int level = 0) const = 0;
+  void print() const;
 
-   void set_comment(std::string comment);
+  void set_comment(std::string comment);
 
-   static int free_all_objects();
-   static size_t total_allocated();
+  static int free_all_objects();
+  static size_t total_allocated();
+
 protected:
-   void emit_comment(std::ostream &of, int level,
-                     bool end_of_line=false) const;
-private:
-   std::string comment_;
+  void emit_comment(std::ostream &of, int level,
+                    bool end_of_line = false) const;
 
-   static std::vector<vhdl_element*> allocated_;
-   static size_t total_alloc_;
+private:
+  std::string comment_;
+
+  static std::vector<vhdl_element *> allocated_;
+  static size_t total_alloc_;
 };
 
-typedef std::list<vhdl_element*> element_list_t;
+typedef std::list<vhdl_element *> element_list_t;
 
 int indent(int level);
 void newline(std::ostream &of, int level);
@@ -74,4 +76,3 @@ std::string nl_string(int level);
 void blank_line(std::ostream &of, int level);
 
 #endif
-

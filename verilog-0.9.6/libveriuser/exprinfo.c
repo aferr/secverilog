@@ -20,29 +20,26 @@
 #ident "$Id: exprinfo.c,v 1.1 2003/10/10 02:57:46 steve Exp $"
 #endif
 
-# include  <assert.h>
-# include  <ctype.h>
-# include  <veriuser.h>
-# include  <vpi_user.h>
-# include  "priv.h"
+#include "priv.h"
+#include <assert.h>
+#include <ctype.h>
+#include <veriuser.h>
+#include <vpi_user.h>
 
-struct t_tfexprinfo* tf_exprinfo(PLI_INT32 a, struct t_tfexprinfo*ip)
-{
-      if (pli_trace) {
-	    fprintf(pli_trace, "tf_exprinfo: enter.\n");
-	    fflush(pli_trace);
-      }
+struct t_tfexprinfo *tf_exprinfo(PLI_INT32 a, struct t_tfexprinfo *ip) {
+  if (pli_trace) {
+    fprintf(pli_trace, "tf_exprinfo: enter.\n");
+    fflush(pli_trace);
+  }
 
-      fprintf(stderr, "tf_exprinfo: XXXX not implemented. XXXX\n");
+  fprintf(stderr, "tf_exprinfo: XXXX not implemented. XXXX\n");
 
-      if (pli_trace) {
-	    fprintf(pli_trace, "tf_exprinfo: return.\n");
-	    fflush(pli_trace);
-      }
-      return 0;
+  if (pli_trace) {
+    fprintf(pli_trace, "tf_exprinfo: return.\n");
+    fflush(pli_trace);
+  }
+  return 0;
 }
-
-
 
 /*
  * $Log: exprinfo.c,v $
@@ -50,4 +47,3 @@ struct t_tfexprinfo* tf_exprinfo(PLI_INT32 a, struct t_tfexprinfo*ip)
  *  Some PLI1 stubs.
  *
  */
-

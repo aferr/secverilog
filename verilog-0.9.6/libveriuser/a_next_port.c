@@ -20,29 +20,27 @@
 #ident "$Id: a_next_port.c,v 1.1 2003/10/10 02:57:46 steve Exp $"
 #endif
 
-# include  <assert.h>
-# include  <ctype.h>
-# include  <acc_user.h>
-# include  <vpi_user.h>
-# include  "priv.h"
+#include "priv.h"
+#include <acc_user.h>
+#include <assert.h>
+#include <ctype.h>
+#include <vpi_user.h>
 
-handle acc_next_port(handle ref, handle bit)
-{
-      if (pli_trace) {
-	    fprintf(pli_trace, "acc_next_port: enter.\n");
-	    fflush(pli_trace);
-      }
+handle acc_next_port(handle ref, handle bit) {
+  if (pli_trace) {
+    fprintf(pli_trace, "acc_next_port: enter.\n");
+    fflush(pli_trace);
+  }
 
-      fprintf(stderr, "acc_next_port: XXXX not implemented. XXXX\n");
+  fprintf(stderr, "acc_next_port: XXXX not implemented. XXXX\n");
 
-      if (pli_trace) {
-	    fprintf(pli_trace, "acc_next_port: return.\n");
-	    fflush(pli_trace);
-      }
+  if (pli_trace) {
+    fprintf(pli_trace, "acc_next_port: return.\n");
+    fflush(pli_trace);
+  }
 
-      return 0;
+  return 0;
 }
-
 
 /*
  * $Log: a_next_port.c,v $
@@ -50,4 +48,3 @@ handle acc_next_port(handle ref, handle bit)
  *  Some PLI1 stubs.
  *
  */
-

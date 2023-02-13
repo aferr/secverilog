@@ -20,49 +20,47 @@
 #include "sys_priv.h"
 #include <string.h>
 
-static PLI_INT32 sys_finish_calltf(PLI_BYTE8 *name)
-{
-      vpiHandle callh, argv, arg;
-      s_vpi_value val;
-      long diag_msg = 1;
+static PLI_INT32 sys_finish_calltf(PLI_BYTE8 *name) {
+  vpiHandle callh, argv, arg;
+  s_vpi_value val;
+  long diag_msg = 1;
 
-      /* Get the argument list and look for the diagnostic message level. */
-      callh = vpi_handle(vpiSysTfCall, 0);
-      argv = vpi_iterate(vpiArgument, callh);
-      if (argv) {
-            arg = vpi_scan(argv);
-            vpi_free_object(argv);
-            val.format = vpiIntVal;
-            vpi_get_value(arg, &val);
-            diag_msg = val.value.integer;
-      }
+  /* Get the argument list and look for the diagnostic message level. */
+  callh = vpi_handle(vpiSysTfCall, 0);
+  argv  = vpi_iterate(vpiArgument, callh);
+  if (argv) {
+    arg = vpi_scan(argv);
+    vpi_free_object(argv);
+    val.format = vpiIntVal;
+    vpi_get_value(arg, &val);
+    diag_msg = val.value.integer;
+  }
 
-      if (strcmp((char*)name, "$stop") == 0) {
-	    vpi_control(vpiStop, diag_msg);
-	    return 0;
-      }
+  if (strcmp((char *)name, "$stop") == 0) {
+    vpi_control(vpiStop, diag_msg);
+    return 0;
+  }
 
-      vpi_control(vpiFinish, diag_msg);
-      return 0;
+  vpi_control(vpiFinish, diag_msg);
+  return 0;
 }
 
-void sys_finish_register()
-{
-      s_vpi_systf_data tf_data;
+void sys_finish_register() {
+  s_vpi_systf_data tf_data;
 
-      tf_data.type      = vpiSysTask;
-      tf_data.tfname    = "$finish";
-      tf_data.calltf    = sys_finish_calltf;
-      tf_data.compiletf = sys_one_opt_numeric_arg_compiletf;
-      tf_data.sizetf    = 0;
-      tf_data.user_data = "$finish";
-      vpi_register_systf(&tf_data);
+  tf_data.type      = vpiSysTask;
+  tf_data.tfname    = "$finish";
+  tf_data.calltf    = sys_finish_calltf;
+  tf_data.compiletf = sys_one_opt_numeric_arg_compiletf;
+  tf_data.sizetf    = 0;
+  tf_data.user_data = "$finish";
+  vpi_register_systf(&tf_data);
 
-      tf_data.type      = vpiSysTask;
-      tf_data.tfname    = "$stop";
-      tf_data.calltf    = sys_finish_calltf;
-      tf_data.compiletf = sys_one_opt_numeric_arg_compiletf;
-      tf_data.sizetf    = 0;
-      tf_data.user_data = "$stop";
-      vpi_register_systf(&tf_data);
+  tf_data.type      = vpiSysTask;
+  tf_data.tfname    = "$stop";
+  tf_data.calltf    = sys_finish_calltf;
+  tf_data.compiletf = sys_one_opt_numeric_arg_compiletf;
+  tf_data.sizetf    = 0;
+  tf_data.user_data = "$stop";
+  vpi_register_systf(&tf_data);
 }

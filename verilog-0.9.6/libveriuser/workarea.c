@@ -17,62 +17,60 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  <veriuser.h>
-# include  <vpi_user.h>
-# include  <stdlib.h>
+#include <stdlib.h>
+#include <veriuser.h>
+#include <vpi_user.h>
 
 /*
  * Keep a list of sys handle to work area bindings.
  */
 struct workarea_cell {
-      vpiHandle sys;
-      void* area;
-      struct workarea_cell*next;
+  vpiHandle sys;
+  void *area;
+  struct workarea_cell *next;
 };
 
-static struct workarea_cell*area_list = 0;
+static struct workarea_cell *area_list = 0;
 
-PLI_INT32 tf_setworkarea(void*workarea)
-{
-      vpiHandle sys;
-      struct workarea_cell*cur;
+PLI_INT32 tf_setworkarea(void *workarea) {
+  vpiHandle sys;
+  struct workarea_cell *cur;
 
-      sys = vpi_handle(vpiSysTfCall, 0);
-      cur = area_list;
+  sys = vpi_handle(vpiSysTfCall, 0);
+  cur = area_list;
 
-      while (cur) {
-	    if (cur->sys == sys) {
-		  cur->area = workarea;
-		  return 0;
-	    }
-
-	    cur = cur->next;
-      }
-
-      cur = calloc(1, sizeof (struct workarea_cell));
-      cur->next = area_list;
-      cur->sys = sys;
+  while (cur) {
+    if (cur->sys == sys) {
       cur->area = workarea;
-      area_list = cur;
-
       return 0;
+    }
+
+    cur = cur->next;
+  }
+
+  cur       = calloc(1, sizeof(struct workarea_cell));
+  cur->next = area_list;
+  cur->sys  = sys;
+  cur->area = workarea;
+  area_list = cur;
+
+  return 0;
 }
 
-PLI_BYTE8* tf_getworkarea(void)
-{
-      struct workarea_cell*cur;
-      vpiHandle sys;
+PLI_BYTE8 *tf_getworkarea(void) {
+  struct workarea_cell *cur;
+  vpiHandle sys;
 
-      sys = vpi_handle(vpiSysTfCall, 0);
-      cur = area_list;
+  sys = vpi_handle(vpiSysTfCall, 0);
+  cur = area_list;
 
-      while (cur) {
-	    if (cur->sys == sys) {
-		  return cur->area;
-	    }
+  while (cur) {
+    if (cur->sys == sys) {
+      return cur->area;
+    }
 
-	    cur = cur->next;
-      }
+    cur = cur->next;
+  }
 
-      return 0;
+  return 0;
 }

@@ -17,25 +17,21 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  "device.h"
-# include  "fpga_priv.h"
-# include  "edif.h"
-# include  "generic.h"
-# include  "xilinx.h"
-# include  <stdlib.h>
-# include  <string.h>
-# include  <assert.h>
-
+#include "device.h"
+#include "edif.h"
+#include "fpga_priv.h"
+#include "generic.h"
+#include "xilinx.h"
+#include <assert.h>
+#include <stdlib.h>
+#include <string.h>
 
 /*
  * This is a table of cell types that are accessible via the cellref
  * attribute to a gate.
  */
 const static struct edif_xlib_celltable virtex2_celltable[] = {
-      { "BUFG",     xilinx_cell_bufg },
-      { "MULT_AND", xilinx_cell_mult_and },
-      { 0, 0}
-};
+    {"BUFG", xilinx_cell_bufg}, {"MULT_AND", xilinx_cell_mult_and}, {0, 0}};
 
 /*
  * The show_header function is called before any of the devices of the
@@ -46,42 +42,39 @@ const static struct edif_xlib_celltable virtex2_celltable[] = {
  * are *not* to be used as ports, they will be connected to special
  * PAD devices instead.
  */
-static void virtex2_show_header(ivl_design_t des)
-{
-      const char*part_str = 0;
+static void virtex2_show_header(ivl_design_t des) {
+  const char *part_str = 0;
 
-      xilinx_common_header(des);
+  xilinx_common_header(des);
 
-      xlib = edif_xlibrary_create(edf, "VIRTEX2");
-      edif_xlibrary_set_celltable(xlib, virtex2_celltable);
+  xlib = edif_xlibrary_create(edf, "VIRTEX2");
+  edif_xlibrary_set_celltable(xlib, virtex2_celltable);
 
+  if ((part_str = ivl_design_flag(des, "part")) && (part_str[0] != 0)) {
+    edif_pstring(edf, "PART", part_str);
+  }
 
-      if ( (part_str = ivl_design_flag(des, "part")) && (part_str[0] != 0) ) {
-	    edif_pstring(edf, "PART", part_str);
-      }
+  cell_0 = edif_xcell_create(xlib, "GND", 1);
+  edif_cell_portconfig(cell_0, 0, "GROUND", IVL_SIP_OUTPUT);
 
-      cell_0 = edif_xcell_create(xlib, "GND", 1);
-      edif_cell_portconfig(cell_0, 0, "GROUND", IVL_SIP_OUTPUT);
-
-      cell_1 = edif_xcell_create(xlib, "VCC", 1);
-      edif_cell_portconfig(cell_1, 0, "VCC", IVL_SIP_OUTPUT);
-
+  cell_1 = edif_xcell_create(xlib, "VCC", 1);
+  edif_cell_portconfig(cell_1, 0, "VCC", IVL_SIP_OUTPUT);
 }
 
 const struct device_s d_virtex2_edif = {
-      virtex2_show_header,
-      xilinx_show_footer,
-      xilinx_show_scope,
-      xilinx_pad,
-      virtex_logic,
-      virtex_generic_dff,
-      virtex_eq,
-      virtex_eq,
-      virtex_ge,
-      0, /* show_cmp_gt */
-      virtex_mux,
-      virtex_add,
-      virtex_add,
-      xilinx_shiftl, /* show_shiftl */
-      0  /* show_shiftr */
+    virtex2_show_header,
+    xilinx_show_footer,
+    xilinx_show_scope,
+    xilinx_pad,
+    virtex_logic,
+    virtex_generic_dff,
+    virtex_eq,
+    virtex_eq,
+    virtex_ge,
+    0, /* show_cmp_gt */
+    virtex_mux,
+    virtex_add,
+    virtex_add,
+    xilinx_shiftl, /* show_shiftl */
+    0              /* show_shiftr */
 };

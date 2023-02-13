@@ -26,13 +26,13 @@
  * YYLTYPE compels the lexor to use this type and not something other.
  */
 struct cfltype {
-      unsigned first_line;
-      unsigned first_column;
-      unsigned last_line;
-      unsigned last_column;
-      const char*text;
+  unsigned first_line;
+  unsigned first_column;
+  unsigned last_line;
+  unsigned last_column;
+  const char *text;
 };
-# define YYLTYPE struct cfltype
+#define YYLTYPE struct cfltype
 
 int cflex(void);
 int cferror(const char *);

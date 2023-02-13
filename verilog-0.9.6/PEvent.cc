@@ -17,21 +17,12 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include "config.h"
+#include "config.h"
 
-# include  "PEvent.h"
+#include "PEvent.h"
 
-PEvent::PEvent(perm_string n)
-: name_(n)
-{
-}
+PEvent::PEvent(perm_string n) : name_(n) {}
 
-PEvent::~PEvent()
-{
-}
+PEvent::~PEvent() {}
 
-perm_string  PEvent::name() const
-{
-      return name_;
-}
-
+perm_string PEvent::name() const { return name_; }

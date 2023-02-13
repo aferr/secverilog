@@ -20,37 +20,32 @@
 #ident "$Id: spname.c,v 1.4 2003/06/17 16:55:08 steve Exp $"
 #endif
 
-#include  <assert.h>
-#include  <vpi_user.h>
-#include  <veriuser.h>
-#include  "priv.h"
+#include "priv.h"
+#include <assert.h>
+#include <veriuser.h>
+#include <vpi_user.h>
 
-char* tf_spname(void)
-{
-      char*rtn;
+char *tf_spname(void) {
+  char *rtn;
 
-      vpiHandle sys = vpi_handle(vpiSysTfCall, 0);
-      vpiHandle scope = vpi_handle(vpiScope, sys);
+  vpiHandle sys   = vpi_handle(vpiSysTfCall, 0);
+  vpiHandle scope = vpi_handle(vpiScope, sys);
 
-      rtn = __acc_newstring(vpi_get_str(vpiFullName, scope));
+  rtn = __acc_newstring(vpi_get_str(vpiFullName, scope));
 
-      if (pli_trace) {
-	    fprintf(pli_trace, "%s: tf_spname() --> %s\n",
-		    vpi_get_str(vpiName,sys), rtn);
-      }
+  if (pli_trace) {
+    fprintf(pli_trace, "%s: tf_spname() --> %s\n", vpi_get_str(vpiName, sys),
+            rtn);
+  }
 
-      return rtn;
+  return rtn;
 }
 
-char *tf_imipname(void *obj)
-{
-      return vpi_get_str(vpiFullName, vpi_handle(vpiScope, (vpiHandle)obj));
+char *tf_imipname(void *obj) {
+  return vpi_get_str(vpiFullName, vpi_handle(vpiScope, (vpiHandle)obj));
 }
 
-char *tf_mipname(void)
-{
-      return tf_imipname(vpi_handle(vpiSysTfCall,0));
-}
+char *tf_mipname(void) { return tf_imipname(vpi_handle(vpiSysTfCall, 0)); }
 
 /*
  * $Log: spname.c,v $
@@ -76,4 +71,3 @@ char *tf_mipname(void)
  *  Add a bunch of new acc_ and tf_ functions.
  *
  */
-

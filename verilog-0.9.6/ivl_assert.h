@@ -20,21 +20,19 @@
 #ifndef __ivl_assert_h
 #define __ivl_assert_h
 
-# include  <cassert>
+#include <cassert>
 
-#define ivl_assert(tok, expression)  \
-      do {			    \
-	    if (! (expression))     \
-		  __ivl_assert(#expression, tok, __FILE__, __LINE__);	\
-      } while(0)
+#define ivl_assert(tok, expression)                                            \
+  do {                                                                         \
+    if (!(expression))                                                         \
+      __ivl_assert(#expression, tok, __FILE__, __LINE__);                      \
+  } while (0)
 
-#define __ivl_assert(expression, tok, file, line)  \
-      do { \
-	    cerr << (tok).get_fileline() << ": assert: " \
-		 << file << ":" << line \
-		 << ": failed assertion " << (expression) << endl; \
-	    abort(); \
-      } while(0)
-
+#define __ivl_assert(expression, tok, file, line)                              \
+  do {                                                                         \
+    cerr << (tok).get_fileline() << ": assert: " << file << ":" << line        \
+         << ": failed assertion " << (expression) << endl;                     \
+    abort();                                                                   \
+  } while (0)
 
 #endif

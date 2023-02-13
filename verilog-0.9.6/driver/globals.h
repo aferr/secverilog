@@ -19,29 +19,29 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  <stddef.h>
+#include <stddef.h>
 
-  /* This is the integer-width argument that will be passed to ivl. */
+/* This is the integer-width argument that will be passed to ivl. */
 extern unsigned integer_width;
 
-  /* Perform variable substitutions on the string. */
-extern char* substitutions(const char*str);
+/* Perform variable substitutions on the string. */
+extern char *substitutions(const char *str);
 
-  /* Add the name to the list of source files. */
-extern void process_file_name(const char*name, int lib_flag);
+/* Add the name to the list of source files. */
+extern void process_file_name(const char *name, int lib_flag);
 
-  /* Add the name to the list of library directories. */
-extern void process_library_switch(const char*name);
-extern void process_library_nocase_switch(const char*name);
-extern void process_library2_switch(const char*name);
+/* Add the name to the list of library directories. */
+extern void process_library_switch(const char *name);
+extern void process_library_nocase_switch(const char *name);
+extern void process_library2_switch(const char *name);
 
-  /* Add a new include file search directory */
-extern void process_include_dir(const char*name);
+/* Add a new include file search directory */
+extern void process_include_dir(const char *name);
 
-  /* Add a new -D define. */
-extern void process_define(const char*name);
+/* Add a new -D define. */
+extern void process_define(const char *name);
 
-  /* Set the default timescale for the simulator. */
-extern void process_timescale(const char*ts_string);
+/* Set the default timescale for the simulator. */
+extern void process_timescale(const char *ts_string);
 
 #endif

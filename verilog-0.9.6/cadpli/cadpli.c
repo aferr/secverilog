@@ -17,71 +17,66 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  <vpi_user.h>
-# include  <veriuser.h>
-# include  <stdlib.h>
-# include  <string.h>
-# include  <assert.h>
-# include  "config.h"
-# include  "ivl_dlfcn.h"
+#include "config.h"
+#include "ivl_dlfcn.h"
+#include <assert.h>
+#include <stdlib.h>
+#include <string.h>
+#include <veriuser.h>
+#include <vpi_user.h>
 
-typedef void* (*funcvp)(void);
+typedef void *(*funcvp)(void);
 
-static void thunker_register(void)
-{
-      struct t_vpi_vlog_info vlog_info;
-      void*mod;
-      void*boot;
-      struct t_tfcell*tf;
-      int idx;
+static void thunker_register(void) {
+  struct t_vpi_vlog_info vlog_info;
+  void *mod;
+  void *boot;
+  struct t_tfcell *tf;
+  int idx;
 
-      vpi_get_vlog_info(&vlog_info);
+  vpi_get_vlog_info(&vlog_info);
 
-      for (idx = 0 ;  idx < vlog_info.argc ;  idx += 1) {
-	    char*module, *cp, *bp;
-	    if (strncmp("-cadpli=", vlog_info.argv[idx], 8) != 0)
-		  continue;
+  for (idx = 0; idx < vlog_info.argc; idx += 1) {
+    char *module, *cp, *bp;
+    if (strncmp("-cadpli=", vlog_info.argv[idx], 8) != 0)
+      continue;
 
-	    cp = vlog_info.argv[idx] + 8;
-	    assert(cp);
+    cp = vlog_info.argv[idx] + 8;
+    assert(cp);
 
-	    bp = strchr(cp, ':');
-	    assert(bp);
+    bp = strchr(cp, ':');
+    assert(bp);
 
-	    module = malloc(bp-cp+1);
-	    strncpy(module, cp, bp-cp);
-	    module[bp-cp] = 0;
+    module = malloc(bp - cp + 1);
+    strncpy(module, cp, bp - cp);
+    module[bp - cp] = 0;
 
-	    mod = ivl_dlopen(module);
-	    if (mod == 0) {
-		  vpi_printf("%s link: %s\n", vlog_info.argv[idx], dlerror());
-		  free(module);
-		  continue;
-	    }
+    mod = ivl_dlopen(module);
+    if (mod == 0) {
+      vpi_printf("%s link: %s\n", vlog_info.argv[idx], dlerror());
+      free(module);
+      continue;
+    }
 
-	    bp += 1;
-	    boot = ivl_dlsym(mod, bp);
-	    if (boot == 0) {
-		  vpi_printf("%s: Symbol %s not found.\n",
-			     vlog_info.argv[idx], bp);
-		  free(module);
-		  continue;
-	    }
+    bp += 1;
+    boot = ivl_dlsym(mod, bp);
+    if (boot == 0) {
+      vpi_printf("%s: Symbol %s not found.\n", vlog_info.argv[idx], bp);
+      free(module);
+      continue;
+    }
 
-	    free(module);
-	    assert(boot);
+    free(module);
+    assert(boot);
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
-	    tf = (*((funcvp)boot))();
+    tf = (*((funcvp)boot))();
 #pragma GCC diagnostic pop
-	    assert(tf);
+    assert(tf);
 
-	    veriusertfs_register_table(tf);
-      }
+    veriusertfs_register_table(tf);
+  }
 }
 
-void (*vlog_startup_routines[])() = {
-      thunker_register,
-      0
-};
+void (*vlog_startup_routines[])() = {thunker_register, 0};

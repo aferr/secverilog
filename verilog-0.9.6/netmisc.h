@@ -19,7 +19,7 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  "netlist.h"
+#include "netlist.h"
 
 /*
  * Search for a symbol using the "start" scope as the starting
@@ -36,25 +36,19 @@
  * ex2 is the lsb expression for the range. If there is no range, then
  * these values are set to 0.
  */
-extern NetScope* symbol_search(const LineInfo*li,
-                               Design*des,
-			       NetScope*start,
-                               pform_name_t path,
-			       NetNet*&net,       /* net/reg */
-			       const NetExpr*&par,/* parameter */
-			       NetEvent*&eve,     /* named event */
-			       const NetExpr*&ex1, const NetExpr*&ex2);
+extern NetScope *symbol_search(const LineInfo *li, Design *des, NetScope *start,
+                               pform_name_t path, NetNet *&net, /* net/reg */
+                               const NetExpr *&par,             /* parameter */
+                               NetEvent *&eve, /* named event */
+                               const NetExpr *&ex1, const NetExpr *&ex2);
 
-inline NetScope* symbol_search(const LineInfo*li,
-                               Design*des,
-			       NetScope*start,
-                               const pform_name_t&path,
-			       NetNet*&net,       /* net/reg */
-			       const NetExpr*&par,/* parameter */
-			       NetEvent*&eve      /* named event */)
-{
-      const NetExpr*ex1, *ex2;
-      return symbol_search(li, des, start, path, net, par, eve, ex1, ex2);
+inline NetScope *symbol_search(const LineInfo *li, Design *des, NetScope *start,
+                               const pform_name_t &path,
+                               NetNet *&net,        /* net/reg */
+                               const NetExpr *&par, /* parameter */
+                               NetEvent *&eve /* named event */) {
+  const NetExpr *ex1, *ex2;
+  return symbol_search(li, des, start, path, net, par, eve, ex1, ex2);
 }
 
 /*
@@ -63,68 +57,70 @@ inline NetScope* symbol_search(const LineInfo*li,
  * not transforming the expression at all, if it is already wide
  * enough.
  */
-extern NetExpr*pad_to_width(NetExpr*expr, unsigned wid, const LineInfo&info);
-extern NetNet*pad_to_width(Design*des, NetNet*n, unsigned w,
-                           const LineInfo&info);
+extern NetExpr *pad_to_width(NetExpr *expr, unsigned wid, const LineInfo &info);
+extern NetNet *pad_to_width(Design *des, NetNet *n, unsigned w,
+                            const LineInfo &info);
 
-extern NetNet*pad_to_width_signed(Design*des, NetNet*n, unsigned w,
-                                  const LineInfo&info);
+extern NetNet *pad_to_width_signed(Design *des, NetNet *n, unsigned w,
+                                   const LineInfo &info);
 
 /*
  * Generate the nodes necessary to cast an expression (a net) to a
  * real value.
  */
-extern NetNet*cast_to_int(Design*des, NetScope*scope, NetNet*src, unsigned wid);
-extern NetNet*cast_to_real(Design*des, NetScope*scope, NetNet*src);
+extern NetNet *cast_to_int(Design *des, NetScope *scope, NetNet *src,
+                           unsigned wid);
+extern NetNet *cast_to_real(Design *des, NetScope *scope, NetNet *src);
 
 /*
  * Take the input expression and return a variation that assures that
  * the expression is 1-bit wide and logical. This reflects the needs
  * of conditions i.e. for "if" statements or logical operators.
  */
-extern NetExpr*condition_reduce(NetExpr*expr);
+extern NetExpr *condition_reduce(NetExpr *expr);
 
 /*
  * This function transforms an expression by cropping the high bits
  * off with a part select. The result has the width w passed in. This
  * function does not pad, use pad_to_width if padding is desired.
  */
-extern NetNet*crop_to_width(Design*des, NetNet*n, unsigned w);
+extern NetNet *crop_to_width(Design *des, NetNet *n, unsigned w);
 
 /*
  * These functions generate an equation to normalize an expression using
  * the provided vector/array information.
  */
-extern NetExpr*normalize_variable_base(NetExpr *base, long msb, long lsb,
-                                       unsigned long wid, bool is_up);
-extern NetExpr*normalize_variable_array_base(NetExpr *base, long offset,
-                                             unsigned count);
+extern NetExpr *normalize_variable_base(NetExpr *base, long msb, long lsb,
+                                        unsigned long wid, bool is_up);
+extern NetExpr *normalize_variable_array_base(NetExpr *base, long offset,
+                                              unsigned count);
 
 /*
  * This function takes as input a NetNet signal and adds a constant
  * value to it. If the val is 0, then simply return sig. Otherwise,
  * return a new NetNet value that is the output of an addition.
  */
-extern NetNet*add_to_net(Design*des, NetNet*sig, long val);
-extern NetNet*sub_net_from(Design*des, NetScope*scope, long val, NetNet*sig);
+extern NetNet *add_to_net(Design *des, NetNet *sig, long val);
+extern NetNet *sub_net_from(Design *des, NetScope *scope, long val,
+                            NetNet *sig);
 
 /*
  * Make a NetEConst object that contains only X bits.
  */
-extern NetEConst*make_const_x(unsigned long wid);
-extern NetEConst*make_const_0(unsigned long wid);
+extern NetEConst *make_const_x(unsigned long wid);
+extern NetEConst *make_const_0(unsigned long wid);
 
 /*
  * Make A const net
  */
-extern NetNet* make_const_x(Design*des, NetScope*scope, unsigned long wid);
+extern NetNet *make_const_x(Design *des, NetScope *scope, unsigned long wid);
 
 /*
  * In some cases the lval is accessible as a pointer to the head of
  * a list of NetAssign_ objects. This function returns the width of
  * the l-value represented by this list.
  */
-extern unsigned count_lval_width(const class NetAssign_*first);
+extern unsigned count_lval_width(const class NetAssign_ *first);
 
 /*
  * This is temporarily used to indicate that a user function elaboration
@@ -149,11 +145,10 @@ extern bool need_constant_expr;
  */
 class PExpr;
 
-extern NetExpr* elab_and_eval(Design*des, NetScope*scope,
-			      const PExpr*pe, int expr_wid,
-			      int prune_width =-1);
+extern NetExpr *elab_and_eval(Design *des, NetScope *scope, const PExpr *pe,
+                              int expr_wid, int prune_width = -1);
 
-void probe_expr_width(Design*des, NetScope*scope, PExpr*pe);
+void probe_expr_width(Design *des, NetScope *scope, PExpr *pe);
 
 /*
  * This function elaborates an expression as if it is for the r-value
@@ -162,42 +157,42 @@ void probe_expr_width(Design*des, NetScope*scope, PExpr*pe);
  * elaborate. The result is the NetExpr elaborated and evaluated.
  * (See elab_expr.cc)
  */
-extern NetExpr* elaborate_rval_expr(Design*des, NetScope*scope,
-				    ivl_variable_type_t data_type_lv,
-				    int expr_wid_lv, PExpr*expr);
+extern NetExpr *elaborate_rval_expr(Design *des, NetScope *scope,
+                                    ivl_variable_type_t data_type_lv,
+                                    int expr_wid_lv, PExpr *expr);
 
 /*
  * Used by elaboration to suppress the sign of an operand if the other
  * is unsigned.
  */
-extern void suppress_binary_operand_sign_if_needed(NetExpr*lp, NetExpr*rp);
+extern void suppress_binary_operand_sign_if_needed(NetExpr *lp, NetExpr *rp);
 
 /*
  * This procedure elaborates an expression and if the elaboration is
  * successful the original expression is replaced with the new one.
  */
-void eval_expr(NetExpr*&expr, int prune_width =-1);
+void eval_expr(NetExpr *&expr, int prune_width = -1);
 
 /*
  * Get the long integer value for the passed in expression, if
  * possible. If it is not possible (the expression is not evaluated
  * down to a constant) then return false and leave value unchanged.
  */
-bool eval_as_long(long&value, NetExpr*expr);
-bool eval_as_double(double&value, NetExpr*expr);
+bool eval_as_long(long &value, NetExpr *expr);
+bool eval_as_double(double &value, NetExpr *expr);
 
 /*
  * Evaluate the component of a scope path to get an hname_t value. Do
  * the evaluation in the context of the given scope.
  */
-extern hname_t eval_path_component(Design*des, NetScope*scope,
-				   const name_component_t&comp);
+extern hname_t eval_path_component(Design *des, NetScope *scope,
+                                   const name_component_t &comp);
 
 /*
  * Evaluate an entire scope path in the context of the given scope.
  */
-extern std::list<hname_t> eval_scope_path(Design*des, NetScope*scope,
-					  const pform_name_t&path);
+extern std::list<hname_t> eval_scope_path(Design *des, NetScope *scope,
+                                          const pform_name_t &path);
 
 /*
  * Return true if the data type is a type that is normally available
@@ -221,7 +216,7 @@ const char *human_readable_op(const char op, bool unary = false);
  * C_X   - the expression is constant and it has an 'bX value.
  */
 enum const_bool { C_NON, C_0, C_1, C_X };
-const_bool const_logical(const NetExpr*expr);
+const_bool const_logical(const NetExpr *expr);
 
 extern bool dly_used_no_timescale;
 extern bool dly_used_timescale;

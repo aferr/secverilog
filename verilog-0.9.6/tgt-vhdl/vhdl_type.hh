@@ -24,17 +24,17 @@
 #include "vhdl_element.hh"
 
 enum vhdl_type_name_t {
-   VHDL_TYPE_STD_LOGIC,
-   VHDL_TYPE_STD_LOGIC_VECTOR,
-   VHDL_TYPE_STRING,
-   VHDL_TYPE_LINE,
-   VHDL_TYPE_FILE,
-   VHDL_TYPE_INTEGER,
-   VHDL_TYPE_BOOLEAN,
-   VHDL_TYPE_SIGNED,
-   VHDL_TYPE_UNSIGNED,
-   VHDL_TYPE_TIME,
-   VHDL_TYPE_ARRAY
+  VHDL_TYPE_STD_LOGIC,
+  VHDL_TYPE_STD_LOGIC_VECTOR,
+  VHDL_TYPE_STRING,
+  VHDL_TYPE_LINE,
+  VHDL_TYPE_FILE,
+  VHDL_TYPE_INTEGER,
+  VHDL_TYPE_BOOLEAN,
+  VHDL_TYPE_SIGNED,
+  VHDL_TYPE_UNSIGNED,
+  VHDL_TYPE_TIME,
+  VHDL_TYPE_ARRAY
 };
 
 /*
@@ -44,49 +44,49 @@ enum vhdl_type_name_t {
  */
 class vhdl_type : public vhdl_element {
 public:
-   // Scalar constructor
-   vhdl_type(vhdl_type_name_t name, int msb = 0, int lsb = 0)
+  // Scalar constructor
+  vhdl_type(vhdl_type_name_t name, int msb = 0, int lsb = 0)
       : name_(name), msb_(msb), lsb_(lsb), base_(NULL) {}
 
-   // Array constructor
-   vhdl_type(vhdl_type *base, const std::string &array_name,
-             int msb, int lsb)
+  // Array constructor
+  vhdl_type(vhdl_type *base, const std::string &array_name, int msb, int lsb)
       : name_(VHDL_TYPE_ARRAY), msb_(msb), lsb_(lsb), base_(base),
         array_name_(array_name) {}
 
-   // Copy constructor
-   vhdl_type(const vhdl_type &other);
+  // Copy constructor
+  vhdl_type(const vhdl_type &other);
 
-   virtual ~vhdl_type();
+  virtual ~vhdl_type();
 
-   void emit(std::ostream &of, int level) const;
-   vhdl_type_name_t get_name() const { return name_; }
-   std::string get_string() const;
-   std::string get_decl_string() const;
-   std::string get_type_decl_string() const;
-   vhdl_type *get_base() const;
-   int get_width() const { return msb_ - lsb_ + 1; }
-   int get_msb() const { return msb_; }
-   int get_lsb() const { return lsb_; }
+  void emit(std::ostream &of, int level) const;
+  vhdl_type_name_t get_name() const { return name_; }
+  std::string get_string() const;
+  std::string get_decl_string() const;
+  std::string get_type_decl_string() const;
+  vhdl_type *get_base() const;
+  int get_width() const { return msb_ - lsb_ + 1; }
+  int get_msb() const { return msb_; }
+  int get_lsb() const { return lsb_; }
 
-   // Common types
-   static vhdl_type *std_logic();
-   static vhdl_type *string();
-   static vhdl_type *line();
-   static vhdl_type *std_logic_vector(int msb, int lsb);
-   static vhdl_type *nunsigned(int width, int lsb=0);
-   static vhdl_type *nsigned(int width, int lsb=0);
-   static vhdl_type *integer();
-   static vhdl_type *boolean();
-   static vhdl_type *time();
+  // Common types
+  static vhdl_type *std_logic();
+  static vhdl_type *string();
+  static vhdl_type *line();
+  static vhdl_type *std_logic_vector(int msb, int lsb);
+  static vhdl_type *nunsigned(int width, int lsb = 0);
+  static vhdl_type *nsigned(int width, int lsb = 0);
+  static vhdl_type *integer();
+  static vhdl_type *boolean();
+  static vhdl_type *time();
 
-   static vhdl_type *type_for(int width, bool issigned, int lsb=0);
-   static vhdl_type *array_of(vhdl_type *b, std::string &n, int m, int l);
+  static vhdl_type *type_for(int width, bool issigned, int lsb = 0);
+  static vhdl_type *array_of(vhdl_type *b, std::string &n, int m, int l);
+
 protected:
-   vhdl_type_name_t name_;
-   int msb_, lsb_;
-   vhdl_type *base_;   // Array base type for VHDL_TYPE_ARRAY
-   std::string array_name_; // Type name for the array `type array_name_ is ...'
+  vhdl_type_name_t name_;
+  int msb_, lsb_;
+  vhdl_type *base_;        // Array base type for VHDL_TYPE_ARRAY
+  std::string array_name_; // Type name for the array `type array_name_ is ...'
 };
 
 #endif

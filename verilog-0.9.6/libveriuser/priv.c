@@ -20,40 +20,36 @@
 #ident "$Id: priv.c,v 1.3 2003/05/18 00:16:35 steve Exp $"
 #endif
 
-# include  "priv.h"
-# include  <string.h>
-# include  <assert.h>
+#include "priv.h"
+#include <assert.h>
+#include <string.h>
 
-FILE* pli_trace = 0;
+FILE *pli_trace = 0;
 
 static char string_buffer[8192];
 static unsigned string_fill = 0;
 
-static void buffer_reset(void)
-{
-      string_fill = 0;
-}
+static void buffer_reset(void) { string_fill = 0; }
 
-char* __acc_newstring(const char*txt)
-{
-      char*res;
-      unsigned len;
+char *__acc_newstring(const char *txt) {
+  char *res;
+  unsigned len;
 
-      if (txt == 0)
-	    return 0;
+  if (txt == 0)
+    return 0;
 
-      len = strlen(txt);
-      assert(len < sizeof string_buffer);
+  len = strlen(txt);
+  assert(len < sizeof string_buffer);
 
-      if ((string_fill + len + 1) >= sizeof string_buffer)
-	    buffer_reset();
+  if ((string_fill + len + 1) >= sizeof string_buffer)
+    buffer_reset();
 
-      res = string_buffer + string_fill;
-      strcpy(string_buffer + string_fill, txt);
+  res = string_buffer + string_fill;
+  strcpy(string_buffer + string_fill, txt);
 
-      string_fill += len + 1;
+  string_fill += len + 1;
 
-      return res;
+  return res;
 }
 
 /*
@@ -76,4 +72,3 @@ char* __acc_newstring(const char*txt)
  *  IEEE1364-2001 standard PLI type declarations.
  *
  */
-

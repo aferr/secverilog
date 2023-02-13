@@ -20,29 +20,27 @@
 #ident "$Id: a_fetch_dir.c,v 1.1 2003/10/10 02:57:45 steve Exp $"
 #endif
 
-# include  <assert.h>
-# include  <ctype.h>
-# include  <acc_user.h>
-# include  <vpi_user.h>
-# include  "priv.h"
+#include "priv.h"
+#include <acc_user.h>
+#include <assert.h>
+#include <ctype.h>
+#include <vpi_user.h>
 
-PLI_INT32 acc_fetch_direction(handle obj)
-{
-      if (pli_trace) {
-	    fprintf(pli_trace, "acc_fetch_direction: enter.\n");
-	    fflush(pli_trace);
-      }
+PLI_INT32 acc_fetch_direction(handle obj) {
+  if (pli_trace) {
+    fprintf(pli_trace, "acc_fetch_direction: enter.\n");
+    fflush(pli_trace);
+  }
 
-      fprintf(stderr, "acc_fetch_direction: XXXX not implemented. XXXX\n");
+  fprintf(stderr, "acc_fetch_direction: XXXX not implemented. XXXX\n");
 
-      if (pli_trace) {
-	    fprintf(pli_trace, "acc_fetch_direction: return.\n");
-	    fflush(pli_trace);
-      }
+  if (pli_trace) {
+    fprintf(pli_trace, "acc_fetch_direction: return.\n");
+    fflush(pli_trace);
+  }
 
-      return accInout;
+  return accInout;
 }
-
 
 /*
  * $Log: a_fetch_dir.c,v $
@@ -50,4 +48,3 @@ PLI_INT32 acc_fetch_direction(handle obj)
  *  Some PLI1 stubs.
  *
  */
-

@@ -20,12 +20,11 @@
 #ident "$Id: a_compare_handles.c,v 1.3 2004/02/18 02:51:59 steve Exp $"
 #endif
 
-# include  <vpi_user.h>
-# include  <acc_user.h>
+#include <acc_user.h>
+#include <vpi_user.h>
 
-PLI_INT32 acc_compare_handles(handle handle1, handle handle2)
-{
-      return handle1 == handle2;
+PLI_INT32 acc_compare_handles(handle handle1, handle handle2) {
+  return handle1 == handle2;
 }
 
 /*

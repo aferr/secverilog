@@ -19,9 +19,9 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  "svector.h"
-# include  <string>
-# include  <iostream>
+#include "svector.h"
+#include <iostream>
+#include <string>
 
 #ifdef __GNUC__
 #if __GNUC__ > 2
@@ -40,33 +40,31 @@ class PExpr;
  */
 class PDelays {
 
-    public:
-      PDelays();
-      ~PDelays();
+public:
+  PDelays();
+  ~PDelays();
 
-	/* Set the delay expressions. If the delete_flag is true, then
-	   this object takes ownership of the expressions, and will
-	   delete it in the destructor. */
-      void set_delay(PExpr*);
-      void set_delays(const svector<PExpr*>*del, bool delete_flag=true);
+  /* Set the delay expressions. If the delete_flag is true, then
+     this object takes ownership of the expressions, and will
+     delete it in the destructor. */
+  void set_delay(PExpr *);
+  void set_delays(const svector<PExpr *> *del, bool delete_flag = true);
 
-      void eval_delays(Design*des, NetScope*scope,
-		       NetExpr*&rise_time,
-		       NetExpr*&fall_time,
-		       NetExpr*&decay_time,
-		       bool as_nets_flag =false) const;
+  void eval_delays(Design *des, NetScope *scope, NetExpr *&rise_time,
+                   NetExpr *&fall_time, NetExpr *&decay_time,
+                   bool as_nets_flag = false) const;
 
-      void dump_delays(ostream&out) const;
+  void dump_delays(ostream &out) const;
 
-    private:
-      PExpr* delay_[3];
-      bool delete_flag_;
+private:
+  PExpr *delay_[3];
+  bool delete_flag_;
 
-    private: // not implemented
-      PDelays(const PDelays&);
-      PDelays& operator= (const PDelays&);
+private: // not implemented
+  PDelays(const PDelays &);
+  PDelays &operator=(const PDelays &);
 };
 
-ostream& operator << (ostream&o, const PDelays&);
+ostream &operator<<(ostream &o, const PDelays &);
 
 #endif

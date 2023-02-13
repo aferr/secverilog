@@ -20,22 +20,21 @@
 #ident "$Id: a_fetch_argc.c,v 1.2 2002/08/12 01:35:02 steve Exp $"
 #endif
 
-# include  <vpi_user.h>
-# include  <veriuser.h>
+#include <veriuser.h>
+#include <vpi_user.h>
 
 /*
  * acc_fetch_argc implemented using VPI interface
  */
-int acc_fetch_argc(void)
-{
-      s_vpi_vlog_info vpi_vlog_info;
+int acc_fetch_argc(void) {
+  s_vpi_vlog_info vpi_vlog_info;
 
-      /* get command line info */
-      if (! vpi_get_vlog_info(&vpi_vlog_info))
-	    return 0;
+  /* get command line info */
+  if (!vpi_get_vlog_info(&vpi_vlog_info))
+    return 0;
 
-      /* return argc */
-      return vpi_vlog_info.argc;
+  /* return argc */
+  return vpi_vlog_info.argc;
 }
 
 /*

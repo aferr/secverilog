@@ -20,16 +20,15 @@
 #ident "$Id: getcstringp.c,v 1.3 2003/03/13 04:35:09 steve Exp $"
 #endif
 
-#include  <veriuser.h>
-#include  <acc_user.h>
+#include <acc_user.h>
+#include <veriuser.h>
 
 /*
  * tf_getinstance implemented using equivalent acc_ routing
  */
-char *tf_getcstringp(int n)
-{
-      char*res = acc_fetch_tfarg_str(n);
-      return res;
+char *tf_getcstringp(int n) {
+  char *res = acc_fetch_tfarg_str(n);
+  return res;
 }
 
 /*

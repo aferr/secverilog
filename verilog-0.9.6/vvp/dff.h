@@ -19,7 +19,7 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  "vvp_net.h"
+#include "vvp_net.h"
 
 /*
  * The vvp_dff implements a D-type FF that is agnostic to the data
@@ -33,20 +33,19 @@
  *   port-2:  Clock Enable input
  *   port-3:  Asynchronous D input.
  */
-class vvp_dff  : public vvp_net_fun_t {
+class vvp_dff : public vvp_net_fun_t {
 
-    public:
-      explicit vvp_dff(bool invert_clk =false, bool invert_ce =false);
-      ~vvp_dff();
+public:
+  explicit vvp_dff(bool invert_clk = false, bool invert_ce = false);
+  ~vvp_dff();
 
-      void recv_vec4(vvp_net_ptr_t port, const vvp_vector4_t&bit,
-                     vvp_context_t);
+  void recv_vec4(vvp_net_ptr_t port, const vvp_vector4_t &bit, vvp_context_t);
 
-    private:
-      bool iclk_, ice_;
-      vvp_bit4_t clk_cur_;
-      vvp_bit4_t enable_;
-      vvp_vector4_t d_;
+private:
+  bool iclk_, ice_;
+  vvp_bit4_t clk_cur_;
+  vvp_bit4_t enable_;
+  vvp_vector4_t d_;
 };
 
 #endif

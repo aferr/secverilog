@@ -20,26 +20,23 @@
 #ident "$Id: a_fetch_fullname.c,v 1.5 2003/05/29 02:21:45 steve Exp $"
 #endif
 
-#include  <vpi_user.h>
-#include  <acc_user.h>
-#include  "priv.h"
+#include "priv.h"
+#include <acc_user.h>
+#include <vpi_user.h>
 
 /*
  * acc_fetch_fullname implemented using VPI interface
  */
-char *acc_fetch_fullname(handle object)
-{
-      return __acc_newstring(vpi_get_str(vpiFullName, object));
+char *acc_fetch_fullname(handle object) {
+  return __acc_newstring(vpi_get_str(vpiFullName, object));
 }
 
-char* acc_fetch_name(handle object)
-{
-      return __acc_newstring(vpi_get_str(vpiName, object));
+char *acc_fetch_name(handle object) {
+  return __acc_newstring(vpi_get_str(vpiName, object));
 }
 
-char* acc_fetch_defname(handle object)
-{
-      return __acc_newstring(vpi_get_str(vpiDefName, object));
+char *acc_fetch_defname(handle object) {
+  return __acc_newstring(vpi_get_str(vpiDefName, object));
 }
 
 /*

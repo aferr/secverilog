@@ -19,8 +19,8 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  "StringHeap.h"
-# include  "verinum.h"
+#include "StringHeap.h"
+#include "verinum.h"
 
 /*
  * This class keeps a map of key/value pairs. The map can be set from
@@ -28,33 +28,31 @@
  */
 class Attrib {
 
-    public:
-      Attrib();
-      virtual ~Attrib();
+public:
+  Attrib();
+  virtual ~Attrib();
 
-      const verinum&attribute(perm_string key) const;
-      void attribute(perm_string key, const verinum&value);
-      bool has_compat_attributes(const Attrib&that) const;
+  const verinum &attribute(perm_string key) const;
+  void attribute(perm_string key, const verinum &value);
+  bool has_compat_attributes(const Attrib &that) const;
 
+  /* Provide a means of iterating over the entries in the map. */
+  unsigned attr_cnt() const;
+  perm_string attr_key(unsigned idx) const;
+  const verinum &attr_value(unsigned idx) const;
 
-	/* Provide a means of iterating over the entries in the map. */
-      unsigned       attr_cnt() const;
-      perm_string    attr_key(unsigned idx) const;
-      const verinum& attr_value(unsigned idx) const;
+private:
+  struct cell_ {
+    perm_string key;
+    verinum val;
+  };
 
+  unsigned nlist_;
+  struct cell_ *list_;
 
-    private:
-      struct cell_ {
-	    perm_string  key;
-	    verinum val;
-      };
-
-      unsigned nlist_;
-      struct cell_*list_;
-
-    private: // not implemented
-      Attrib(const Attrib&);
-      Attrib& operator= (const Attrib&);
+private: // not implemented
+  Attrib(const Attrib &);
+  Attrib &operator=(const Attrib &);
 };
 
 #endif

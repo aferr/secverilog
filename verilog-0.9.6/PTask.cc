@@ -17,28 +17,23 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include "config.h"
+#include "config.h"
 
-# include  "PTask.h"
+#include "PTask.h"
 
-PTask::PTask(perm_string name, PScope*parent, bool is_auto__)
-: PScope(name, parent), ports_(0), statement_(0)
-{
-      is_auto_ = is_auto__;
+PTask::PTask(perm_string name, PScope *parent, bool is_auto__)
+    : PScope(name, parent), ports_(0), statement_(0) {
+  is_auto_ = is_auto__;
 }
 
-PTask::~PTask()
-{
+PTask::~PTask() {}
+
+void PTask::set_ports(svector<PWire *> *p) {
+  assert(ports_ == 0);
+  ports_ = p;
 }
 
-void PTask::set_ports(svector<PWire*>*p)
-{
-      assert(ports_ == 0);
-      ports_ = p;
-}
-
-void PTask::set_statement(Statement*s)
-{
-      assert(statement_ == 0);
-      statement_ = s;
+void PTask::set_statement(Statement *s) {
+  assert(statement_ == 0);
+  statement_ = s;
 }

@@ -17,27 +17,25 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-#include  <assert.h>
-#include  <vpi_user.h>
-#include  <acc_user.h>
+#include <acc_user.h>
+#include <assert.h>
+#include <vpi_user.h>
 
+char *acc_fetch_type_str(PLI_INT32 type) {
+  switch (type) {
+  case accNet:
+    return "accNet";
 
-char* acc_fetch_type_str(PLI_INT32 type)
-{
-      switch (type) {
-	  case accNet:
-	    return "accNet";
+  case accReg:
+    return "accReg";
 
-	  case accReg:
-	    return "accReg";
+  case accParameter:
+    return "accParameter";
 
-	  case accParameter:
-	    return "accParameter";
+  case accConstant:
+    return "accConstant";
+  }
 
-	  case accConstant:
-	    return "accConstant";
-      }
-
-      vpi_printf("acc_fetch_type_str: type %d is what accType?\n", (int)type);
-      return "acc_fetch_type_str(unknown)";
+  vpi_printf("acc_fetch_type_str: type %d is what accType?\n", (int)type);
+  return "acc_fetch_type_str(unknown)";
 }

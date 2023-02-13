@@ -19,18 +19,17 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-
-# include  <list>
-# include  <map>
-# include  <vector>
-# include  <utility>
-# include  "StringHeap.h"
-# include  "HName.h"
-# include  "named.h"
-# include  "PScope.h"
-# include  "LineInfo.h"
-# include  "netlist.h"
-# include  "pform_types.h"
+#include "HName.h"
+#include "LineInfo.h"
+#include "PScope.h"
+#include "StringHeap.h"
+#include "named.h"
+#include "netlist.h"
+#include "pform_types.h"
+#include <list>
+#include <map>
+#include <utility>
+#include <vector>
 
 class PExpr;
 class PEIdent;
@@ -54,125 +53,127 @@ struct Predicate;
 
 class Module : public PScope, public LineInfo {
 
-	/* The module ports are in general a vector of port_t
-	   objects. Each port has a name and an ordered list of
-	   wires. The name is the means that the outside uses to
-	   access the port, the wires are the internal connections to
-	   the port. */
-    public:
-      struct port_t {
-	    perm_string name;
-	    vector<PEIdent*> expr;
-      };
+  /* The module ports are in general a vector of port_t
+     objects. Each port has a name and an ordered list of
+     wires. The name is the means that the outside uses to
+     access the port, the wires are the internal connections to
+     the port. */
+public:
+  struct port_t {
+    perm_string name;
+    vector<PEIdent *> expr;
+  };
 
-    public:
-	/* The name passed here is the module name, not the instance
-	   name, as well as file name. This make must be a permallocated string. */
-      explicit Module(perm_string name, perm_string file);
-      ~Module();
+public:
+  /* The name passed here is the module name, not the instance
+     name, as well as file name. This make must be a permallocated string. */
+  explicit Module(perm_string name, perm_string file);
+  ~Module();
 
-	/* Initially false. This is set to true if the module has been
-	   declared as a library module. This makes the module
-	   ineligible for being chosen as an implicit root. It has no
-	   other effect. */
-      bool library_flag;
+  /* Initially false. This is set to true if the module has been
+     declared as a library module. This makes the module
+     ineligible for being chosen as an implicit root. It has no
+     other effect. */
+  bool library_flag;
 
-      bool is_cell;
+  bool is_cell;
 
-      enum UCDriveType { UCD_NONE, UCD_PULL0, UCD_PULL1 };
-      UCDriveType uc_drive;
+  enum UCDriveType { UCD_NONE, UCD_PULL0, UCD_PULL1 };
+  UCDriveType uc_drive;
 
-      NetNet::Type default_nettype;
+  NetNet::Type default_nettype;
 
-	/* specparams are simpler then other params, in that they have
-	   no type information. They are merely constant
-	   expressions. */
-      map<perm_string,PExpr*>specparams;
+  /* specparams are simpler then other params, in that they have
+     no type information. They are merely constant
+     expressions. */
+  map<perm_string, PExpr *> specparams;
 
-	/* The module also has defparam assignments which don't create
-	   new parameters within the module, but may be used to set
-	   values within this module (when instantiated) or in other
-	   instantiated modules. */
-      typedef pair<pform_name_t,PExpr*> named_expr_t;
-      list<named_expr_t>defparms;
+  /* The module also has defparam assignments which don't create
+     new parameters within the module, but may be used to set
+     values within this module (when instantiated) or in other
+     instantiated modules. */
+  typedef pair<pform_name_t, PExpr *> named_expr_t;
+  list<named_expr_t> defparms;
 
-        /* Parameters may be overridden at instantiation time;
-           the overrides do not contain explicit parameter names,
-           but rather refer to parameters in the order they
-           appear in the instantiated module.  Therefore a
-           list of names in module-order is needed to pass from
-           a parameter-index to its name. */
-      list<perm_string> param_names;
+  /* Parameters may be overridden at instantiation time;
+     the overrides do not contain explicit parameter names,
+     but rather refer to parameters in the order they
+     appear in the instantiated module.  Therefore a
+     list of names in module-order is needed to pass from
+     a parameter-index to its name. */
+  list<perm_string> param_names;
 
-	/* This is an array of port descriptors, which is in turn a
-	   named array of PEident pointers. */
-      vector<port_t*> ports;
+  /* This is an array of port descriptors, which is in turn a
+     named array of PEident pointers. */
+  vector<port_t *> ports;
 
-      map<perm_string,PExpr*> attributes;
+  map<perm_string, PExpr *> attributes;
 
-	/* These are the timescale for this module. The default is
-	   set by the `timescale directive. */
-      int time_unit, time_precision;
-      bool time_from_timescale;
-      bool timescale_warn_done;
+  /* These are the timescale for this module. The default is
+     set by the `timescale directive. */
+  int time_unit, time_precision;
+  bool time_from_timescale;
+  bool timescale_warn_done;
 
-	/* Task definitions within this module */
-      map<perm_string,PTask*> tasks;
-      map<perm_string,PFunction*> funcs;
+  /* Task definitions within this module */
+  map<perm_string, PTask *> tasks;
+  map<perm_string, PFunction *> funcs;
 
-	/* The module has a list of genvars that may be used in
-	   various generate schemes. */
-      map<perm_string,LineInfo*> genvars;
+  /* The module has a list of genvars that may be used in
+     various generate schemes. */
+  map<perm_string, LineInfo *> genvars;
 
-	/* the module has a list of generate schemes that appear in
-	   the module definition. These are used at elaboration time. */
-      list<PGenerate*> generate_schemes;
+  /* the module has a list of generate schemes that appear in
+     the module definition. These are used at elaboration time. */
+  list<PGenerate *> generate_schemes;
 
-      list<PSpecPath*> specify_paths;
+  list<PSpecPath *> specify_paths;
 
-	// The mod_name() is the name of the module type.
-      perm_string mod_name() const { return pscope_name(); }
+  // The mod_name() is the name of the module type.
+  perm_string mod_name() const { return pscope_name(); }
 
-        // The file_name() is the name of the file that defines the module type.
-      perm_string file_name() const { return file; }
+  // The file_name() is the name of the file that defines the module type.
+  perm_string file_name() const { return file; }
 
-      void add_gate(PGate*gate);
+  void add_gate(PGate *gate);
 
-      unsigned port_count() const;
-      const vector<PEIdent*>& get_port(unsigned idx) const;
-      unsigned find_port(const char*name) const;
+  unsigned port_count() const;
+  const vector<PEIdent *> &get_port(unsigned idx) const;
+  unsigned find_port(const char *name) const;
 
-      PGate* get_gate(perm_string name);
+  PGate *get_gate(perm_string name);
 
-      const list<PGate*>& get_gates() const;
+  const list<PGate *> &get_gates() const;
 
-      void dump(ostream&out) const;
-      bool elaborate(Design*, NetScope*scope) const;
+  void dump(ostream &out) const;
+  bool elaborate(Design *, NetScope *scope) const;
 
-      typedef map<perm_string,NetExpr*> replace_t;
-      bool elaborate_scope(Design*, NetScope*scope, const replace_t&rep);
+  typedef map<perm_string, NetExpr *> replace_t;
+  bool elaborate_scope(Design *, NetScope *scope, const replace_t &rep);
 
-      bool elaborate_sig(Design*, NetScope*scope) const;
+  bool elaborate_sig(Design *, NetScope *scope) const;
 
-      PExpr* getAssumptions() const;
-      void typecheck(SexpPrinter&printer, TypeEnv& env, map<perm_string,Module*> modules, char* depfun);
-      void next_cycle_transform(SexpPrinter&printer, TypeEnv& env);
-      void dumpExprDefs(SexpPrinter&, set<perm_string>exprs) const;
-      void CollectDepExprs(SexpPrinter&, TypeEnv & env, map<perm_string,Module*> modules) const;
-      void CollectDepInvariants(SexpPrinter&printer, TypeEnv & env) const;
-      PProcess* gen_assign_next_block(perm_string);
+  PExpr *getAssumptions() const;
+  void typecheck(SexpPrinter &printer, TypeEnv &env,
+                 map<perm_string, Module *> modules, char *depfun);
+  void next_cycle_transform(SexpPrinter &printer, TypeEnv &env);
+  void dumpExprDefs(SexpPrinter &, set<perm_string> exprs) const;
+  void CollectDepExprs(SexpPrinter &, TypeEnv &env,
+                       map<perm_string, Module *> modules) const;
+  void CollectDepInvariants(SexpPrinter &printer, TypeEnv &env) const;
+  PProcess *gen_assign_next_block(perm_string);
 
-    private:
-      list<PGate*> gates_;
+private:
+  list<PGate *> gates_;
 
-      perm_string file;
+  perm_string file;
 
-      static void elaborate_parm_item_(perm_string name, const param_expr_t&cur,
-				       Design*des, NetScope*scope);
+  static void elaborate_parm_item_(perm_string name, const param_expr_t &cur,
+                                   Design *des, NetScope *scope);
 
-    private: // Not implemented
-      Module(const Module&);
-      Module& operator= (const Module&);
+private: // Not implemented
+  Module(const Module &);
+  Module &operator=(const Module &);
 };
 
 #endif

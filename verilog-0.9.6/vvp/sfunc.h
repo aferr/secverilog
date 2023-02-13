@@ -19,28 +19,27 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  "pointers.h"
+#include "pointers.h"
 
 class sfunc_core : public vvp_wide_fun_core, protected vvp_gen_event_s {
 
-    public:
-      sfunc_core(vvp_net_t*ptr, vpiHandle sys, unsigned argc, vpiHandle*argv);
-      ~sfunc_core();
+public:
+  sfunc_core(vvp_net_t *ptr, vpiHandle sys, unsigned argc, vpiHandle *argv);
+  ~sfunc_core();
 
-      void recv_vec4(vvp_net_ptr_t port, const vvp_vector4_t&bit,
-                     vvp_context_t context);
+  void recv_vec4(vvp_net_ptr_t port, const vvp_vector4_t &bit,
+                 vvp_context_t context);
 
-    private:
-      void recv_vec4_from_inputs(unsigned port);
-      void recv_real_from_inputs(unsigned port);
+private:
+  void recv_vec4_from_inputs(unsigned port);
+  void recv_real_from_inputs(unsigned port);
 
-      void run_run();
+  void run_run();
 
-
-    private:
-      vpiHandle sys_;
-      unsigned  argc_;
-      vpiHandle*argv_;
+private:
+  vpiHandle sys_;
+  unsigned argc_;
+  vpiHandle *argv_;
 };
 
 #endif

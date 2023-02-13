@@ -20,73 +20,70 @@
 /*
  * This file includes functions for evaluating REAL expressions.
  */
-# include  "vvp_config.h"
-# include  "vvp_priv.h"
-# include  <string.h>
-# include  <stdlib.h>
+#include "vvp_config.h"
+#include "vvp_priv.h"
+#include <stdlib.h>
+#include <string.h>
 #ifdef HAVE_STDINT_H
-# include  <stdint.h>
+#include <stdint.h>
 #endif
 
 #ifdef HAVE_INTTYPES_H
-# ifndef __STDC_FORMAT_MACROS
-#  define __STDC_FORMAT_MACROS 1
-# endif
-# include  <inttypes.h>
+#ifndef __STDC_FORMAT_MACROS
+#define __STDC_FORMAT_MACROS 1
+#endif
+#include <inttypes.h>
 #else
 #endif
 
-# include  <math.h>
-# include  <assert.h>
+#include <assert.h>
+#include <math.h>
 
 /*
  * Evaluate the bool64 the hard way, by evaluating the logic vector
  * and converting it to a bool64.
  */
-static int eval_bool64_logic(ivl_expr_t expr)
-{
-      int res;
-      struct vector_info tmp;
+static int eval_bool64_logic(ivl_expr_t expr) {
+  int res;
+  struct vector_info tmp;
 
-      tmp = draw_eval_expr(expr, STUFF_OK_XZ);
-      res = allocate_word();
-      fprintf(vvp_out, "   %%ix/get %d, %u, %u;\n", res, tmp.base, tmp.wid);
-      clr_vector(tmp);
+  tmp = draw_eval_expr(expr, STUFF_OK_XZ);
+  res = allocate_word();
+  fprintf(vvp_out, "   %%ix/get %d, %u, %u;\n", res, tmp.base, tmp.wid);
+  clr_vector(tmp);
 
-      return res;
+  return res;
 }
 
-static int draw_number_bool64(ivl_expr_t expr)
-{
-      int res;
-      const char*bits = ivl_expr_bits(expr);
-      uint64_t val = 0;
-      unsigned long idx, low, hig;
+static int draw_number_bool64(ivl_expr_t expr) {
+  int res;
+  const char *bits = ivl_expr_bits(expr);
+  uint64_t val     = 0;
+  unsigned long idx, low, hig;
 
-      for (idx = 0 ;  idx < ivl_expr_width(expr) ;  idx += 1) {
-	    if (bits[idx] == '1')
-		  val |= 1UL << idx;
-      }
+  for (idx = 0; idx < ivl_expr_width(expr); idx += 1) {
+    if (bits[idx] == '1')
+      val |= 1UL << idx;
+  }
 
-      res = allocate_word();
-      low = val % UINT64_C(0x100000000);
-      hig = val / UINT64_C(0x100000000);
-      fprintf(vvp_out, "   %%ix/load %d, %lu, %lu;\n", res, low, hig);
-      return res;
+  res = allocate_word();
+  low = val % UINT64_C(0x100000000);
+  hig = val / UINT64_C(0x100000000);
+  fprintf(vvp_out, "   %%ix/load %d, %lu, %lu;\n", res, low, hig);
+  return res;
 }
 
-int draw_eval_bool64(ivl_expr_t expr)
-{
-      int res;
+int draw_eval_bool64(ivl_expr_t expr) {
+  int res;
 
-      switch (ivl_expr_type(expr)) {
-	  case IVL_EX_NUMBER:
-	    res = draw_number_bool64(expr);
-	    break;
-	  default:
-	    res = eval_bool64_logic(expr);
-	    break;
-      }
+  switch (ivl_expr_type(expr)) {
+  case IVL_EX_NUMBER:
+    res = draw_number_bool64(expr);
+    break;
+  default:
+    res = eval_bool64_logic(expr);
+    break;
+  }
 
-      return res;
+  return res;
 }

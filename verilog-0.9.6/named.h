@@ -19,7 +19,7 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  "StringHeap.h"
+#include "StringHeap.h"
 
 /*
  * There are lots of places where names are attached to objects. This
@@ -27,8 +27,8 @@
  */
 
 template <class T> struct named {
-      perm_string name;
-      T parm;
+  perm_string name;
+  T parm;
 };
 
 #endif

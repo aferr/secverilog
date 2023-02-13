@@ -17,73 +17,71 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  "netlist.h"
-# include  "netmisc.h"
-# include  <cassert>
-
+#include "netlist.h"
+#include "netmisc.h"
+#include <cassert>
 
 /*
  * Search for the hierarchical name.
  */
-NetScope*symbol_search(const LineInfo*li, Design*des, NetScope*scope,
-                       pform_name_t path,
-		       NetNet*&net,
-		       const NetExpr*&par,
-		       NetEvent*&eve,
-		       const NetExpr*&ex1, const NetExpr*&ex2)
-{
-      assert(scope);
-      bool hier_path = false;
+NetScope *symbol_search(const LineInfo *li, Design *des, NetScope *scope,
+                        pform_name_t path, NetNet *&net, const NetExpr *&par,
+                        NetEvent *&eve, const NetExpr *&ex1,
+                        const NetExpr *&ex2) {
+  assert(scope);
+  bool hier_path = false;
 
-	/* Get the tail name of the object we are looking for. */
-      perm_string key = peek_tail_name(path);
-      path.pop_back();
+  /* Get the tail name of the object we are looking for. */
+  perm_string key = peek_tail_name(path);
+  path.pop_back();
 
-	/* Initialize output argument to cleared. */
-      net = 0;
-      par = 0;
-      eve = 0;
+  /* Initialize output argument to cleared. */
+  net = 0;
+  par = 0;
+  eve = 0;
 
-	/* If the path has a scope part, then search for the specified
-	   scope that we are supposed to search. */
-      if (! path.empty()) {
-	    list<hname_t> path_list = eval_scope_path(des, scope, path);
-	    assert(path_list.size() <= path.size());
+  /* If the path has a scope part, then search for the specified
+     scope that we are supposed to search. */
+  if (!path.empty()) {
+    list<hname_t> path_list = eval_scope_path(des, scope, path);
+    assert(path_list.size() <= path.size());
 
-	      // If eval_scope_path returns a short list, then some
-	      // part of the scope was not found. Abort.
-	    if (path_list.size() < path.size())
-		  return 0;
-
-	    scope = des->find_scope(scope, path_list);
-
-            if (scope && scope->is_auto() && li) {
-                  cerr << li->get_fileline() << ": error: Hierarchical "
-                        "reference to automatically allocated item "
-                        "`" << key << "' in path `" << path << "'" << endl;
-                  des->errors += 1;
-            }
-
-	    hier_path = true;
-      }
-
-      while (scope) {
-	    if ( (net = scope->find_signal(key)) )
-		  return scope;
-
-	    if ( (eve = scope->find_event(key)) )
-		  return scope;
-
-	    if ( (par = scope->get_parameter(key, ex1, ex2)) )
-		  return scope;
-
-	      /* We can't look up if we are at the enclosing module scope
-	       * or if a hierarchical path was given. */
-	    if ((scope->type() == NetScope::MODULE) || hier_path)
-		  scope = 0;
-	    else
-		  scope = scope->parent();
-      }
-
+    // If eval_scope_path returns a short list, then some
+    // part of the scope was not found. Abort.
+    if (path_list.size() < path.size())
       return 0;
+
+    scope = des->find_scope(scope, path_list);
+
+    if (scope && scope->is_auto() && li) {
+      cerr << li->get_fileline()
+           << ": error: Hierarchical "
+              "reference to automatically allocated item "
+              "`"
+           << key << "' in path `" << path << "'" << endl;
+      des->errors += 1;
+    }
+
+    hier_path = true;
+  }
+
+  while (scope) {
+    if ((net = scope->find_signal(key)))
+      return scope;
+
+    if ((eve = scope->find_event(key)))
+      return scope;
+
+    if ((par = scope->get_parameter(key, ex1, ex2)))
+      return scope;
+
+    /* We can't look up if we are at the enclosing module scope
+     * or if a hierarchical path was given. */
+    if ((scope->type() == NetScope::MODULE) || hier_path)
+      scope = 0;
+    else
+      scope = scope->parent();
+  }
+
+  return 0;
 }

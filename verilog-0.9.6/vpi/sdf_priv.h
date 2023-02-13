@@ -19,14 +19,14 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  <stdio.h>
+#include <stdio.h>
 
 /*
  * Invoke the parser to parse the opened SDF file. The fd is the SDF
  * file already opened and ready for reading. The path is the path to
  * the file and is only used for error messages.
  */
-extern void sdf_process_file(FILE*fd, const char*path);
+extern void sdf_process_file(FILE *fd, const char *path);
 
 extern int sdf_flag_warning;
 extern int sdf_flag_inform;
@@ -37,17 +37,17 @@ extern int sdf_flag_inform;
  */
 
 struct sdf_delay_s {
-      int defined;
-      double value;
+  int defined;
+  double value;
 };
 
 struct sdf_delval_list_s {
-      int count;
-      struct sdf_delay_s val[12];
+  int count;
+  struct sdf_delay_s val[12];
 };
 
-extern void sdf_select_instance(const char*celltype, const char*inst);
-extern void sdf_iopath_delays(int vpi_edge, const char*src, const char*dst,
-			      const struct sdf_delval_list_s*delval);
+extern void sdf_select_instance(const char *celltype, const char *inst);
+extern void sdf_iopath_delays(int vpi_edge, const char *src, const char *dst,
+                              const struct sdf_delval_list_s *delval);
 
 #endif

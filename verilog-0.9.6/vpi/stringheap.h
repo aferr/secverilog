@@ -22,15 +22,15 @@
 struct stringheap_cell;
 
 struct stringheap_s {
-      struct stringheap_cell*cell_lst;
-      unsigned cell_off;
+  struct stringheap_cell *cell_lst;
+  unsigned cell_off;
 };
 
 /*
  * Allocate the string from the heap.
  */
-const char*strdup_sh(struct stringheap_s*hp, const char*str);
+const char *strdup_sh(struct stringheap_s *hp, const char *str);
 
-void string_heap_delete(struct stringheap_s*hp);
+void string_heap_delete(struct stringheap_s *hp);
 
 #endif

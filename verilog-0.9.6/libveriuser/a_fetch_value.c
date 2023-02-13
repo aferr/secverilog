@@ -17,109 +17,105 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  <acc_user.h>
-# include  <vpi_user.h>
-# include  "priv.h"
-# include  <assert.h>
-# include  <string.h>
+#include "priv.h"
+#include <acc_user.h>
+#include <assert.h>
+#include <string.h>
+#include <vpi_user.h>
 
-static char* fetch_struct_value(handle obj, s_acc_value*value)
-{
-      struct t_vpi_value val;
+static char *fetch_struct_value(handle obj, s_acc_value *value) {
+  struct t_vpi_value val;
 
-      switch (value->format) {
+  switch (value->format) {
 
-	  case accScalarVal:
-	    val.format = vpiScalarVal;
-	    vpi_get_value(obj, &val);
-	    switch (val.value.scalar) {
-		case vpi0:
-		  value->value.scalar = acc0;
-		  break;
-		case vpi1:
-		  value->value.scalar = acc1;
-		  break;
-		case vpiX:
-		  value->value.scalar = accX;
-		  break;
-		case vpiZ:
-		  value->value.scalar = accZ;
-		  break;
-		default:
-		  assert(0);
-	    }
+  case accScalarVal:
+    val.format = vpiScalarVal;
+    vpi_get_value(obj, &val);
+    switch (val.value.scalar) {
+    case vpi0:
+      value->value.scalar = acc0;
+      break;
+    case vpi1:
+      value->value.scalar = acc1;
+      break;
+    case vpiX:
+      value->value.scalar = accX;
+      break;
+    case vpiZ:
+      value->value.scalar = accZ;
+      break;
+    default:
+      assert(0);
+    }
 
-	    if (pli_trace) {
-		  fprintf(pli_trace, "acc_fetch_value(<%s>, "
-			  "accScalarVal) --> %d\n",
-			  vpi_get_str(vpiFullName,obj),
-			  value->value.scalar);
-	    }
-	    break;
+    if (pli_trace) {
+      fprintf(pli_trace,
+              "acc_fetch_value(<%s>, "
+              "accScalarVal) --> %d\n",
+              vpi_get_str(vpiFullName, obj), value->value.scalar);
+    }
+    break;
 
-	  case accIntVal:
-	    val.format = vpiIntVal;
-	    vpi_get_value(obj, &val);
-	    value->value.integer = val.value.integer;
+  case accIntVal:
+    val.format = vpiIntVal;
+    vpi_get_value(obj, &val);
+    value->value.integer = val.value.integer;
 
-	    if (pli_trace) {
-		  fprintf(pli_trace, "acc_fetch_value(<%s>, "
-			  "accIntVal) --> %d\n",
-			  vpi_get_str(vpiFullName,obj),
-			  value->value.integer);
-	    }
-	    break;
+    if (pli_trace) {
+      fprintf(pli_trace,
+              "acc_fetch_value(<%s>, "
+              "accIntVal) --> %d\n",
+              vpi_get_str(vpiFullName, obj), value->value.integer);
+    }
+    break;
 
-	  case accRealVal:
-	    val.format = vpiRealVal;
-	    vpi_get_value(obj, &val);
-	    value->value.real = val.value.real;
+  case accRealVal:
+    val.format = vpiRealVal;
+    vpi_get_value(obj, &val);
+    value->value.real = val.value.real;
 
-	    if (pli_trace) {
-		  fprintf(pli_trace, "acc_fetch_value(<%s>, "
-			  "accRealVal) --> %g\n",
-			  vpi_get_str(vpiFullName,obj),
-			  value->value.real);
-	    }
-	    break;
+    if (pli_trace) {
+      fprintf(pli_trace,
+              "acc_fetch_value(<%s>, "
+              "accRealVal) --> %g\n",
+              vpi_get_str(vpiFullName, obj), value->value.real);
+    }
+    break;
 
-	  default:
-	    vpi_printf("XXXX acc_fetch_value(..., \"%%%%\", <%d>);\n",
-		       value->format);
-	    value->value.str = "<string value>";
-	    break;
-      }
+  default:
+    vpi_printf("XXXX acc_fetch_value(..., \"%%%%\", <%d>);\n", value->format);
+    value->value.str = "<string value>";
+    break;
+  }
 
-      return 0;
+  return 0;
 }
 
-static char* fetch_strength_value(handle obj)
-{
-      struct t_vpi_value val;
-      char str[4];
+static char *fetch_strength_value(handle obj) {
+  struct t_vpi_value val;
+  char str[4];
 
-      val.format = vpiStrengthVal;
-      vpi_get_value(obj, &val);
+  val.format = vpiStrengthVal;
+  vpi_get_value(obj, &val);
 
-      /* Should this iterate over the bits? It now matches the old code. */
-      vpip_format_strength(str, &val, 0);
+  /* Should this iterate over the bits? It now matches the old code. */
+  vpip_format_strength(str, &val, 0);
 
-      if (pli_trace) {
-	    fprintf(pli_trace, "acc_fetch_value(<%s>, \"%%v\") --> %s\n",
-		    vpi_get_str(vpiFullName,obj), str);
-      }
+  if (pli_trace) {
+    fprintf(pli_trace, "acc_fetch_value(<%s>, \"%%v\") --> %s\n",
+            vpi_get_str(vpiFullName, obj), str);
+  }
 
-      return __acc_newstring(str);
+  return __acc_newstring(str);
 }
 
-char* acc_fetch_value(handle obj, const char*fmt, s_acc_value*value)
-{
-      if (strcmp(fmt, "%%") == 0)
-	    return fetch_struct_value(obj, value);
+char *acc_fetch_value(handle obj, const char *fmt, s_acc_value *value) {
+  if (strcmp(fmt, "%%") == 0)
+    return fetch_struct_value(obj, value);
 
-      if (strcmp(fmt, "%v") == 0)
-	    return fetch_strength_value(obj);
+  if (strcmp(fmt, "%v") == 0)
+    return fetch_strength_value(obj);
 
-      vpi_printf("XXXX acc_fetch_value(..., \"%s\", ...)\n", fmt);
-      return "<acc_fetch_value>";
+  vpi_printf("XXXX acc_fetch_value(..., \"%s\", ...)\n", fmt);
+  return "<acc_fetch_value>";
 }

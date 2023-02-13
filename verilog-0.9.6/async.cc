@@ -17,21 +17,15 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include "config.h"
+#include "config.h"
 
-# include  "functor.h"
-# include  "netlist.h"
-# include  <cassert>
+#include "functor.h"
+#include "netlist.h"
+#include <cassert>
 
-bool NetAssign::is_asynchronous()
-{
-      return true;
-}
+bool NetAssign::is_asynchronous() { return true; }
 
-bool NetCondit::is_asynchronous()
-{
-      return false;
-}
+bool NetCondit::is_asynchronous() { return false; }
 
 /*
  * NetEvWait statements come from statements of the form @(...) in the
@@ -43,49 +37,44 @@ bool NetCondit::is_asynchronous()
  * unaccounted for in the sensitivity list then the statement is a
  * latch.
  */
-bool NetEvWait::is_asynchronous()
-{
-	/* The "sense" set contains the set of Nexa that are in the
-	   sensitivity list. We also require that the events are all
-	   level sensitive, but the nex_async_ method takes care of
-	   that test. */
-      NexusSet*sense = new NexusSet;
-      for (unsigned idx = 0 ;  idx < nevents_ ;  idx += 1) {
-	    NexusSet*tmp = event(idx)->nex_async_();
-	    if (tmp == 0) {
-		  delete sense;
-		  return false;
-	    }
-
-	    sense->add(*tmp);
-	    delete tmp;
-      }
-
-      NexusSet*inputs = statement_->nex_input();
-
-      if (! sense->contains(*inputs)) {
-	    delete sense;
-	    delete inputs;
-	    return false;
-      }
-
+bool NetEvWait::is_asynchronous() {
+  /* The "sense" set contains the set of Nexa that are in the
+     sensitivity list. We also require that the events are all
+     level sensitive, but the nex_async_ method takes care of
+     that test. */
+  NexusSet *sense = new NexusSet;
+  for (unsigned idx = 0; idx < nevents_; idx += 1) {
+    NexusSet *tmp = event(idx)->nex_async_();
+    if (tmp == 0) {
       delete sense;
-      delete inputs;
-
-	/* If it passes all the other tests, then this statement is
-	   asynchronous. */
-      return true;
-}
-
-bool NetProc::is_asynchronous()
-{
       return false;
+    }
+
+    sense->add(*tmp);
+    delete tmp;
+  }
+
+  NexusSet *inputs = statement_->nex_input();
+
+  if (!sense->contains(*inputs)) {
+    delete sense;
+    delete inputs;
+    return false;
+  }
+
+  delete sense;
+  delete inputs;
+
+  /* If it passes all the other tests, then this statement is
+     asynchronous. */
+  return true;
 }
 
-bool NetProcTop::is_asynchronous()
-{
-      if (type_ == IVL_PR_INITIAL)
-	    return false;
+bool NetProc::is_asynchronous() { return false; }
 
-      return statement_->is_asynchronous();
+bool NetProcTop::is_asynchronous() {
+  if (type_ == IVL_PR_INITIAL)
+    return false;
+
+  return statement_->is_asynchronous();
 }

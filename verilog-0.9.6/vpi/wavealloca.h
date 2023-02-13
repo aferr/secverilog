@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) Tony Bybell 1999.
  *
  * This program is free software; you can redistribute it and/or
@@ -25,5 +25,4 @@
 #define alloca _alloca
 #endif
 #define wave_alloca alloca
-#endif 
-
+#endif

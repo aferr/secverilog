@@ -17,27 +17,18 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  "PScope.h"
+#include "PScope.h"
 
-PScope::PScope(perm_string n, PScope*parent)
-: name_(n), parent_(parent)
-{
-}
+PScope::PScope(perm_string n, PScope *parent) : name_(n), parent_(parent) {}
 
-PScope::PScope(perm_string n)
-: name_(n), parent_(0)
-{
-}
+PScope::PScope(perm_string n) : name_(n), parent_(0) {}
 
-PScope::~PScope()
-{
-}
+PScope::~PScope() {}
 
-PWire* LexicalScope::wires_find(perm_string name)
-{
-      map<perm_string,PWire*>::const_iterator cur = wires.find(name);
-      if (cur == wires.end())
-	    return 0;
-      else
-	    return (*cur).second;
+PWire *LexicalScope::wires_find(perm_string name) {
+  map<perm_string, PWire *>::const_iterator cur = wires.find(name);
+  if (cur == wires.end())
+    return 0;
+  else
+    return (*cur).second;
 }

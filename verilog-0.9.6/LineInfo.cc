@@ -17,41 +17,28 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include "config.h"
+#include "config.h"
 
-# include  "LineInfo.h"
-# include  <sstream>
+#include "LineInfo.h"
+#include <sstream>
 
-LineInfo::LineInfo()
-: lineno_(0)
-{
+LineInfo::LineInfo() : lineno_(0) {}
+
+LineInfo::~LineInfo() {}
+
+string LineInfo::get_fileline() const {
+  ostringstream buf;
+  buf << (file_.str() ? file_.str() : "") << ":" << lineno_;
+
+  string res = buf.str();
+  return res;
 }
 
-LineInfo::~LineInfo()
-{
+void LineInfo::set_line(const LineInfo &that) {
+  file_   = that.file_;
+  lineno_ = that.lineno_;
 }
 
-string LineInfo::get_fileline() const
-{
-      ostringstream buf;
-      buf << (file_.str()? file_.str() : "") << ":" << lineno_;
+void LineInfo::set_file(perm_string f) { file_ = f; }
 
-      string res = buf.str();
-      return res;
-}
-
-void LineInfo::set_line(const LineInfo&that)
-{
-      file_ = that.file_;
-      lineno_ = that.lineno_;
-}
-
-void LineInfo::set_file(perm_string f)
-{
-      file_ = f;
-}
-
-void LineInfo::set_lineno(unsigned n)
-{
-      lineno_ = n;
-}
+void LineInfo::set_lineno(unsigned n) { lineno_ = n; }

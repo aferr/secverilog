@@ -20,63 +20,59 @@
 #ident "$Id: enables.c,v 1.6 2002/08/12 01:35:03 steve Exp $"
 #endif
 
-# include "config.h"
-# include  "ivl_target.h"
-# include  <assert.h>
-# include  "priv.h"
-
+#include "config.h"
+#include "ivl_target.h"
+#include "priv.h"
+#include <assert.h>
 
 /*
  * Given a pin index, look at the nexus for a bufif device that is
  * driving it, if any. Save that device in the enable slot for the
  * cell. We'll try to fit it later.
  */
-static void absorb_pad_enable(unsigned idx)
-{
-      unsigned ndx;
-      ivl_nexus_t nex = bind_pin[idx].nexus;
+static void absorb_pad_enable(unsigned idx) {
+  unsigned ndx;
+  ivl_nexus_t nex = bind_pin[idx].nexus;
 
-      for (ndx = 0 ;  ndx < ivl_nexus_ptrs(nex) ;  ndx += 1) {
+  for (ndx = 0; ndx < ivl_nexus_ptrs(nex); ndx += 1) {
 
-	    unsigned pin;
-	    ivl_nexus_ptr_t ptr = ivl_nexus_ptr(nex, ndx);
-	    ivl_net_logic_t log = ivl_nexus_ptr_log(ptr);
+    unsigned pin;
+    ivl_nexus_ptr_t ptr = ivl_nexus_ptr(nex, ndx);
+    ivl_net_logic_t log = ivl_nexus_ptr_log(ptr);
 
-	    if (log == 0)
-		  continue;
+    if (log == 0)
+      continue;
 
-	    pin = ivl_nexus_ptr_pin(ptr);
-	    assert(pin == 0);
+    pin = ivl_nexus_ptr_pin(ptr);
+    assert(pin == 0);
 
-	    switch (ivl_logic_type(log)) {
+    switch (ivl_logic_type(log)) {
 
-		case IVL_LO_BUFIF0:
-		case IVL_LO_BUFIF1:
-		  assert(bind_pin[idx].enable == 0);
-		  bind_pin[idx].enable = log;
-		  break;
+    case IVL_LO_BUFIF0:
+    case IVL_LO_BUFIF1:
+      assert(bind_pin[idx].enable == 0);
+      bind_pin[idx].enable = log;
+      break;
 
-		default:
-	    }
-      }
+    default:
+    }
+  }
 }
 
-void absorb_pad_enables(void)
-{
-      unsigned idx;
+void absorb_pad_enables(void) {
+  unsigned idx;
 
-      for (idx = 0 ;  idx < pins ;  idx += 1) {
+  for (idx = 0; idx < pins; idx += 1) {
 
-	    if (bind_pin[idx].sop == 0)
-		  continue;
+    if (bind_pin[idx].sop == 0)
+      continue;
 
-	    if (bind_pin[idx].nexus == 0)
-		  continue;
+    if (bind_pin[idx].nexus == 0)
+      continue;
 
-	    absorb_pad_enable(idx);
-      }
+    absorb_pad_enable(idx);
+  }
 }
-
 
 /*
  * $Log: enables.c,v $
@@ -100,4 +96,3 @@ void absorb_pad_enables(void)
  *  Add the pal loadable target.
  *
  */
-

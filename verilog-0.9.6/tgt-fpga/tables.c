@@ -20,9 +20,9 @@
 #ident "$Id: tables.c,v 1.6 2003/08/07 04:04:01 steve Exp $"
 #endif
 
-# include  "fpga_priv.h"
-# include  <string.h>
-# include  <assert.h>
+#include "fpga_priv.h"
+#include <assert.h>
+#include <string.h>
 
 extern const struct device_s d_generic;
 extern const struct device_s d_generic_edif;
@@ -30,32 +30,27 @@ extern const struct device_s d_lpm_edif;
 extern const struct device_s d_virtex_edif;
 extern const struct device_s d_virtex2_edif;
 
-
 const struct device_table_s {
-      const char*name;
-      device_t driver;
-} device_table[] = {
-      { "generic-edif", &d_generic_edif },
-      { "generic-xnf",  &d_generic },
-      { "lpm",          &d_lpm_edif },
-      { "virtex",       &d_virtex_edif },
-      { "virtex2",      &d_virtex2_edif },
-      { 0, 0 }
-};
+  const char *name;
+  device_t driver;
+} device_table[] = {{"generic-edif", &d_generic_edif},
+                    {"generic-xnf", &d_generic},
+                    {"lpm", &d_lpm_edif},
+                    {"virtex", &d_virtex_edif},
+                    {"virtex2", &d_virtex2_edif},
+                    {0, 0}};
 
-device_t device_from_arch(const char*arch)
-{
-      unsigned idx;
+device_t device_from_arch(const char *arch) {
+  unsigned idx;
 
-      assert(arch);
+  assert(arch);
 
-      for (idx = 0 ;  device_table[idx].name ;  idx += 1) {
-	    if (strcmp(arch, device_table[idx].name) == 0)
-		  return device_table[idx].driver;
+  for (idx = 0; device_table[idx].name; idx += 1) {
+    if (strcmp(arch, device_table[idx].name) == 0)
+      return device_table[idx].driver;
+  }
 
-      }
-
-      return 0;
+  return 0;
 }
 
 /*
@@ -83,4 +78,3 @@ device_t device_from_arch(const char*arch)
  *  Start into the virtex EDIF output driver.
  *
  */
-

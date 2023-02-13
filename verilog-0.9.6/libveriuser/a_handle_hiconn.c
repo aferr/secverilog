@@ -20,29 +20,27 @@
 #ident "$Id: a_handle_hiconn.c,v 1.1 2003/10/10 02:57:45 steve Exp $"
 #endif
 
-# include  <assert.h>
-# include  <ctype.h>
-# include  <acc_user.h>
-# include  <vpi_user.h>
-# include  "priv.h"
+#include "priv.h"
+#include <acc_user.h>
+#include <assert.h>
+#include <ctype.h>
+#include <vpi_user.h>
 
-handle acc_handle_hiconn(handle obj)
-{
-      if (pli_trace) {
-	    fprintf(pli_trace, "acc_handle_hiconn: enter.\n");
-	    fflush(pli_trace);
-      }
+handle acc_handle_hiconn(handle obj) {
+  if (pli_trace) {
+    fprintf(pli_trace, "acc_handle_hiconn: enter.\n");
+    fflush(pli_trace);
+  }
 
-      fprintf(stderr, "acc_handle_hiconn: XXXX not implemented. XXXX\n");
+  fprintf(stderr, "acc_handle_hiconn: XXXX not implemented. XXXX\n");
 
-      if (pli_trace) {
-	    fprintf(pli_trace, "acc_handle_hiconn: return.\n");
-	    fflush(pli_trace);
-      }
+  if (pli_trace) {
+    fprintf(pli_trace, "acc_handle_hiconn: return.\n");
+    fflush(pli_trace);
+  }
 
-      return 0;
+  return 0;
 }
-
 
 /*
  * $Log: a_handle_hiconn.c,v $
@@ -50,4 +48,3 @@ handle acc_handle_hiconn(handle obj)
  *  Some PLI1 stubs.
  *
  */
-

@@ -19,8 +19,8 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  "config.h"
-# include  "vvp_net.h"
+#include "config.h"
+#include "vvp_net.h"
 
 /*
  * This functor type resolves its inputs using the Verilog method of
@@ -36,62 +36,60 @@
  */
 class resolv_functor : public vvp_net_fun_t {
 
-    public:
-      explicit resolv_functor(vvp_scalar_t hiz_value, const char* debug =0);
-      ~resolv_functor();
+public:
+  explicit resolv_functor(vvp_scalar_t hiz_value, const char *debug = 0);
+  ~resolv_functor();
 
-      void recv_vec4(vvp_net_ptr_t port, const vvp_vector4_t&bit,
-                     vvp_context_t);
-      void recv_vec8(vvp_net_ptr_t port, const vvp_vector8_t&bit);
+  void recv_vec4(vvp_net_ptr_t port, const vvp_vector4_t &bit, vvp_context_t);
+  void recv_vec8(vvp_net_ptr_t port, const vvp_vector8_t &bit);
 
-      void recv_vec4_pv(vvp_net_ptr_t port, const vvp_vector4_t&bit,
-			unsigned base, unsigned wid, unsigned vwid,
-                        vvp_context_t);
-      void recv_vec8_pv(vvp_net_ptr_t port, const vvp_vector8_t&bit,
-			unsigned base, unsigned wid, unsigned vwid);
+  void recv_vec4_pv(vvp_net_ptr_t port, const vvp_vector4_t &bit, unsigned base,
+                    unsigned wid, unsigned vwid, vvp_context_t);
+  void recv_vec8_pv(vvp_net_ptr_t port, const vvp_vector8_t &bit, unsigned base,
+                    unsigned wid, unsigned vwid);
 
-    private:
-      vvp_vector8_t val_[4];
-	// Bit value to emit for HiZ bits.
-      vvp_scalar_t hiz_;
-	// True if debugging is enabled
-      const char* debug_label_;
+private:
+  vvp_vector8_t val_[4];
+  // Bit value to emit for HiZ bits.
+  vvp_scalar_t hiz_;
+  // True if debugging is enabled
+  const char *debug_label_;
 };
 
 class resolv_wired_logic : public vvp_net_fun_t {
 
-    public:
-      explicit resolv_wired_logic(void);
-      ~resolv_wired_logic();
+public:
+  explicit resolv_wired_logic(void);
+  ~resolv_wired_logic();
 
-      void recv_vec4(vvp_net_ptr_t port, const vvp_vector4_t&bit,
-                     vvp_context_t);
+  void recv_vec4(vvp_net_ptr_t port, const vvp_vector4_t &bit, vvp_context_t);
 
-    protected:
-      virtual vvp_vector4_t wired_logic_math_(vvp_vector4_t&a, vvp_vector4_t&b) =0;
+protected:
+  virtual vvp_vector4_t wired_logic_math_(vvp_vector4_t &a,
+                                          vvp_vector4_t &b) = 0;
 
-    private:
-      vvp_vector4_t val_[4];
+private:
+  vvp_vector4_t val_[4];
 };
 
 class resolv_triand : public resolv_wired_logic {
 
-    public:
-      explicit resolv_triand(void) { }
-      ~resolv_triand() { }
+public:
+  explicit resolv_triand(void) {}
+  ~resolv_triand() {}
 
-    private:
-      virtual vvp_vector4_t wired_logic_math_(vvp_vector4_t&a, vvp_vector4_t&b);
+private:
+  virtual vvp_vector4_t wired_logic_math_(vvp_vector4_t &a, vvp_vector4_t &b);
 };
 
 class resolv_trior : public resolv_wired_logic {
 
-    public:
-      explicit resolv_trior(void) { }
-      ~resolv_trior() { }
+public:
+  explicit resolv_trior(void) {}
+  ~resolv_trior() {}
 
-    private:
-      virtual vvp_vector4_t wired_logic_math_(vvp_vector4_t&a, vvp_vector4_t&b);
+private:
+  virtual vvp_vector4_t wired_logic_math_(vvp_vector4_t &a, vvp_vector4_t &b);
 };
 
 #endif

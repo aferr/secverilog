@@ -21,9 +21,9 @@
 
 // The SunPro C++ compiler is broken and does not define size_t in cstddef.
 #ifdef __SUNPRO_CC
-# include  <stddef.h>
+#include <stddef.h>
 #else
-# include  <cstddef>
+#include <cstddef>
 #endif
 
 extern unsigned long count_opcodes;
@@ -42,7 +42,6 @@ extern unsigned long count_var_arrays;
 extern unsigned long count_var_array_words;
 extern unsigned long count_real_arrays;
 extern unsigned long count_real_array_words;
-
 
 extern unsigned long count_time_events;
 extern unsigned long count_time_pool(void);

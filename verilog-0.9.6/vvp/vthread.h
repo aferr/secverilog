@@ -19,7 +19,7 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  "vvp_net.h"
+#include "vvp_net.h"
 
 /*
  * A vthread is a simulation thread that executes instructions when
@@ -32,15 +32,15 @@
  * fetching the next instruction.
  */
 
-typedef struct vthread_s* vthread_t;
-typedef struct vvp_code_s*vvp_code_t;
+typedef struct vthread_s *vthread_t;
+typedef struct vvp_code_s *vvp_code_t;
 
 /*
  * This creates a new simulation thread, with the given start
  * address. The generated thread is ready to run, but is not yet
  * scheduled.
  */
-extern vthread_t vthread_new(vvp_code_t sa, struct __vpiScope*scope);
+extern vthread_t vthread_new(vvp_code_t sa, struct __vpiScope *scope);
 
 /*
  * This function marks the thread as scheduled. It is used only by the
@@ -109,11 +109,12 @@ extern vvp_context_item_t vthread_get_rd_context_item(unsigned context_idx);
  * example, when a VPI implementation function needs to access the bit
  * space of the thread.
  */
-extern vvp_bit4_t vthread_get_bit(struct vthread_s*thr, unsigned addr);
-extern void vthread_put_bit(struct vthread_s*thr, unsigned addr, vvp_bit4_t bit);
+extern vvp_bit4_t vthread_get_bit(struct vthread_s *thr, unsigned addr);
+extern void vthread_put_bit(struct vthread_s *thr, unsigned addr,
+                            vvp_bit4_t bit);
 
-extern double vthread_get_real(struct vthread_s*thr, unsigned addr);
-extern void vthread_put_real(struct vthread_s*thr, unsigned addr, double val);
+extern double vthread_get_real(struct vthread_s *thr, unsigned addr);
+extern void vthread_put_real(struct vthread_s *thr, unsigned addr, double val);
 
 /* This is used to actually delete a thread once we are done with it. */
 extern void vthread_delete(vthread_t thr);

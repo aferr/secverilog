@@ -20,7 +20,7 @@
 #ident "$Id: asynch.c,v 1.3 2003/04/23 15:01:29 steve Exp $"
 #endif
 
-# include  <veriuser.h>
+#include <veriuser.h>
 
 /* Enables async misctf callbacks */
 int async_misctf_enable = 0;
@@ -28,16 +28,14 @@ int async_misctf_enable = 0;
 /*
  * Implement misctf async enable
  */
-int tf_asynchon(void)
-{
-      async_misctf_enable = 1;
-      return 0;
+int tf_asynchon(void) {
+  async_misctf_enable = 1;
+  return 0;
 }
 
-int tf_asynchoff(void)
-{
-      async_misctf_enable = 0;
-      return 0;
+int tf_asynchoff(void) {
+  async_misctf_enable = 0;
+  return 0;
 }
 
 /*

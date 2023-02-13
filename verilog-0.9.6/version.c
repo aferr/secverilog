@@ -17,72 +17,70 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  "version_base.h"
-# include  "version_tag.h"
-# include  <stdio.h>
-# include  <string.h>
+#include "version_base.h"
+#include "version_tag.h"
+#include <stdio.h>
+#include <string.h>
 
-static void run_string(const char*txt)
-{
-      const char*cp = txt;
-      while (*cp) {
-	    if (cp[0] == '%' && cp[1] != 0) {
-		  switch (cp[1]) {
-		      case 'M':
-			fprintf(stdout, "%u", VERSION_MAJOR1);
-			break;
-		      case 'm':
-			fprintf(stdout, "%u", VERSION_MAJOR2);
-			break;
-		      case 'n':
-			fprintf(stdout, "%u", VERSION_MINOR);
-			break;
-		      case 'E':
-			fprintf(stdout, "%s", VERSION_EXTRA);
-			break;
-		      case 'T':
-			fprintf(stdout, "%s", VERSION_TAG);
-			break;
-		      case '%':
-			putc('%', stdout);
-			break;
-		      default:
-			break;
-		  }
-		  cp += 2;
-
-	    } else if (cp[0] == '\\' && cp[1] != 0) {
-		  switch (cp[1]) {
-		      case 'n':
-			putc('\n', stdout);
-			break;
-		      default:
-			putc(cp[1], stdout);
-			break;
-		  }
-		  cp += 2;
-
-	    } else {
-		  putc(cp[0], stdout);
-		  cp += 1;
-	    }
+static void run_string(const char *txt) {
+  const char *cp = txt;
+  while (*cp) {
+    if (cp[0] == '%' && cp[1] != 0) {
+      switch (cp[1]) {
+      case 'M':
+        fprintf(stdout, "%u", VERSION_MAJOR1);
+        break;
+      case 'm':
+        fprintf(stdout, "%u", VERSION_MAJOR2);
+        break;
+      case 'n':
+        fprintf(stdout, "%u", VERSION_MINOR);
+        break;
+      case 'E':
+        fprintf(stdout, "%s", VERSION_EXTRA);
+        break;
+      case 'T':
+        fprintf(stdout, "%s", VERSION_TAG);
+        break;
+      case '%':
+        putc('%', stdout);
+        break;
+      default:
+        break;
       }
+      cp += 2;
+
+    } else if (cp[0] == '\\' && cp[1] != 0) {
+      switch (cp[1]) {
+      case 'n':
+        putc('\n', stdout);
+        break;
+      default:
+        putc(cp[1], stdout);
+        break;
+      }
+      cp += 2;
+
+    } else {
+      putc(cp[0], stdout);
+      cp += 1;
+    }
+  }
 }
 
-int main(int argc, char*argv[])
-{
-      int idx;
+int main(int argc, char *argv[]) {
+  int idx;
 
-      if (argc == 1) {
-	    printf("%s\n", VERSION);
-	    return 0;
-      }
+  if (argc == 1) {
+    printf("%s\n", VERSION);
+    return 0;
+  }
 
-      run_string(argv[1]);
-      for (idx = 2 ; idx < argc ; idx += 1) {
-	    printf(" ");
-	    run_string(argv[idx]);
-      }
+  run_string(argv[1]);
+  for (idx = 2; idx < argc; idx += 1) {
+    printf(" ");
+    run_string(argv[idx]);
+  }
 
-      return 0;
+  return 0;
 }

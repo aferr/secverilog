@@ -26,14 +26,14 @@
  * Context structure for PRNG in mt19937int.c
  */
 struct context_s {
-      int		mti;		/* the array for the state vector */
-      unsigned long	mt[1023];	/* mti==N+1 means mt[N] is not init */
+  int mti;                /* the array for the state vector */
+  unsigned long mt[1023]; /* mti==N+1 means mt[N] is not init */
 };
 
 extern void sgenrand(struct context_s *context, unsigned long seed);
 extern unsigned long genrand(struct context_s *context);
 
-extern PLI_UINT64 timerec_to_time64(const struct t_vpi_time*timerec);
+extern PLI_UINT64 timerec_to_time64(const struct t_vpi_time *timerec);
 
 extern char *as_escaped(char *arg);
 extern char *get_filename(vpiHandle callh, char *name, vpiHandle file);
@@ -42,10 +42,10 @@ extern void check_for_extra_args(vpiHandle argv, vpiHandle callh, char *name,
                                  const char *arg_str, unsigned opt);
 
 struct timeformat_info_s {
-      int units;
-      unsigned prec;
-      char*suff;
-      unsigned width;
+  int units;
+  unsigned prec;
+  char *suff;
+  unsigned width;
 };
 
 extern struct timeformat_info_s timeformat_info;

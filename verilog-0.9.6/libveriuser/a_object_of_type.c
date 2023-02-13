@@ -17,82 +17,95 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-#include  <assert.h>
-#include  <vpi_user.h>
-#include  <acc_user.h>
-#include  "priv.h"
+#include "priv.h"
+#include <acc_user.h>
+#include <assert.h>
+#include <vpi_user.h>
 
 /*
  * acc_object_of_type implemented using VPI interface
  */
-int acc_object_of_type(handle object, PLI_INT32 type)
-{
-      int vtype;
-      int rtn = 0;	/* false */
+int acc_object_of_type(handle object, PLI_INT32 type) {
+  int vtype;
+  int rtn = 0; /* false */
 
-      if (pli_trace) {
-	    fprintf(pli_trace, "acc_object_of_type(%p \"%s\", %d)",
-		    (void*) object, vpi_get_str(vpiName, object), (int)type);
-	    fflush(pli_trace);
-      }
+  if (pli_trace) {
+    fprintf(pli_trace, "acc_object_of_type(%p \"%s\", %d)", (void *)object,
+            vpi_get_str(vpiName, object), (int)type);
+    fflush(pli_trace);
+  }
 
-      /* get VPI type of object */
-      vtype = vpi_get(vpiType, object);
+  /* get VPI type of object */
+  vtype = vpi_get(vpiType, object);
 
-      switch (type) {
-	  case accModule: rtn = vtype == vpiModule; break;
+  switch (type) {
+  case accModule:
+    rtn = vtype == vpiModule;
+    break;
 
-	  case accScope:
-	    if (vtype == vpiModule || vtype == vpiNamedBegin ||
-		vtype == vpiNamedFork || vtype == vpiTask ||
-		vtype == vpiFunction) rtn = 1;
-	    break;
+  case accScope:
+    if (vtype == vpiModule || vtype == vpiNamedBegin || vtype == vpiNamedFork ||
+        vtype == vpiTask || vtype == vpiFunction)
+      rtn = 1;
+    break;
 
-	  case accNet: rtn = vtype == vpiNet; break;
-	  case accReg: rtn = vtype == vpiReg; break;
+  case accNet:
+    rtn = vtype == vpiNet;
+    break;
+  case accReg:
+    rtn = vtype == vpiReg;
+    break;
 
-	  case accRealParam:
-	    if (vtype == vpiNamedEvent &&
-	        vpi_get(vpiConstType, object) == vpiRealConst)
-		  rtn = 1;
-	    break;
+  case accRealParam:
+    if (vtype == vpiNamedEvent && vpi_get(vpiConstType, object) == vpiRealConst)
+      rtn = 1;
+    break;
 
-	  case accParameter: rtn = vtype == vpiParameter; break;
-	  case accNamedEvent: rtn = vtype == vpiNamedEvent; break;
-	  case accIntegerVar: rtn = vtype == vpiIntegerVar; break;
-	  case accRealVar: rtn = vtype == vpiRealVar; break;
-	  case accTimeVar: rtn = vtype == vpiTimeVar; break;
+  case accParameter:
+    rtn = vtype == vpiParameter;
+    break;
+  case accNamedEvent:
+    rtn = vtype == vpiNamedEvent;
+    break;
+  case accIntegerVar:
+    rtn = vtype == vpiIntegerVar;
+    break;
+  case accRealVar:
+    rtn = vtype == vpiRealVar;
+    break;
+  case accTimeVar:
+    rtn = vtype == vpiTimeVar;
+    break;
 
-	  case accScalar:
-	    if (vtype == vpiReg || vtype == vpiNet)
-		  rtn = vpi_get(vpiSize, object) == 1;
-	    break;
+  case accScalar:
+    if (vtype == vpiReg || vtype == vpiNet)
+      rtn = vpi_get(vpiSize, object) == 1;
+    break;
 
-	  case accVector:
-	    if (vtype == vpiReg || vtype == vpiNet)
-		  rtn = vpi_get(vpiSize, object) > 1;
-	    break;
+  case accVector:
+    if (vtype == vpiReg || vtype == vpiNet)
+      rtn = vpi_get(vpiSize, object) > 1;
+    break;
 
-	    default:
-		  vpi_printf("acc_object_of_type: Unknown type %d\n",
-		             (int)type);
-		  rtn = 0;
-      }
+  default:
+    vpi_printf("acc_object_of_type: Unknown type %d\n", (int)type);
+    rtn = 0;
+  }
 
-      if (pli_trace) fprintf(pli_trace, " --> %d\n", rtn);
+  if (pli_trace)
+    fprintf(pli_trace, " --> %d\n", rtn);
 
-      return rtn;
+  return rtn;
 }
 
-int acc_object_in_typelist(handle object, PLI_INT32*typelist)
-{
-      while (typelist[0] != 0) {
-	    int rtn = acc_object_of_type(object, typelist[0]);
-	    if (rtn)
-		  return rtn;
+int acc_object_in_typelist(handle object, PLI_INT32 *typelist) {
+  while (typelist[0] != 0) {
+    int rtn = acc_object_of_type(object, typelist[0]);
+    if (rtn)
+      return rtn;
 
-	    typelist += 1;
-      }
+    typelist += 1;
+  }
 
-      return 0;
+  return 0;
 }

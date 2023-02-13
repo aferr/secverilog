@@ -19,11 +19,11 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  "LineInfo.h"
-# include  "PScope.h"
-# include  "svector.h"
-# include  "StringHeap.h"
-# include  <string>
+#include "LineInfo.h"
+#include "PScope.h"
+#include "StringHeap.h"
+#include "svector.h"
+#include <string>
 class Design;
 class NetScope;
 class PWire;
@@ -31,56 +31,56 @@ class Statement;
 class PExpr;
 
 enum PTaskFuncEnum {
-      PTF_NONE,
-      PTF_REG,
-      PTF_REG_S,
-      PTF_INTEGER,
-      PTF_REAL,
-      PTF_REALTIME,
-      PTF_TIME
+  PTF_NONE,
+  PTF_REG,
+  PTF_REG_S,
+  PTF_INTEGER,
+  PTF_REAL,
+  PTF_REALTIME,
+  PTF_TIME
 };
 
 struct PTaskFuncArg {
-      PTaskFuncEnum type;
-      svector<PExpr*>*range;
+  PTaskFuncEnum type;
+  svector<PExpr *> *range;
 };
 
 /*
  * The PTask holds the parsed definitions of a task.
  */
-class PTask  : public PScope, public LineInfo {
+class PTask : public PScope, public LineInfo {
 
-    public:
-      explicit PTask(perm_string name, PScope*parent, bool is_auto);
-      ~PTask();
+public:
+  explicit PTask(perm_string name, PScope *parent, bool is_auto);
+  ~PTask();
 
-      void set_ports(svector<PWire *>*p);
-      void set_statement(Statement *s);
+  void set_ports(svector<PWire *> *p);
+  void set_statement(Statement *s);
 
-	// Tasks introduce scope, to need to be handled during the
-	// scope elaboration pass. The scope passed is my scope,
-	// created by the containing scope. I fill it in with stuff if
-	// I need to.
-      void elaborate_scope(Design*des, NetScope*scope) const;
+  // Tasks introduce scope, to need to be handled during the
+  // scope elaboration pass. The scope passed is my scope,
+  // created by the containing scope. I fill it in with stuff if
+  // I need to.
+  void elaborate_scope(Design *des, NetScope *scope) const;
 
-	// Bind the ports to the regs that are the ports.
-      void elaborate_sig(Design*des, NetScope*scope) const;
+  // Bind the ports to the regs that are the ports.
+  void elaborate_sig(Design *des, NetScope *scope) const;
 
-	// Elaborate the statement to finish off the task definition.
-      void elaborate(Design*des, NetScope*scope) const;
+  // Elaborate the statement to finish off the task definition.
+  void elaborate(Design *des, NetScope *scope) const;
 
-      bool is_auto() const { return is_auto_; };
+  bool is_auto() const { return is_auto_; };
 
-      void dump(ostream&, unsigned) const;
+  void dump(ostream &, unsigned) const;
 
-    private:
-      svector<PWire*>*ports_;
-      Statement*statement_;
-      bool is_auto_;
+private:
+  svector<PWire *> *ports_;
+  Statement *statement_;
+  bool is_auto_;
 
-    private: // Not implemented
-      PTask(const PTask&);
-      PTask& operator=(const PTask&);
+private: // Not implemented
+  PTask(const PTask &);
+  PTask &operator=(const PTask &);
 };
 
 /*
@@ -92,31 +92,31 @@ class PTask  : public PScope, public LineInfo {
  */
 class PFunction : public PScope, public LineInfo {
 
-    public:
-      explicit PFunction(perm_string name, PScope*parent, bool is_auto);
-      ~PFunction();
+public:
+  explicit PFunction(perm_string name, PScope *parent, bool is_auto);
+  ~PFunction();
 
-      void set_ports(svector<PWire *>*p);
-      void set_statement(Statement *s);
-      void set_return(PTaskFuncArg t);
+  void set_ports(svector<PWire *> *p);
+  void set_statement(Statement *s);
+  void set_return(PTaskFuncArg t);
 
-      void elaborate_scope(Design*des, NetScope*scope) const;
+  void elaborate_scope(Design *des, NetScope *scope) const;
 
-	/* elaborate the ports and return value. */
-      void elaborate_sig(Design *des, NetScope*) const;
+  /* elaborate the ports and return value. */
+  void elaborate_sig(Design *des, NetScope *) const;
 
-	/* Elaborate the behavioral statement. */
-      void elaborate(Design *des, NetScope*) const;
+  /* Elaborate the behavioral statement. */
+  void elaborate(Design *des, NetScope *) const;
 
-      bool is_auto() const { return is_auto_; };
+  bool is_auto() const { return is_auto_; };
 
-      void dump(ostream&, unsigned) const;
+  void dump(ostream &, unsigned) const;
 
-    private:
-      PTaskFuncArg return_type_;
-      svector<PWire *> *ports_;
-      Statement *statement_;
-      bool is_auto_;
+private:
+  PTaskFuncArg return_type_;
+  svector<PWire *> *ports_;
+  Statement *statement_;
+  bool is_auto_;
 };
 
 #endif

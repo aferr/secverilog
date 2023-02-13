@@ -31,35 +31,29 @@
  * program for example Verilog code to call this module.
  */
 
-# include  <vpi_user.h>
+#include <vpi_user.h>
 
-static PLI_INT32 my_hello_calltf(char *xx)
-{
-      vpi_printf("Hello World, from VPI.\n");
-      return 0;
+static PLI_INT32 my_hello_calltf(char *xx) {
+  vpi_printf("Hello World, from VPI.\n");
+  return 0;
 }
 
-static void my_hello_register()
-{
-      s_vpi_systf_data tf_data;
+static void my_hello_register() {
+  s_vpi_systf_data tf_data;
 
-      tf_data.type      = vpiSysTask;
-      tf_data.tfname    = "$my_hello";
-      tf_data.calltf    = my_hello_calltf;
-      tf_data.compiletf = 0;
-      tf_data.sizetf    = 0;
-      vpi_register_systf(&tf_data);
-
+  tf_data.type      = vpiSysTask;
+  tf_data.tfname    = "$my_hello";
+  tf_data.calltf    = my_hello_calltf;
+  tf_data.compiletf = 0;
+  tf_data.sizetf    = 0;
+  vpi_register_systf(&tf_data);
 }
 
 /*
  * This is a table of register functions. This table is the external
  * symbol that the simulator looks for when loading this .vpi module.
  */
-void (*vlog_startup_routines[])() = {
-      my_hello_register,
-      0
-};
+void (*vlog_startup_routines[])() = {my_hello_register, 0};
 /*
  * $Log: hello_vpi.c,v $
  * Revision 1.5  2007/01/17 05:35:48  steve
@@ -78,4 +72,3 @@ void (*vlog_startup_routines[])() = {
  *  More examples.
  *
  */
-

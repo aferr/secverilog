@@ -17,98 +17,98 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  <acc_user.h>
-# include  <vpi_user.h>
-# include  <assert.h>
+#include <acc_user.h>
+#include <assert.h>
+#include <vpi_user.h>
 
-PLI_INT32 acc_fetch_size(handle obj)
-{
-      return vpi_get(vpiSize, obj);
+PLI_INT32 acc_fetch_size(handle obj) { return vpi_get(vpiSize, obj); }
+
+PLI_INT32 acc_fetch_type(handle obj) {
+  switch (vpi_get(vpiType, obj)) {
+
+  case vpiConstant:
+    /*XXXX SWIFT PLI tasks seem to assume that string
+      constants show up an accParameter, instead of
+      accConstant. */
+    if (vpi_get(vpiConstType, obj) == vpiStringConst)
+      return accParameter;
+    else
+      return accConstant;
+
+  case vpiNamedEvent:
+    return accNamedEvent;
+
+  case vpiNet:
+    return accNet;
+
+  case vpiParameter:
+    return accParameter;
+
+  case vpiReg:
+    return accReg;
+
+  case vpiIntegerVar:
+    return accIntegerVar;
+
+  case vpiModule:
+    return accModule;
+  }
+
+  vpi_printf("acc_fetch_type: vpiType %d is what accType?\n",
+             (int)vpi_get(vpiType, obj));
+  return accUnknown;
 }
 
-PLI_INT32 acc_fetch_type(handle obj)
-{
-      switch (vpi_get(vpiType, obj)) {
+PLI_INT32 acc_fetch_fulltype(handle obj) {
+  int type = vpi_get(vpiType, obj);
 
-	  case vpiConstant:
-	      /*XXXX SWIFT PLI tasks seem to assume that string
-		constants show up an accParameter, instead of
-		accConstant. */
-	    if (vpi_get(vpiConstType, obj) == vpiStringConst)
-		  return accParameter;
-	    else
-		  return accConstant;
-
-	  case vpiNamedEvent:
-	    return accNamedEvent;
-
-	  case vpiNet:
-	    return accNet;
-
-	  case vpiParameter:
-	    return accParameter;
-
-	  case vpiReg:
-	    return accReg;
-
-	  case vpiIntegerVar:
-	    return accIntegerVar;
-
-	  case vpiModule:
-	    return accModule;
-      }
-
-      vpi_printf("acc_fetch_type: vpiType %d is what accType?\n",
-                 (int)vpi_get(vpiType, obj));
+  switch (type) {
+  case vpiNet: {
+    type = vpi_get(vpiNetType, obj);
+    switch (type) {
+    case vpiWire:
+      return accWire;
+    default:
+      vpi_printf("acc_fetch_fulltype: vpiNetType %d unknown?\n", type);
       return accUnknown;
-}
+    }
+  }
 
-PLI_INT32 acc_fetch_fulltype(handle obj)
-{
-      int type = vpi_get(vpiType, obj);
+  case vpiConstant:
+    /* see acc_fetch_type */
+    if (vpi_get(vpiConstType, obj) == vpiStringConst)
+      return accStringParam;
+    else
+      return accConstant;
 
-      switch (type) {
-	  case vpiNet: {
-	    type = vpi_get(vpiNetType, obj);
-	    switch(type) {
-		case vpiWire: return accWire;
-		default:
-		vpi_printf("acc_fetch_fulltype: vpiNetType %d unknown?\n",
-			   type);
-		return accUnknown;
-	    }
-	  }
+  case vpiIntegerVar:
+    return accIntegerVar;
 
-	  case vpiConstant:
-	      /* see acc_fetch_type */
-	    if (vpi_get(vpiConstType, obj) == vpiStringConst)
-		  return accStringParam;
-	    else
-		  return accConstant;
+  case vpiModule:
+    if (!vpi_handle(vpiScope, obj))
+      return accTopModule;
+    else
+      return accModuleInstance;
+    /* FIXME accCellInstance */
 
-	  case vpiIntegerVar: return accIntegerVar;
+  case vpiNamedEvent:
+    return accNamedEvent;
 
-	  case vpiModule:
-	    if (!vpi_handle(vpiScope, obj))
-		return accTopModule;
-	    else
-		return accModuleInstance;
-	    /* FIXME accCellInstance */
+  case vpiParameter:
+    switch (vpi_get(vpiConstType, obj)) {
+    case vpiRealConst:
+      return accRealParam;
+    case vpiStringConst:
+      return accStringParam;
+    default:
+      return accIntegerParam;
+    }
 
-	  case vpiNamedEvent: return accNamedEvent;
+  case vpiReg:
+    return accReg;
 
-	  case vpiParameter:
-	    switch(vpi_get(vpiConstType, obj)) {
-		case vpiRealConst: return accRealParam;
-		case vpiStringConst: return accStringParam;
-		default: return accIntegerParam;
-	    }
-
-	  case vpiReg: return accReg;
-
-	  default:
-	    vpi_printf("acc_fetch_fulltype: vpiType %d unknown?\n",
-		       type);
-	    return accUnknown;
-      }
+  default:
+    vpi_printf("acc_fetch_fulltype: vpiType %d unknown?\n", type);
+    return accUnknown;
+  }
 }

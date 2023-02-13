@@ -20,37 +20,35 @@
 #ident "$Id: a_handle_object.c,v 1.2 2003/12/17 15:45:07 steve Exp $"
 #endif
 
-#include  <vpi_user.h>
-#include  <acc_user.h>
-#include  "priv.h"
+#include "priv.h"
+#include <acc_user.h>
+#include <vpi_user.h>
 
 static vpiHandle search_scope = 0;
 
-handle acc_handle_object(const char*name)
-{
-      vpiHandle sys = vpi_handle(vpiSysTfCall, 0);
-      vpiHandle scope = search_scope? search_scope : vpi_handle(vpiScope, sys);
-      vpiHandle res = vpi_handle_by_name(name, scope);
+handle acc_handle_object(const char *name) {
+  vpiHandle sys   = vpi_handle(vpiSysTfCall, 0);
+  vpiHandle scope = search_scope ? search_scope : vpi_handle(vpiScope, sys);
+  vpiHandle res   = vpi_handle_by_name(name, scope);
 
-      if (pli_trace) {
-	    fprintf(pli_trace, "acc_handle_object(%s <scope=%s>) --> .\n",
-		    name, acc_fetch_fullname(scope));
-      }
+  if (pli_trace) {
+    fprintf(pli_trace, "acc_handle_object(%s <scope=%s>) --> .\n", name,
+            acc_fetch_fullname(scope));
+  }
 
-      return res;
+  return res;
 }
 
-char* acc_set_scope(handle ref, ...)
-{
-      char*name;
-      search_scope = ref;
+char *acc_set_scope(handle ref, ...) {
+  char *name;
+  search_scope = ref;
 
-      name = acc_fetch_fullname(search_scope);
-      if (pli_trace) {
-	    fprintf(pli_trace, "acc_set_scope(<scope=%s>)\n", name);
-      }
+  name = acc_fetch_fullname(search_scope);
+  if (pli_trace) {
+    fprintf(pli_trace, "acc_set_scope(<scope=%s>)\n", name);
+  }
 
-      return acc_fetch_fullname(ref);
+  return acc_fetch_fullname(ref);
 }
 
 /*
@@ -62,4 +60,3 @@ char* acc_set_scope(handle ref, ...)
  *  Add a bunch of new acc_ and tf_ functions.
  *
  */
-

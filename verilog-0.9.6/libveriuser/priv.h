@@ -19,18 +19,18 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  <stdio.h>
+#include <stdio.h>
 
 /*
  * This function implements the acc_ string buffer, by adding the
  * input string to the buffer, and returning a pointer to the first
  * character of the new string.
  */
-extern char* __acc_newstring(const char*txt);
+extern char *__acc_newstring(const char *txt);
 
 /*
  * Trace file for logging ACC and TF calls.
  */
-FILE* pli_trace;
+FILE *pli_trace;
 
 #endif

@@ -19,16 +19,16 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  <string>
-# include  "ivl_target.h"
-# include  "svector.h"
-# include  "StringHeap.h"
-# include  "PDelays.h"
-# include  "PExpr.h"
-# include  "PScope.h"
-# include  "HName.h"
+#include "HName.h"
 #include "LineInfo.h"
+#include "PDelays.h"
+#include "PExpr.h"
+#include "PScope.h"
+#include "StringHeap.h"
+#include "ivl_target.h"
 #include "path_assign.h"
+#include "svector.h"
+#include <string>
 class PExpr;
 class Statement;
 class PEventStatement;
@@ -49,27 +49,29 @@ struct Predicate;
  */
 class PProcess : public LineInfo {
 
-    public:
-      PProcess(ivl_process_type_t t, Statement*st)
-      : type_(t), statement_(st) { }
+public:
+  PProcess(ivl_process_type_t t, Statement *st) : type_(t), statement_(st) {}
 
-      virtual ~PProcess();
+  virtual ~PProcess();
 
-      bool elaborate(Design*des, NetScope*scope) const;
+  bool elaborate(Design *des, NetScope *scope) const;
 
-      ivl_process_type_t type() const { return type_; }
-      Statement*statement() { return statement_; }
+  ivl_process_type_t type() const { return type_; }
+  Statement *statement() { return statement_; }
 
-      map<perm_string,PExpr*> attributes;
+  map<perm_string, PExpr *> attributes;
 
-      virtual void dump(ostream&out, unsigned ind) const;
-      virtual void typecheck(SexpPrinter&printer, TypeEnv& env) const;
-      virtual void next_cycle_transform(SexpPrinter&printer, TypeEnv& env) const;
-      virtual bool collect_dep_invariants(SexpPrinter&printer, TypeEnv& env, Predicate& pred);
-      virtual void collect_index_exprs(set<perm_string>&exprs, map<perm_string, SecType*>&env);
-    private:
-      ivl_process_type_t type_;
-      Statement*statement_;
+  virtual void dump(ostream &out, unsigned ind) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env) const;
+  virtual void next_cycle_transform(SexpPrinter &printer, TypeEnv &env) const;
+  virtual bool collect_dep_invariants(SexpPrinter &printer, TypeEnv &env,
+                                      Predicate &pred);
+  virtual void collect_index_exprs(set<perm_string> &exprs,
+                                   map<perm_string, SecType *> &env);
+
+private:
+  ivl_process_type_t type_;
+  Statement *statement_;
 };
 
 /*
@@ -79,21 +81,26 @@ class PProcess : public LineInfo {
  */
 class Statement : public LineInfo {
 
-    public:
-      Statement() { }
-      virtual ~Statement() =0;
+public:
+  Statement() {}
+  virtual ~Statement() = 0;
 
-      virtual void dump(ostream&out, unsigned ind) const;
-      virtual void typecheck(SexpPrinter&printer, TypeEnv& env, Predicate& pred) const = 0;
-      virtual void mustmodify(set<PExpr*, ExprComparator>&vars, set<perm_string>) const {}
-      virtual NetProc* elaborate(Design*des, NetScope*scope) const;
-      virtual void elaborate_scope(Design*des, NetScope*scope) const;
-      virtual void elaborate_sig(Design*des, NetScope*scope) const;
-      virtual Statement* next_cycle_transform(SexpPrinter&printer, TypeEnv& env);
-      virtual bool collect_dep_invariants(SexpPrinter&printer, TypeEnv& env, Predicate& pred);
-      virtual void collect_index_exprs(set<perm_string>&exprs, map<perm_string, SecType*>&env);
-  virtual void collect_assign_paths(PathAnalysis &paths, TypeEnv &env, Predicate &pred);
-      map<perm_string,PExpr*> attributes;
+  virtual void dump(ostream &out, unsigned ind) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
+                         Predicate &pred) const = 0;
+  virtual void mustmodify(set<PExpr *, ExprComparator> &vars,
+                          set<perm_string>) const {}
+  virtual NetProc *elaborate(Design *des, NetScope *scope) const;
+  virtual void elaborate_scope(Design *des, NetScope *scope) const;
+  virtual void elaborate_sig(Design *des, NetScope *scope) const;
+  virtual Statement *next_cycle_transform(SexpPrinter &printer, TypeEnv &env);
+  virtual bool collect_dep_invariants(SexpPrinter &printer, TypeEnv &env,
+                                      Predicate &pred);
+  virtual void collect_index_exprs(set<perm_string> &exprs,
+                                   map<perm_string, SecType *> &env);
+  virtual void collect_assign_paths(PathAnalysis &paths, TypeEnv &env,
+                                    Predicate &pred);
+  map<perm_string, PExpr *> attributes;
 };
 
 /*
@@ -101,71 +108,78 @@ class Statement : public LineInfo {
  * type. The rvalue is an expression. The lvalue needs to be figured
  * out by the parser as much as possible.
  */
-class PAssign_  : public Statement {
-    public:
-      explicit PAssign_(PExpr*lval, PExpr*ex, bool is_constant);
-      explicit PAssign_(PExpr*lval, PExpr*de, PExpr*ex);
-      explicit PAssign_(PExpr*lval, PExpr*cnt, PEventStatement*de, PExpr*ex);
-      virtual ~PAssign_() =0;
+class PAssign_ : public Statement {
+public:
+  explicit PAssign_(PExpr *lval, PExpr *ex, bool is_constant);
+  explicit PAssign_(PExpr *lval, PExpr *de, PExpr *ex);
+  explicit PAssign_(PExpr *lval, PExpr *cnt, PEventStatement *de, PExpr *ex);
+  virtual ~PAssign_() = 0;
 
-      virtual bool collect_dep_invariants(SexpPrinter&printer, TypeEnv& env, Predicate& pred);
-      virtual void collect_index_exprs(set<perm_string>&exprs, map<perm_string, SecType*>&env);      
-  virtual void collect_assign_paths(PathAnalysis &paths, TypeEnv &env, Predicate &pred);
-  
-      PExpr* lval() const  { return lval_; }
-      PExpr* rval() const  { return rval_; }
+  virtual bool collect_dep_invariants(SexpPrinter &printer, TypeEnv &env,
+                                      Predicate &pred);
+  virtual void collect_index_exprs(set<perm_string> &exprs,
+                                   map<perm_string, SecType *> &env);
+  virtual void collect_assign_paths(PathAnalysis &paths, TypeEnv &env,
+                                    Predicate &pred);
 
-    protected:
-      NetAssign_* elaborate_lval(Design*, NetScope*scope) const;
-      NetExpr* elaborate_rval_(Design*, NetScope*, unsigned lv_width,
-			       ivl_variable_type_t type) const;
+  PExpr *lval() const { return lval_; }
+  PExpr *rval() const { return rval_; }
 
-      PExpr* delay_;
-      PEventStatement*event_;
-      PExpr* count_;
+protected:
+  NetAssign_ *elaborate_lval(Design *, NetScope *scope) const;
+  NetExpr *elaborate_rval_(Design *, NetScope *, unsigned lv_width,
+                           ivl_variable_type_t type) const;
 
-    protected:
-      PExpr* lval_;
-      PExpr* rval_;
-      bool is_constant_;
+  PExpr *delay_;
+  PEventStatement *event_;
+  PExpr *count_;
+
+protected:
+  PExpr *lval_;
+  PExpr *rval_;
+  bool is_constant_;
 };
 
-class PAssign  : public PAssign_ {
+class PAssign : public PAssign_ {
 
-    public:
-      explicit PAssign(PExpr*lval, PExpr*ex);
-      explicit PAssign(PExpr*lval, PExpr*de, PExpr*ex);
-      explicit PAssign(PExpr*lval, PExpr*cnt, PEventStatement*de, PExpr*ex);
-      explicit PAssign(PExpr*lval, PExpr*ex, bool is_constant);
-      ~PAssign();
+public:
+  explicit PAssign(PExpr *lval, PExpr *ex);
+  explicit PAssign(PExpr *lval, PExpr *de, PExpr *ex);
+  explicit PAssign(PExpr *lval, PExpr *cnt, PEventStatement *de, PExpr *ex);
+  explicit PAssign(PExpr *lval, PExpr *ex, bool is_constant);
+  ~PAssign();
 
-      virtual void dump(ostream&out, unsigned ind) const;
-      virtual void typecheck(SexpPrinter&printer, TypeEnv& env, Predicate& pred) const;
-      virtual void mustmodify(set<PExpr*, ExprComparator>& vars, set<perm_string>) const;
-      virtual NetProc* elaborate(Design*des, NetScope*scope) const;
-      void absintp(Predicate&, TypeEnv&) const;
+  virtual void dump(ostream &out, unsigned ind) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
+                         Predicate &pred) const;
+  virtual void mustmodify(set<PExpr *, ExprComparator> &vars,
+                          set<perm_string>) const;
+  virtual NetProc *elaborate(Design *des, NetScope *scope) const;
+  void absintp(Predicate &, TypeEnv &) const;
 
-    private:
+private:
 };
 
-class PAssignNB  : public PAssign_ {
+class PAssignNB : public PAssign_ {
 
-    public:
-      explicit PAssignNB(PExpr*lval, PExpr*ex);
-      explicit PAssignNB(PExpr*lval, PExpr*de, PExpr*ex);
-      explicit PAssignNB(PExpr*lval, PExpr*cnt, PEventStatement*de, PExpr*ex);
-      virtual Statement* next_cycle_transform(SexpPrinter&printer, TypeEnv&env);      
-      ~PAssignNB();
+public:
+  explicit PAssignNB(PExpr *lval, PExpr *ex);
+  explicit PAssignNB(PExpr *lval, PExpr *de, PExpr *ex);
+  explicit PAssignNB(PExpr *lval, PExpr *cnt, PEventStatement *de, PExpr *ex);
+  virtual Statement *next_cycle_transform(SexpPrinter &printer, TypeEnv &env);
+  ~PAssignNB();
 
-      virtual void dump(ostream&out, unsigned ind) const;
-      virtual void typecheck(SexpPrinter&printer, TypeEnv& env, Predicate& pred) const;
-      virtual void mustmodify(set<PExpr*, ExprComparator>& vars, set<perm_string>) const;
-      virtual NetProc* elaborate(Design*des, NetScope*scope) const;
-      void absintp(Predicate&, TypeEnv&) const;
+  virtual void dump(ostream &out, unsigned ind) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
+                         Predicate &pred) const;
+  virtual void mustmodify(set<PExpr *, ExprComparator> &vars,
+                          set<perm_string>) const;
+  virtual NetProc *elaborate(Design *des, NetScope *scope) const;
+  void absintp(Predicate &, TypeEnv &) const;
 
-    private:
-      NetProc*assign_to_memory_(class NetMemory*, PExpr*,
-				Design*des, NetScope*scope) const;
+private:
+  NetProc *assign_to_memory_(class NetMemory *, PExpr *, Design *des,
+                             NetScope *scope) const;
 };
 
 /*
@@ -175,200 +189,219 @@ class PAssignNB  : public PAssign_ {
  * statements before constructing this object, so it knows a priori
  * what is contained.
  */
-class PBlock  : public PScope, public Statement {
+class PBlock : public PScope, public Statement {
 
-    public:
-      enum BL_TYPE { BL_SEQ, BL_PAR };
+public:
+  enum BL_TYPE { BL_SEQ, BL_PAR };
 
-	// If the block has a name, it is a scope and also has a parent.
-      explicit PBlock(perm_string n, PScope*parent, BL_TYPE t);
-	// If it doesn't have a name, it's not a scope
-      explicit PBlock(BL_TYPE t);
-      ~PBlock();
+  // If the block has a name, it is a scope and also has a parent.
+  explicit PBlock(perm_string n, PScope *parent, BL_TYPE t);
+  // If it doesn't have a name, it's not a scope
+  explicit PBlock(BL_TYPE t);
+  ~PBlock();
 
-      BL_TYPE bl_type() const { return bl_type_; }
+  BL_TYPE bl_type() const { return bl_type_; }
 
-      void set_statement(const svector<Statement*>&st);
+  void set_statement(const svector<Statement *> &st);
 
-      virtual void dump(ostream&out, unsigned ind) const;
-      virtual void typecheck(SexpPrinter&printer, TypeEnv& env, Predicate& pred) const;
-      virtual void mustmodify(set<PExpr*, ExprComparator>& vars, set<perm_string>) const;
-      virtual NetProc* elaborate(Design*des, NetScope*scope) const;
-      virtual void elaborate_scope(Design*des, NetScope*scope) const;
-      virtual void elaborate_sig(Design*des, NetScope*scope) const;
-      virtual Statement* next_cycle_transform(SexpPrinter&printer, TypeEnv&env);
-      virtual bool collect_dep_invariants(SexpPrinter&out, TypeEnv& env, Predicate& pred);      
-      virtual void collect_index_exprs(set<perm_string>&exprs, map<perm_string, SecType*>&env);            
-  virtual void collect_assign_paths(PathAnalysis &paths, TypeEnv &env, Predicate &pred);
-  
-    private:
-      const BL_TYPE bl_type_;
-      svector<Statement*>list_;
+  virtual void dump(ostream &out, unsigned ind) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
+                         Predicate &pred) const;
+  virtual void mustmodify(set<PExpr *, ExprComparator> &vars,
+                          set<perm_string>) const;
+  virtual NetProc *elaborate(Design *des, NetScope *scope) const;
+  virtual void elaborate_scope(Design *des, NetScope *scope) const;
+  virtual void elaborate_sig(Design *des, NetScope *scope) const;
+  virtual Statement *next_cycle_transform(SexpPrinter &printer, TypeEnv &env);
+  virtual bool collect_dep_invariants(SexpPrinter &out, TypeEnv &env,
+                                      Predicate &pred);
+  virtual void collect_index_exprs(set<perm_string> &exprs,
+                                   map<perm_string, SecType *> &env);
+  virtual void collect_assign_paths(PathAnalysis &paths, TypeEnv &env,
+                                    Predicate &pred);
+
+private:
+  const BL_TYPE bl_type_;
+  svector<Statement *> list_;
 };
 
-class PCallTask  : public Statement {
+class PCallTask : public Statement {
 
-    public:
-      explicit PCallTask(const pform_name_t&n, const svector<PExpr*>&parms);
-      explicit PCallTask(perm_string n, const svector<PExpr*>&parms);
-      ~PCallTask();
+public:
+  explicit PCallTask(const pform_name_t &n, const svector<PExpr *> &parms);
+  explicit PCallTask(perm_string n, const svector<PExpr *> &parms);
+  ~PCallTask();
 
-      const pform_name_t& path() const;
+  const pform_name_t &path() const;
 
-      unsigned nparms() const { return parms_.count(); }
+  unsigned nparms() const { return parms_.count(); }
 
-      PExpr*&parm(unsigned idx)
-	    { assert(idx < parms_.count());
-	      return parms_[idx];
-	    }
+  PExpr *&parm(unsigned idx) {
+    assert(idx < parms_.count());
+    return parms_[idx];
+  }
 
-      PExpr* parm(unsigned idx) const
-	    { assert(idx < parms_.count());
-	      return parms_[idx];
-	    }
+  PExpr *parm(unsigned idx) const {
+    assert(idx < parms_.count());
+    return parms_[idx];
+  }
 
-      virtual void dump(ostream&out, unsigned ind) const;
-      virtual void typecheck(SexpPrinter&printer, TypeEnv& env, Predicate& pred) const;
-      virtual NetProc* elaborate(Design*des, NetScope*scope) const;
-      void absintp(Predicate&, TypeEnv&) const;
+  virtual void dump(ostream &out, unsigned ind) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
+                         Predicate &pred) const;
+  virtual NetProc *elaborate(Design *des, NetScope *scope) const;
+  void absintp(Predicate &, TypeEnv &) const;
 
-    private:
-      NetProc* elaborate_sys(Design*des, NetScope*scope) const;
-      NetProc* elaborate_usr(Design*des, NetScope*scope) const;
+private:
+  NetProc *elaborate_sys(Design *des, NetScope *scope) const;
+  NetProc *elaborate_usr(Design *des, NetScope *scope) const;
 
-      pform_name_t path_;
-      svector<PExpr*> parms_;
+  pform_name_t path_;
+  svector<PExpr *> parms_;
 };
 
-class PCase  : public Statement {
+class PCase : public Statement {
 
-    public:
-      struct Item {
-	    svector<PExpr*>expr;
-	    Statement*stat;
-      };
+public:
+  struct Item {
+    svector<PExpr *> expr;
+    Statement *stat;
+  };
 
-      PCase(NetCase::TYPE, PExpr*ex, svector<Item*>*);
-      ~PCase();
+  PCase(NetCase::TYPE, PExpr *ex, svector<Item *> *);
+  ~PCase();
 
-      virtual NetProc* elaborate(Design*des, NetScope*scope) const;
-      virtual void elaborate_scope(Design*des, NetScope*scope) const;
-      virtual void elaborate_sig(Design*des, NetScope*scope) const;
-      virtual void dump(ostream&out, unsigned ind) const;
-      virtual void typecheck(SexpPrinter&printer, TypeEnv& env, Predicate& pred) const;
-      void absintp(Predicate&, TypeEnv&, unsigned idx) const;
+  virtual NetProc *elaborate(Design *des, NetScope *scope) const;
+  virtual void elaborate_scope(Design *des, NetScope *scope) const;
+  virtual void elaborate_sig(Design *des, NetScope *scope) const;
+  virtual void dump(ostream &out, unsigned ind) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
+                         Predicate &pred) const;
+  void absintp(Predicate &, TypeEnv &, unsigned idx) const;
 
-    private:
-      NetCase::TYPE type_;
-      PExpr*expr_;
+private:
+  NetCase::TYPE type_;
+  PExpr *expr_;
 
-      svector<Item*>*items_;
+  svector<Item *> *items_;
 
-    private: // not implemented
-      PCase(const PCase&);
-      PCase& operator= (const PCase&);
+private: // not implemented
+  PCase(const PCase &);
+  PCase &operator=(const PCase &);
 };
 
-class PCAssign  : public Statement {
+class PCAssign : public Statement {
 
-    public:
-      explicit PCAssign(PExpr*l, PExpr*r);
-      ~PCAssign();
+public:
+  explicit PCAssign(PExpr *l, PExpr *r);
+  ~PCAssign();
 
-      virtual NetCAssign* elaborate(Design*des, NetScope*scope) const;
-      virtual void dump(ostream&out, unsigned ind) const;
-      virtual void typecheck(SexpPrinter&printer, TypeEnv& env, Predicate& pred) const;
-      virtual Statement* next_cycle_transform(SexpPrinter&printer, TypeEnv&env);
-      virtual bool collect_dep_invariants(SexpPrinter&out, TypeEnv& env, Predicate& pred);
-      virtual void collect_index_exprs(set<perm_string>&exprs, map<perm_string, SecType*>&env);
-  virtual void collect_assign_paths(PathAnalysis &paths, TypeEnv &env, Predicate &pred);
-      void absintp(Predicate&, TypeEnv&) const;
+  virtual NetCAssign *elaborate(Design *des, NetScope *scope) const;
+  virtual void dump(ostream &out, unsigned ind) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
+                         Predicate &pred) const;
+  virtual Statement *next_cycle_transform(SexpPrinter &printer, TypeEnv &env);
+  virtual bool collect_dep_invariants(SexpPrinter &out, TypeEnv &env,
+                                      Predicate &pred);
+  virtual void collect_index_exprs(set<perm_string> &exprs,
+                                   map<perm_string, SecType *> &env);
+  virtual void collect_assign_paths(PathAnalysis &paths, TypeEnv &env,
+                                    Predicate &pred);
+  void absintp(Predicate &, TypeEnv &) const;
 
-    private:
-      PExpr*lval_;
-      PExpr*expr_;
+private:
+  PExpr *lval_;
+  PExpr *expr_;
 };
 
-class PCondit  : public Statement {
+class PCondit : public Statement {
 
-    public:
-      PCondit(PExpr*ex, Statement*i, Statement*e);
-      ~PCondit();
+public:
+  PCondit(PExpr *ex, Statement *i, Statement *e);
+  ~PCondit();
 
-      virtual NetProc* elaborate(Design*des, NetScope*scope) const;
-      virtual void elaborate_scope(Design*des, NetScope*scope) const;
-      virtual void elaborate_sig(Design*des, NetScope*scope) const;
-      virtual void dump(ostream&out, unsigned ind) const;
-      virtual void typecheck(SexpPrinter&printer, TypeEnv& env, Predicate& pred) const;
-      virtual void mustmodify(set<PExpr*, ExprComparator>& vars, set<perm_string>) const;
-      virtual Statement* next_cycle_transform(SexpPrinter&printer, TypeEnv&env);
-      virtual bool collect_dep_invariants(SexpPrinter&out, TypeEnv& env, Predicate& pred);
-      virtual void collect_index_exprs(set<perm_string>&exprs, map<perm_string, SecType*>&env);
-  virtual void collect_assign_paths(PathAnalysis &paths, TypeEnv &env, Predicate &pred);
-  
-      void absintp(Predicate& pred, TypeEnv&, bool istrue, bool useAllVars = false) const;
-      void merge(Predicate&, Predicate&, Predicate&) const;
+  virtual NetProc *elaborate(Design *des, NetScope *scope) const;
+  virtual void elaborate_scope(Design *des, NetScope *scope) const;
+  virtual void elaborate_sig(Design *des, NetScope *scope) const;
+  virtual void dump(ostream &out, unsigned ind) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
+                         Predicate &pred) const;
+  virtual void mustmodify(set<PExpr *, ExprComparator> &vars,
+                          set<perm_string>) const;
+  virtual Statement *next_cycle_transform(SexpPrinter &printer, TypeEnv &env);
+  virtual bool collect_dep_invariants(SexpPrinter &out, TypeEnv &env,
+                                      Predicate &pred);
+  virtual void collect_index_exprs(set<perm_string> &exprs,
+                                   map<perm_string, SecType *> &env);
+  virtual void collect_assign_paths(PathAnalysis &paths, TypeEnv &env,
+                                    Predicate &pred);
 
-    private:
-      PExpr*expr_;
-      Statement*if_;
-      Statement*else_;
+  void absintp(Predicate &pred, TypeEnv &, bool istrue,
+               bool useAllVars = false) const;
+  void merge(Predicate &, Predicate &, Predicate &) const;
 
-    private: // not implemented
-      PCondit(const PCondit&);
-      PCondit& operator= (const PCondit&);
+private:
+  PExpr *expr_;
+  Statement *if_;
+  Statement *else_;
+
+private: // not implemented
+  PCondit(const PCondit &);
+  PCondit &operator=(const PCondit &);
 };
 
-class PDeassign  : public Statement {
+class PDeassign : public Statement {
 
-    public:
-      explicit PDeassign(PExpr*l);
-      ~PDeassign();
+public:
+  explicit PDeassign(PExpr *l);
+  ~PDeassign();
 
-      virtual NetDeassign* elaborate(Design*des, NetScope*scope) const;
-      virtual void dump(ostream&out, unsigned ind) const;
-      virtual void typecheck(SexpPrinter&printer, TypeEnv& env, Predicate& pred) const;
-      void absintp(Predicate&, TypeEnv&) const;
+  virtual NetDeassign *elaborate(Design *des, NetScope *scope) const;
+  virtual void dump(ostream &out, unsigned ind) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
+                         Predicate &pred) const;
+  void absintp(Predicate &, TypeEnv &) const;
 
-    private:
-      PExpr*lval_;
+private:
+  PExpr *lval_;
 };
 
-class PDelayStatement  : public Statement {
+class PDelayStatement : public Statement {
 
-    public:
-      PDelayStatement(PExpr*d, Statement*st);
-      ~PDelayStatement();
+public:
+  PDelayStatement(PExpr *d, Statement *st);
+  ~PDelayStatement();
 
-      virtual void dump(ostream&out, unsigned ind) const;
-      virtual void typecheck(SexpPrinter&printer, TypeEnv& env, Predicate& pred) const;
-      virtual NetProc* elaborate(Design*des, NetScope*scope) const;
-      virtual void elaborate_scope(Design*des, NetScope*scope) const;
-      virtual void elaborate_sig(Design*des, NetScope*scope) const;
-      void absintp(Predicate&, TypeEnv&) const;
+  virtual void dump(ostream &out, unsigned ind) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
+                         Predicate &pred) const;
+  virtual NetProc *elaborate(Design *des, NetScope *scope) const;
+  virtual void elaborate_scope(Design *des, NetScope *scope) const;
+  virtual void elaborate_sig(Design *des, NetScope *scope) const;
+  void absintp(Predicate &, TypeEnv &) const;
 
-    private:
-      PExpr*delay_;
-      Statement*statement_;
+private:
+  PExpr *delay_;
+  Statement *statement_;
 };
-
 
 /*
  * This represents the parsing of a disable <scope> statement.
  */
-class PDisable  : public Statement {
+class PDisable : public Statement {
 
-    public:
-      explicit PDisable(const pform_name_t&sc);
-      ~PDisable();
+public:
+  explicit PDisable(const pform_name_t &sc);
+  ~PDisable();
 
-      virtual void dump(ostream&out, unsigned ind) const;
-      virtual void typecheck(SexpPrinter&printer, TypeEnv& env, Predicate& pred) const;
-      virtual NetProc* elaborate(Design*des, NetScope*scope) const;
-      void absintp(Predicate&, TypeEnv&) const;
+  virtual void dump(ostream &out, unsigned ind) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
+                         Predicate &pred) const;
+  virtual NetProc *elaborate(Design *des, NetScope *scope) const;
+  void absintp(Predicate &, TypeEnv &) const;
 
-    private:
-      pform_name_t scope_;
+private:
+  pform_name_t scope_;
 };
 
 /*
@@ -379,183 +412,194 @@ class PDisable  : public Statement {
  *      @(expr) <statement>;
  *      @* <statement>;
  */
-class PEventStatement  : public Statement {
+class PEventStatement : public Statement {
 
-    public:
+public:
+  explicit PEventStatement(const svector<PEEvent *> &ee);
+  explicit PEventStatement(PEEvent *ee);
+  // Make an @* statement.
+  explicit PEventStatement(void);
 
-      explicit PEventStatement(const svector<PEEvent*>&ee);
-      explicit PEventStatement(PEEvent*ee);
-	// Make an @* statement.
-      explicit PEventStatement(void);
+  ~PEventStatement();
 
-      ~PEventStatement();
+  void set_statement(Statement *st);
 
-      void set_statement(Statement*st);
+  virtual void dump(ostream &out, unsigned ind) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
+                         Predicate &pred) const;
+  // Call this with a NULL statement only. It is used to print
+  // the event expression for inter-assignment event controls.
+  virtual void dump_inline(ostream &out) const;
+  virtual NetProc *elaborate(Design *des, NetScope *scope) const;
+  virtual void elaborate_scope(Design *des, NetScope *scope) const;
+  virtual void elaborate_sig(Design *des, NetScope *scope) const;
+  virtual Statement *next_cycle_transform(SexpPrinter &printer, TypeEnv &env);
+  virtual bool collect_dep_invariants(SexpPrinter &out, TypeEnv &env,
+                                      Predicate &pred);
+  virtual void collect_index_exprs(set<perm_string> &exprs,
+                                   map<perm_string, SecType *> &env);
+  virtual void collect_assign_paths(PathAnalysis &paths, TypeEnv &env,
+                                    Predicate &pred);
 
-      virtual void dump(ostream&out, unsigned ind) const;
-      virtual void typecheck(SexpPrinter&printer, TypeEnv& env, Predicate& pred) const;
-	// Call this with a NULL statement only. It is used to print
-	// the event expression for inter-assignment event controls.
-      virtual void dump_inline(ostream&out) const;
-      virtual NetProc* elaborate(Design*des, NetScope*scope) const;
-      virtual void elaborate_scope(Design*des, NetScope*scope) const;
-      virtual void elaborate_sig(Design*des, NetScope*scope) const;
-      virtual Statement* next_cycle_transform(SexpPrinter&printer, TypeEnv&env);
-      virtual bool collect_dep_invariants(SexpPrinter&out, TypeEnv& env, Predicate& pred);
-      virtual void collect_index_exprs(set<perm_string>&exprs, map<perm_string, SecType*>&env);
-  virtual void collect_assign_paths(PathAnalysis &paths, TypeEnv &env, Predicate &pred);
-  
-      void absintp(Predicate&, TypeEnv&) const;
-      bool has_aa_term(Design*des, NetScope*scope);
+  void absintp(Predicate &, TypeEnv &) const;
+  bool has_aa_term(Design *des, NetScope *scope);
 
-	// This method is used to elaborate, but attach a previously
-	// elaborated statement to the event.
-      NetProc* elaborate_st(Design*des, NetScope*scope, NetProc*st) const;
+  // This method is used to elaborate, but attach a previously
+  // elaborated statement to the event.
+  NetProc *elaborate_st(Design *des, NetScope *scope, NetProc *st) const;
 
-      NetProc* elaborate_wait(Design*des, NetScope*scope, NetProc*st) const;
+  NetProc *elaborate_wait(Design *des, NetScope *scope, NetProc *st) const;
 
-    private:
-      svector<PEEvent*>expr_;
-      Statement*statement_;
+private:
+  svector<PEEvent *> expr_;
+  Statement *statement_;
 };
 
-ostream& operator << (ostream&o, const PEventStatement&obj);
+ostream &operator<<(ostream &o, const PEventStatement &obj);
 
-class PForce  : public Statement {
+class PForce : public Statement {
 
-    public:
-      explicit PForce(PExpr*l, PExpr*r);
-      ~PForce();
+public:
+  explicit PForce(PExpr *l, PExpr *r);
+  ~PForce();
 
-      virtual NetForce* elaborate(Design*des, NetScope*scope) const;
-      virtual void dump(ostream&out, unsigned ind) const;
-      virtual void typecheck(SexpPrinter&printer, TypeEnv& env, Predicate& pred) const;
-      void absintp(Predicate&, TypeEnv&) const;
+  virtual NetForce *elaborate(Design *des, NetScope *scope) const;
+  virtual void dump(ostream &out, unsigned ind) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
+                         Predicate &pred) const;
+  void absintp(Predicate &, TypeEnv &) const;
 
-    private:
-      PExpr*lval_;
-      PExpr*expr_;
+private:
+  PExpr *lval_;
+  PExpr *expr_;
 };
 
 class PForever : public Statement {
-    public:
-      explicit PForever(Statement*s);
-      ~PForever();
+public:
+  explicit PForever(Statement *s);
+  ~PForever();
 
-      virtual NetProc* elaborate(Design*des, NetScope*scope) const;
-      virtual void elaborate_scope(Design*des, NetScope*scope) const;
-      virtual void elaborate_sig(Design*des, NetScope*scope) const;
-      virtual void dump(ostream&out, unsigned ind) const;
-      virtual void typecheck(SexpPrinter&printer, TypeEnv& env, Predicate& pred) const;
-      void absintp(Predicate&, TypeEnv&) const;
+  virtual NetProc *elaborate(Design *des, NetScope *scope) const;
+  virtual void elaborate_scope(Design *des, NetScope *scope) const;
+  virtual void elaborate_sig(Design *des, NetScope *scope) const;
+  virtual void dump(ostream &out, unsigned ind) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
+                         Predicate &pred) const;
+  void absintp(Predicate &, TypeEnv &) const;
 
-    private:
-      Statement*statement_;
+private:
+  Statement *statement_;
 };
 
-class PForStatement  : public Statement {
+class PForStatement : public Statement {
 
-    public:
-      PForStatement(PExpr*n1, PExpr*e1, PExpr*cond,
-		    PExpr*n2, PExpr*e2, Statement*st);
-      ~PForStatement();
+public:
+  PForStatement(PExpr *n1, PExpr *e1, PExpr *cond, PExpr *n2, PExpr *e2,
+                Statement *st);
+  ~PForStatement();
 
-      virtual NetProc* elaborate(Design*des, NetScope*scope) const;
-      virtual void elaborate_scope(Design*des, NetScope*scope) const;
-      virtual void elaborate_sig(Design*des, NetScope*scope) const;
-      virtual void dump(ostream&out, unsigned ind) const;
-      virtual void typecheck(SexpPrinter&printer, TypeEnv& env, Predicate& pred) const;
-      void absintp(Predicate&, TypeEnv&) const;
+  virtual NetProc *elaborate(Design *des, NetScope *scope) const;
+  virtual void elaborate_scope(Design *des, NetScope *scope) const;
+  virtual void elaborate_sig(Design *des, NetScope *scope) const;
+  virtual void dump(ostream &out, unsigned ind) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
+                         Predicate &pred) const;
+  void absintp(Predicate &, TypeEnv &) const;
 
-    private:
-      PExpr* name1_;
-      PExpr* expr1_;
+private:
+  PExpr *name1_;
+  PExpr *expr1_;
 
-      PExpr*cond_;
+  PExpr *cond_;
 
-      PExpr* name2_;
-      PExpr* expr2_;
+  PExpr *name2_;
+  PExpr *expr2_;
 
-      Statement*statement_;
+  Statement *statement_;
 };
 
-class PNoop  : public Statement {
+class PNoop : public Statement {
 
-    public:
-      PNoop() { }
-      ~PNoop() { }
+public:
+  PNoop() {}
+  ~PNoop() {}
 
-    virtual void typecheck(SexpPrinter&printer, TypeEnv& env, Predicate& pred) const;
-    void absintp(Predicate&, TypeEnv&) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
+                         Predicate &pred) const;
+  void absintp(Predicate &, TypeEnv &) const;
 };
 
 class PRepeat : public Statement {
-    public:
-      explicit PRepeat(PExpr*expr, Statement*s);
-      ~PRepeat();
+public:
+  explicit PRepeat(PExpr *expr, Statement *s);
+  ~PRepeat();
 
-      virtual NetProc* elaborate(Design*des, NetScope*scope) const;
-      virtual void elaborate_scope(Design*des, NetScope*scope) const;
-      virtual void elaborate_sig(Design*des, NetScope*scope) const;
-      virtual void dump(ostream&out, unsigned ind) const;
-      virtual void typecheck(SexpPrinter&printer, TypeEnv& env, Predicate& pred) const;
-      void absintp(Predicate&, TypeEnv&) const;
+  virtual NetProc *elaborate(Design *des, NetScope *scope) const;
+  virtual void elaborate_scope(Design *des, NetScope *scope) const;
+  virtual void elaborate_sig(Design *des, NetScope *scope) const;
+  virtual void dump(ostream &out, unsigned ind) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
+                         Predicate &pred) const;
+  void absintp(Predicate &, TypeEnv &) const;
 
-    private:
-      PExpr*expr_;
-      Statement*statement_;
+private:
+  PExpr *expr_;
+  Statement *statement_;
 };
 
-class PRelease  : public Statement {
+class PRelease : public Statement {
 
-    public:
-      explicit PRelease(PExpr*l);
-      ~PRelease();
+public:
+  explicit PRelease(PExpr *l);
+  ~PRelease();
 
-      virtual NetProc* elaborate(Design*des, NetScope*scope) const;
-      virtual void dump(ostream&out, unsigned ind) const;
-      virtual void typecheck(SexpPrinter&printer, TypeEnv& env, Predicate& pred) const;
-      void absintp(Predicate&, TypeEnv&) const;
+  virtual NetProc *elaborate(Design *des, NetScope *scope) const;
+  virtual void dump(ostream &out, unsigned ind) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
+                         Predicate &pred) const;
+  void absintp(Predicate &, TypeEnv &) const;
 
-    private:
-      PExpr*lval_;
+private:
+  PExpr *lval_;
 };
 
 /*
  * The PTrigger statement sends a trigger to a named event. Take the
  * name here.
  */
-class PTrigger  : public Statement {
+class PTrigger : public Statement {
 
-    public:
-      explicit PTrigger(const pform_name_t&ev);
-      ~PTrigger();
+public:
+  explicit PTrigger(const pform_name_t &ev);
+  ~PTrigger();
 
-      virtual NetProc* elaborate(Design*des, NetScope*scope) const;
-      virtual void dump(ostream&out, unsigned ind) const;
-      virtual void typecheck(SexpPrinter&printer, TypeEnv& env, Predicate& pred) const;
-      void absintp(Predicate&, TypeEnv&) const;
+  virtual NetProc *elaborate(Design *des, NetScope *scope) const;
+  virtual void dump(ostream &out, unsigned ind) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
+                         Predicate &pred) const;
+  void absintp(Predicate &, TypeEnv &) const;
 
-    private:
-      pform_name_t event_;
+private:
+  pform_name_t event_;
 };
 
-class PWhile  : public Statement {
+class PWhile : public Statement {
 
-    public:
-      PWhile(PExpr*e1, Statement*st);
-      ~PWhile();
+public:
+  PWhile(PExpr *e1, Statement *st);
+  ~PWhile();
 
-      virtual NetProc* elaborate(Design*des, NetScope*scope) const;
-      virtual void elaborate_scope(Design*des, NetScope*scope) const;
-      virtual void elaborate_sig(Design*des, NetScope*scope) const;
-      virtual void dump(ostream&out, unsigned ind) const;
-      virtual void typecheck(SexpPrinter&printer, TypeEnv& env, Predicate& pred) const;
-      void absintp(Predicate&, TypeEnv&) const;
+  virtual NetProc *elaborate(Design *des, NetScope *scope) const;
+  virtual void elaborate_scope(Design *des, NetScope *scope) const;
+  virtual void elaborate_sig(Design *des, NetScope *scope) const;
+  virtual void dump(ostream &out, unsigned ind) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
+                         Predicate &pred) const;
+  void absintp(Predicate &, TypeEnv &) const;
 
-    private:
-      PExpr*cond_;
-      Statement*statement_;
+private:
+  PExpr *cond_;
+  Statement *statement_;
 };
 
 #endif

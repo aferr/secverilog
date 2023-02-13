@@ -20,14 +20,13 @@
 #ident "$Id: a_close.c,v 1.4 2003/06/17 16:55:07 steve Exp $"
 #endif
 
-# include  <acc_user.h>
-# include  "priv.h"
+#include "priv.h"
+#include <acc_user.h>
 
-void acc_close(void)
-{
-      if (pli_trace) {
-	    fprintf(pli_trace, "acc_close()\n");
-      }
+void acc_close(void) {
+  if (pli_trace) {
+    fprintf(pli_trace, "acc_close()\n");
+  }
 }
 
 /*

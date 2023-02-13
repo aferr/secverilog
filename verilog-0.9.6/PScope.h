@@ -19,11 +19,11 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  "LineInfo.h"
-# include  "StringHeap.h"
-# include  "pform_types.h"
-# include  "ivl_target.h"
-# include  <map>
+#include "LineInfo.h"
+#include "StringHeap.h"
+#include "ivl_target.h"
+#include "pform_types.h"
+#include <map>
 
 class PEvent;
 class PExpr;
@@ -48,97 +48,99 @@ struct TypeEnv;
 
 class LexicalScope {
 
-    public:
-      explicit LexicalScope()  { }
-	// A virtual destructor is so that dynamic_cast can work.
-      virtual ~LexicalScope() { }
+public:
+  explicit LexicalScope() {}
+  // A virtual destructor is so that dynamic_cast can work.
+  virtual ~LexicalScope() {}
 
-      struct range_t {
-	      // True if this is an exclude
-	    bool exclude_flag;
-	      // lower bound
-	      // If low_open_flag is false and low_expr=0, then use -inf
-	    bool low_open_flag;
-	    PExpr*low_expr;
-	      // upper bound
-	      // If high_open_flag is false and high_expr=0, then use +inf
-	    bool high_open_flag;
-	    PExpr*high_expr;
-	      // Next range description in list
-	    struct range_t*next;
-      };
+  struct range_t {
+    // True if this is an exclude
+    bool exclude_flag;
+    // lower bound
+    // If low_open_flag is false and low_expr=0, then use -inf
+    bool low_open_flag;
+    PExpr *low_expr;
+    // upper bound
+    // If high_open_flag is false and high_expr=0, then use +inf
+    bool high_open_flag;
+    PExpr *high_expr;
+    // Next range description in list
+    struct range_t *next;
+  };
 
-	/* The scope has parameters that are evaluated when the scope
-	   is elaborated. During parsing, I put the parameters into
-	   this map. */
-      struct param_expr_t : public LineInfo {
-	    param_expr_t() : type(IVL_VT_NO_TYPE), msb(0), lsb(0), signed_flag(false), expr(0), range(0) { }
-	      // Type information
-	    ivl_variable_type_t type;
-	    PExpr*msb;
-	    PExpr*lsb;
-	    bool signed_flag;
-	      // Value expression
-	    PExpr*expr;
-	      // If there are range constraints, list them here
-	    range_t*range;
-      };
-      map<perm_string,param_expr_t>parameters;
-      map<perm_string,param_expr_t>localparams;
+  /* The scope has parameters that are evaluated when the scope
+     is elaborated. During parsing, I put the parameters into
+     this map. */
+  struct param_expr_t : public LineInfo {
+    param_expr_t()
+        : type(IVL_VT_NO_TYPE), msb(0), lsb(0), signed_flag(false), expr(0),
+          range(0) {}
+    // Type information
+    ivl_variable_type_t type;
+    PExpr *msb;
+    PExpr *lsb;
+    bool signed_flag;
+    // Value expression
+    PExpr *expr;
+    // If there are range constraints, list them here
+    range_t *range;
+  };
+  map<perm_string, param_expr_t> parameters;
+  map<perm_string, param_expr_t> localparams;
 
-	// Named events in the scope.
-      map<perm_string,PEvent*>events;
+  // Named events in the scope.
+  map<perm_string, PEvent *> events;
 
-	// Nets and variables (wires) in the scope
-      map<perm_string,PWire*>wires;
-      PWire* wires_find(perm_string name);
+  // Nets and variables (wires) in the scope
+  map<perm_string, PWire *> wires;
+  PWire *wires_find(perm_string name);
 
-	// Behaviors (processes) in this scope
-      list<PProcess*> behaviors;
-      list<AProcess*> analog_behaviors;
+  // Behaviors (processes) in this scope
+  list<PProcess *> behaviors;
+  list<AProcess *> analog_behaviors;
 
-    protected:
-      void dump_parameters_(ostream&out, unsigned indent) const;
-      void typecheck_parameters_(SexpPrinter&, TypeEnv& env) const;
+protected:
+  void dump_parameters_(ostream &out, unsigned indent) const;
+  void typecheck_parameters_(SexpPrinter &, TypeEnv &env) const;
 
-      void dump_localparams_(ostream&out, unsigned indent) const;
-      void typecheck_localparams_(SexpPrinter&, TypeEnv& env) const;
+  void dump_localparams_(ostream &out, unsigned indent) const;
+  void typecheck_localparams_(SexpPrinter &, TypeEnv &env) const;
 
-      void dump_events_(ostream&out, unsigned indent) const;
-      void typecheck_events_(SexpPrinter&, TypeEnv& env) const;
+  void dump_events_(ostream &out, unsigned indent) const;
+  void typecheck_events_(SexpPrinter &, TypeEnv &env) const;
 
-      void dump_wires_(ostream&out, unsigned indent) const;
-      void typecheck_wires_(SexpPrinter&, TypeEnv& env) const;
+  void dump_wires_(ostream &out, unsigned indent) const;
+  void typecheck_wires_(SexpPrinter &, TypeEnv &env) const;
 
-    private:
+private:
 };
 
 class PScope : public LexicalScope {
 
-    public:
-	// When created, a scope has a name and a parent. The name is
-	// the name of the definition. For example, if this is a
-	// module declaration, the name is the name after the "module"
-	// keyword, and if this is a task scope, the name is the task
-	// name. The parent is the lexical parent of this scope. Since
-	// modules do not nest in Verilog, the parent must be nil for
-	// modules. Scopes for tasks and functions point to their
-	// containing module.
-      PScope(perm_string name, PScope*parent);
-      PScope(perm_string name);
-      virtual ~PScope();
+public:
+  // When created, a scope has a name and a parent. The name is
+  // the name of the definition. For example, if this is a
+  // module declaration, the name is the name after the "module"
+  // keyword, and if this is a task scope, the name is the task
+  // name. The parent is the lexical parent of this scope. Since
+  // modules do not nest in Verilog, the parent must be nil for
+  // modules. Scopes for tasks and functions point to their
+  // containing module.
+  PScope(perm_string name, PScope *parent);
+  PScope(perm_string name);
+  virtual ~PScope();
 
-      perm_string pscope_name() const { return name_; }
-      PScope* pscope_parent() { return parent_; }
+  perm_string pscope_name() const { return name_; }
+  PScope *pscope_parent() { return parent_; }
 
-    protected:
-      bool elaborate_sig_wires_(Design*des, NetScope*scope) const;
+protected:
+  bool elaborate_sig_wires_(Design *des, NetScope *scope) const;
 
-      bool elaborate_behaviors_(Design*des, NetScope*scope) const;
+  bool elaborate_behaviors_(Design *des, NetScope *scope) const;
 
-    private:
-      perm_string name_;
-      PScope*parent_;
+private:
+  perm_string name_;
+  PScope *parent_;
 };
 
 #endif

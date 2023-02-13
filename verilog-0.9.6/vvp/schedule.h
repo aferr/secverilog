@@ -19,10 +19,10 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  "vthread.h"
-# include  "pointers.h"
-# include  "vvp_net.h"
-# include  "array.h"
+#include "array.h"
+#include "pointers.h"
+#include "vthread.h"
+#include "vvp_net.h"
 
 /*
  * This causes a thread to be scheduled for execution. The schedule
@@ -34,7 +34,7 @@
  * execution ahead of non-blocking assignments.
  */
 extern void schedule_vthread(vthread_t thr, vvp_time64_t delay,
-			     bool push_flag =false);
+                             bool push_flag = false);
 
 /*
  * Create an assignment event. The val passed here will be assigned to
@@ -42,28 +42,25 @@ extern void schedule_vthread(vthread_t thr, vvp_time64_t delay,
  * like a non-blocking assignment. This is in fact mostly used to
  * implement the non-blocking assignment.
  */
-extern void schedule_assign_vector(vvp_net_ptr_t ptr,
-				   unsigned base, unsigned vwid,
-				   const vvp_vector4_t&val,
-				   vvp_time64_t  delay);
+extern void schedule_assign_vector(vvp_net_ptr_t ptr, unsigned base,
+                                   unsigned vwid, const vvp_vector4_t &val,
+                                   vvp_time64_t delay);
 
 extern void schedule_assign_plucked_vector(vvp_net_ptr_t ptr,
-					   vvp_time64_t  delay,
-					   const vvp_vector4_t&val,
-					   unsigned adr, unsigned wid);
+                                           vvp_time64_t delay,
+                                           const vvp_vector4_t &val,
+                                           unsigned adr, unsigned wid);
 
-extern void schedule_assign_array_word(vvp_array_t mem,
-				       unsigned word_address,
-				       unsigned off,
-				       vvp_vector4_t val,
-				       vvp_time64_t delay);
+extern void schedule_assign_array_word(vvp_array_t mem, unsigned word_address,
+                                       unsigned off, vvp_vector4_t val,
+                                       vvp_time64_t delay);
 /*
  * This is very similar to schedule_assign_vector, but generates an
  * event in the active queue. It is used at link time to assign a
  * constant value (i.e. C4<...>) to the input of a functor. This
  * creates an event in the active queue.
  */
-extern void schedule_set_vector(vvp_net_ptr_t ptr, const vvp_vector4_t&val);
+extern void schedule_set_vector(vvp_net_ptr_t ptr, const vvp_vector4_t &val);
 extern void schedule_set_vector(vvp_net_ptr_t ptr, vvp_vector8_t val);
 extern void schedule_set_vector(vvp_net_ptr_t ptr, double val);
 
@@ -100,18 +97,18 @@ extern void schedule_init_vector(vvp_net_ptr_t ptr, double val);
 typedef struct vvp_gen_event_s *vvp_gen_event_t;
 
 extern void schedule_generic(vvp_gen_event_t obj, vvp_time64_t delay,
-			     bool sync_flag, bool ro_flag =true,
-			     bool delete_obj_when_done =false);
+                             bool sync_flag, bool ro_flag = true,
+                             bool delete_obj_when_done = false);
 
-extern void schedule_at_start_of_simtime(vvp_gen_event_t obj, vvp_time64_t delay);
+extern void schedule_at_start_of_simtime(vvp_gen_event_t obj,
+                                         vvp_time64_t delay);
 
 /* Use this is schedule thread deletion (after rosync). */
 extern void schedule_del_thr(vthread_t thr);
 
-struct vvp_gen_event_s
-{
-      virtual ~vvp_gen_event_s() =0;
-      virtual void run_run() =0;
+struct vvp_gen_event_s {
+  virtual ~vvp_gen_event_s() = 0;
+  virtual void run_run()     = 0;
 };
 
 /*

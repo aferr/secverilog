@@ -19,17 +19,17 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  <stdio.h>
-# include  "vpi_user.h"
+#include "vpi_user.h"
+#include <stdio.h>
 
-# define MEM_ADDRESS 257
-# define MEM_WORD    258
-# define MEM_ERROR   259
+#define MEM_ADDRESS 257
+#define MEM_WORD 258
+#define MEM_ERROR 259
 
 extern char *readmem_error_token;
 
-extern void sys_readmem_start_file(FILE*in, int bin_flag,
-				   unsigned width, struct t_vpi_vecval*val);
+extern void sys_readmem_start_file(FILE *in, int bin_flag, unsigned width,
+                                   struct t_vpi_vecval *val);
 extern int readmemlex();
 
 extern void destroy_readmem_lexor();

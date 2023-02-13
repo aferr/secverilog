@@ -20,15 +20,14 @@
 #ident "$Id: a_initialize.c,v 1.2 2002/08/12 01:35:02 steve Exp $"
 #endif
 
-# include  <acc_user.h>
+#include <acc_user.h>
 
 int acc_error_flag;
 
-int acc_initialize()
-{
-      acc_error_flag = 0;
+int acc_initialize() {
+  acc_error_flag = 0;
 
-      return 1;
+  return 1;
 }
 
 /*

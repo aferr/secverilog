@@ -17,12 +17,12 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  "config.h"
-# include  "util.h"
-# include  "PExpr.h"
-# include  "netlist.h"
-# include  <iostream>
-# include  <cassert>
+#include "PExpr.h"
+#include "config.h"
+#include "netlist.h"
+#include "util.h"
+#include <cassert>
+#include <iostream>
 
 /*
  * The evaluate_attributes function evaluates the attribute
@@ -30,45 +30,43 @@
  * for passing to netlist devices.
  */
 
-attrib_list_t* evaluate_attributes(const map<perm_string,PExpr*>&att,
-				   unsigned&natt,
-				   Design*des, NetScope*scope)
-{
-      natt = att.size();
-      if (natt == 0)
-	    return 0;
+attrib_list_t *evaluate_attributes(const map<perm_string, PExpr *> &att,
+                                   unsigned &natt, Design *des,
+                                   NetScope *scope) {
+  natt = att.size();
+  if (natt == 0)
+    return 0;
 
-      attrib_list_t*table = new attrib_list_t [natt];
+  attrib_list_t *table = new attrib_list_t[natt];
 
-      unsigned idx = 0;
+  unsigned idx = 0;
 
-      typedef map<perm_string,PExpr*>::const_iterator iter_t;
-      for (iter_t cur = att.begin() ;  cur != att.end() ;  cur ++, idx++) {
-	    table[idx].key = (*cur).first;
-	    PExpr*exp = (*cur).second;
+  typedef map<perm_string, PExpr *>::const_iterator iter_t;
+  for (iter_t cur = att.begin(); cur != att.end(); cur++, idx++) {
+    table[idx].key = (*cur).first;
+    PExpr *exp     = (*cur).second;
 
-	      /* If the attribute value is given in the source, then
-		 evaluate it as a constant. If the value is not
-		 given, then assume the value is 1. */
-	    verinum*tmp = 0;
-	    if (exp) {
-		  tmp = exp->eval_const(des, scope);
-                  if (tmp == 0) {
-			cerr << exp->get_fileline() << ": error: ``"
-			     << *exp << "'' is not a constant expression."
-			     << endl;
-			des->errors += 1;
-                  }
-            }
-	    if (tmp == 0)
-		  tmp = new verinum(1);
-
-	    assert(tmp);
-
-	    table[idx].val = *tmp;
-	    delete tmp;
+    /* If the attribute value is given in the source, then
+       evaluate it as a constant. If the value is not
+       given, then assume the value is 1. */
+    verinum *tmp = 0;
+    if (exp) {
+      tmp = exp->eval_const(des, scope);
+      if (tmp == 0) {
+        cerr << exp->get_fileline() << ": error: ``" << *exp
+             << "'' is not a constant expression." << endl;
+        des->errors += 1;
       }
+    }
+    if (tmp == 0)
+      tmp = new verinum(1);
 
-      assert(idx == natt);
-      return table;
+    assert(tmp);
+
+    table[idx].val = *tmp;
+    delete tmp;
+  }
+
+  assert(idx == natt);
+  return table;
 }

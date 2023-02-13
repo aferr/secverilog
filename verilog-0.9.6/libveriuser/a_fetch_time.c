@@ -20,15 +20,13 @@
 #ident "$Id: a_fetch_time.c,v 1.1 2003/03/13 04:35:09 steve Exp $"
 #endif
 
+#include "priv.h"
+#include <acc_user.h>
+#include <vpi_user.h>
 
-#include  <vpi_user.h>
-#include  <acc_user.h>
-#include  "priv.h"
-
-void acc_fetch_timescale_info(handle obj, p_timescale_info info)
-{
-      info->precision = vpi_get(vpiTimePrecision, 0);
-      info->unit = vpi_get(vpiTimeUnit, obj);
+void acc_fetch_timescale_info(handle obj, p_timescale_info info) {
+  info->precision = vpi_get(vpiTimePrecision, 0);
+  info->unit      = vpi_get(vpiTimeUnit, obj);
 }
 
 /*
@@ -37,4 +35,3 @@ void acc_fetch_timescale_info(handle obj, p_timescale_info info)
  *  Add a bunch of new acc_ and tf_ functions.
  *
  */
-

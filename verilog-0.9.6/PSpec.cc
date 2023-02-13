@@ -17,15 +17,10 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  "PSpec.h"
+#include "PSpec.h"
 
 PSpecPath::PSpecPath(unsigned src_cnt, unsigned dst_cnt)
-: conditional(false), condition(0), edge(0),
-  src(src_cnt), dst(dst_cnt),
-  data_source_expression(0)
-{
-}
+    : conditional(false), condition(0), edge(0), src(src_cnt), dst(dst_cnt),
+      data_source_expression(0) {}
 
-PSpecPath::~PSpecPath()
-{
-}
+PSpecPath::~PSpecPath() {}

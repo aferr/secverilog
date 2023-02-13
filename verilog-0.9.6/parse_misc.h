@@ -19,10 +19,10 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  <list>
-# include  <ostream>
-# include  "compiler.h"
-# include  "pform.h"
+#include "compiler.h"
+#include "pform.h"
+#include <list>
+#include <ostream>
 
 /*
  * The vlltype supports the passing of detailed source file location
@@ -30,39 +30,38 @@
  * YYLTYPE compels the lexor to use this type and not something other.
  */
 struct vlltype {
-      unsigned first_line;
-      unsigned first_column;
-      unsigned last_line;
-      unsigned last_column;
-      const char*text;
+  unsigned first_line;
+  unsigned first_column;
+  unsigned last_line;
+  unsigned last_column;
+  const char *text;
 };
-# define YYLTYPE struct vlltype
+#define YYLTYPE struct vlltype
 
 class LineInfo;
-inline void FILE_NAME(LineInfo*tmp, const struct vlltype&where)
-{
-      tmp->set_lineno(where.first_line);
-      tmp->set_file(filename_strings.make(where.text));
+inline void FILE_NAME(LineInfo *tmp, const struct vlltype &where) {
+  tmp->set_lineno(where.first_line);
+  tmp->set_file(filename_strings.make(where.text));
 }
 
-  /* This for compatibility with new and older bison versions. */
+/* This for compatibility with new and older bison versions. */
 #ifndef yylloc
-# define yylloc VLlloc
+#define yylloc VLlloc
 #endif
 extern YYLTYPE yylloc;
 
 /*
  * Interface into the lexical analyzer. ...
  */
-extern int  VLlex();
-extern void VLerror(const char*msg);
-extern void VLerror(const YYLTYPE&loc, const char*msg);
+extern int VLlex();
+extern void VLerror(const char *msg);
+extern void VLerror(const YYLTYPE &loc, const char *msg);
 #define yywarn VLwarn
-extern void VLwarn(const YYLTYPE&loc, const char*msg);
+extern void VLwarn(const YYLTYPE &loc, const char *msg);
 
 extern void destroy_lexor();
 
-extern ostream& operator << (ostream&, const YYLTYPE&loc);
+extern ostream &operator<<(ostream &, const YYLTYPE &loc);
 
 extern unsigned error_count, warn_count;
 extern unsigned long based_size;
@@ -70,10 +69,10 @@ extern unsigned long based_size;
 extern bool in_celldefine;
 enum UCDriveType { UCD_NONE, UCD_PULL0, UCD_PULL1 };
 extern UCDriveType uc_drive;
-named_pexpr_t* nextify_named_pexpr(named_pexpr_t*n);
-svector<named_pexpr_t*>* nextify_named_pexpr_list(svector<named_pexpr_t*>*l);
-list<perm_string>* nextify_perm_strings(list<perm_string>*l);
-list<perm_string>* nextify_net_decl_names(net_decl_assign_t*nda);
+named_pexpr_t *nextify_named_pexpr(named_pexpr_t *n);
+svector<named_pexpr_t *> *nextify_named_pexpr_list(svector<named_pexpr_t *> *l);
+list<perm_string> *nextify_perm_strings(list<perm_string> *l);
+list<perm_string> *nextify_net_decl_names(net_decl_assign_t *nda);
 perm_string nextify_perm_string(perm_string s);
 
 #endif

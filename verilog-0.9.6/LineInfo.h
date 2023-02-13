@@ -19,8 +19,8 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  "StringHeap.h"
-# include  <string>
+#include "StringHeap.h"
+#include <string>
 
 using namespace std;
 
@@ -34,24 +34,25 @@ using namespace std;
  */
 
 class LineInfo {
-    public:
-      LineInfo();
-      virtual ~LineInfo();
+public:
+  LineInfo();
+  virtual ~LineInfo();
 
-	// Get a fully formatted file/lineno
-      string get_fileline() const;
-	// Set the file/line fro another LineInfo object.
-      void set_line(const LineInfo&that);
+  // Get a fully formatted file/lineno
+  string get_fileline() const;
+  // Set the file/line fro another LineInfo object.
+  void set_line(const LineInfo &that);
 
-	// Access parts of LineInfo data
-      void set_file(perm_string f);
-      void set_lineno(unsigned n);
+  // Access parts of LineInfo data
+  void set_file(perm_string f);
+  void set_lineno(unsigned n);
 
-      perm_string get_file() const { return file_; }
-      unsigned  get_lineno() const { return lineno_; }
-    private:
-      perm_string file_;
-      unsigned lineno_;
+  perm_string get_file() const { return file_; }
+  unsigned get_lineno() const { return lineno_; }
+
+private:
+  perm_string file_;
+  unsigned lineno_;
 };
 
 #endif

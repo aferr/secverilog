@@ -19,9 +19,9 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include "pointers.h"
-# include "vpi_priv.h"
-# include "vvp_net.h"
+#include "pointers.h"
+#include "vpi_priv.h"
+#include "vvp_net.h"
 
 /* Routines used to cleanup the runtime memory when it is all finished. */
 

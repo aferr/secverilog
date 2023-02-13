@@ -17,11 +17,11 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include "vpi_config.h"
-# include "vpi_user.h"
-# include <stdio.h>
-# include <stdlib.h>
-# include <string.h>
+#include "vpi_config.h"
+#include "vpi_user.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 extern void sys_convert_register();
 extern void sys_fileio_register();
@@ -45,169 +45,179 @@ extern void vams_simparam_register();
 #ifdef HAVE_LIBBZ2
 extern void sys_lxt_register();
 #else
-static void sys_lxt_register() { fputs("LXT support disabled since libbzip2 not available\n",stderr); exit(1); }
+static void sys_lxt_register() {
+  fputs("LXT support disabled since libbzip2 not available\n", stderr);
+  exit(1);
+}
 #endif
 extern void sys_lxt2_register();
 extern void sys_fst_register();
 #else
-static void sys_lxt_register() { fputs("LXT support disabled since zlib not available\n",stderr); exit(1); }
-static void sys_lxt2_register() { fputs("LXT2 support disabled since zlib not available\n",stderr); exit(1); }
-static void sys_fst_register() { fputs("FST support disabled since zlib not available\n",stderr); exit(1); }
+static void sys_lxt_register() {
+  fputs("LXT support disabled since zlib not available\n", stderr);
+  exit(1);
+}
+static void sys_lxt2_register() {
+  fputs("LXT2 support disabled since zlib not available\n", stderr);
+  exit(1);
+}
+static void sys_fst_register() {
+  fputs("FST support disabled since zlib not available\n", stderr);
+  exit(1);
+}
 #endif
 
-static void sys_lxt_or_vcd_register()
-{
-      int idx;
-      struct t_vpi_vlog_info vlog_info;
+static void sys_lxt_or_vcd_register() {
+  int idx;
+  struct t_vpi_vlog_info vlog_info;
 
-      const char*dumper;
+  const char *dumper;
 
-	/* Get the dumper of choice from the IVERILOG_DUMPER
-	   environment variable. */
-      dumper = getenv("IVERILOG_DUMPER");
-      if (dumper) {
-	    char*cp = strchr(dumper,'=');
-	    if (cp != 0)
-		  dumper = cp + 1;
+  /* Get the dumper of choice from the IVERILOG_DUMPER
+     environment variable. */
+  dumper = getenv("IVERILOG_DUMPER");
+  if (dumper) {
+    char *cp = strchr(dumper, '=');
+    if (cp != 0)
+      dumper = cp + 1;
 
-      } else {
-	    dumper = "vcd";
-      }
+  } else {
+    dumper = "vcd";
+  }
 
-	/* Scan the extended arguments, looking for flags that select
-	   major features. This can override the environment variable
-	   settings. */
-      vpi_get_vlog_info(&vlog_info);
+  /* Scan the extended arguments, looking for flags that select
+     major features. This can override the environment variable
+     settings. */
+  vpi_get_vlog_info(&vlog_info);
 
-      for (idx = 0 ;  idx < vlog_info.argc ;  idx += 1) {
+  for (idx = 0; idx < vlog_info.argc; idx += 1) {
 
-            if (strcmp(vlog_info.argv[idx],"-fst") == 0) {
-		  dumper = "fst";
+    if (strcmp(vlog_info.argv[idx], "-fst") == 0) {
+      dumper = "fst";
 
-	    } else if (strcmp(vlog_info.argv[idx],"-fst-space") == 0) {
-		  dumper = "fst";
+    } else if (strcmp(vlog_info.argv[idx], "-fst-space") == 0) {
+      dumper = "fst";
 
-	    } else if (strcmp(vlog_info.argv[idx],"-fst-speed") == 0) {
-		  dumper = "fst";
+    } else if (strcmp(vlog_info.argv[idx], "-fst-speed") == 0) {
+      dumper = "fst";
 
-	    } else if (strcmp(vlog_info.argv[idx],"-fst-space-speed") == 0) {
-		  dumper = "fst";
-	    } else if (strcmp(vlog_info.argv[idx],"-fst-speed-space") == 0) {
-		  dumper = "fst";
+    } else if (strcmp(vlog_info.argv[idx], "-fst-space-speed") == 0) {
+      dumper = "fst";
+    } else if (strcmp(vlog_info.argv[idx], "-fst-speed-space") == 0) {
+      dumper = "fst";
 
-	    } else if (strcmp(vlog_info.argv[idx],"-fst-none") == 0) {
-		  dumper = "none";
+    } else if (strcmp(vlog_info.argv[idx], "-fst-none") == 0) {
+      dumper = "none";
 
-	    } else if (strcmp(vlog_info.argv[idx],"-lxt") == 0) {
-		  dumper = "lxt";
+    } else if (strcmp(vlog_info.argv[idx], "-lxt") == 0) {
+      dumper = "lxt";
 
-	    } else if (strcmp(vlog_info.argv[idx],"-lxt-space") == 0) {
-		  dumper = "lxt";
+    } else if (strcmp(vlog_info.argv[idx], "-lxt-space") == 0) {
+      dumper = "lxt";
 
-	    } else if (strcmp(vlog_info.argv[idx],"-lxt-speed") == 0) {
-		  dumper = "lxt";
+    } else if (strcmp(vlog_info.argv[idx], "-lxt-speed") == 0) {
+      dumper = "lxt";
 
-	    } else if (strcmp(vlog_info.argv[idx],"-lxt-none") == 0) {
-		  dumper = "none";
+    } else if (strcmp(vlog_info.argv[idx], "-lxt-none") == 0) {
+      dumper = "none";
 
-	    } else if (strcmp(vlog_info.argv[idx],"-lxt2") == 0) {
-		  dumper = "lxt2";
+    } else if (strcmp(vlog_info.argv[idx], "-lxt2") == 0) {
+      dumper = "lxt2";
 
-	    } else if (strcmp(vlog_info.argv[idx],"-lxt2-space") == 0) {
-		  dumper = "lxt2";
+    } else if (strcmp(vlog_info.argv[idx], "-lxt2-space") == 0) {
+      dumper = "lxt2";
 
-	    } else if (strcmp(vlog_info.argv[idx],"-lxt2-speed") == 0) {
-		  dumper = "lxt2";
+    } else if (strcmp(vlog_info.argv[idx], "-lxt2-speed") == 0) {
+      dumper = "lxt2";
 
-	    } else if (strcmp(vlog_info.argv[idx],"-lxt2-none") == 0) {
-		  dumper = "none";
+    } else if (strcmp(vlog_info.argv[idx], "-lxt2-none") == 0) {
+      dumper = "none";
 
-	    } else if (strcmp(vlog_info.argv[idx],"-lx2") == 0) {
-		  dumper = "lxt2";
+    } else if (strcmp(vlog_info.argv[idx], "-lx2") == 0) {
+      dumper = "lxt2";
 
-	    } else if (strcmp(vlog_info.argv[idx],"-lx2-space") == 0) {
-		  dumper = "lxt2";
+    } else if (strcmp(vlog_info.argv[idx], "-lx2-space") == 0) {
+      dumper = "lxt2";
 
-	    } else if (strcmp(vlog_info.argv[idx],"-lx2-speed") == 0) {
-		  dumper = "lxt2";
+    } else if (strcmp(vlog_info.argv[idx], "-lx2-speed") == 0) {
+      dumper = "lxt2";
 
-	    } else if (strcmp(vlog_info.argv[idx],"-lx2-none") == 0) {
-		  dumper = "none";
+    } else if (strcmp(vlog_info.argv[idx], "-lx2-none") == 0) {
+      dumper = "none";
 
-	    } else if (strcmp(vlog_info.argv[idx],"-vcd") == 0) {
-		  dumper = "vcd";
+    } else if (strcmp(vlog_info.argv[idx], "-vcd") == 0) {
+      dumper = "vcd";
 
-	    } else if (strcmp(vlog_info.argv[idx],"-vcd-off") == 0) {
-		  dumper = "none";
+    } else if (strcmp(vlog_info.argv[idx], "-vcd-off") == 0) {
+      dumper = "none";
 
-	    } else if (strcmp(vlog_info.argv[idx],"-vcd-none") == 0) {
-		  dumper = "none";
+    } else if (strcmp(vlog_info.argv[idx], "-vcd-none") == 0) {
+      dumper = "none";
 
-	    } else if (strcmp(vlog_info.argv[idx],"-none") == 0) {
-		  dumper = "none";
+    } else if (strcmp(vlog_info.argv[idx], "-none") == 0) {
+      dumper = "none";
+    }
+  }
 
-	    }
-      }
+  if (strcmp(dumper, "vcd") == 0)
+    sys_vcd_register();
 
-      if (strcmp(dumper, "vcd") == 0)
-	    sys_vcd_register();
+  else if (strcmp(dumper, "VCD") == 0)
+    sys_vcd_register();
 
-      else if (strcmp(dumper, "VCD") == 0)
-	    sys_vcd_register();
+  else if (strcmp(dumper, "fst") == 0)
+    sys_fst_register();
 
-      else if (strcmp(dumper, "fst") == 0)
-	    sys_fst_register();
+  else if (strcmp(dumper, "FST") == 0)
+    sys_fst_register();
 
-      else if (strcmp(dumper, "FST") == 0)
-	    sys_fst_register();
+  else if (strcmp(dumper, "lxt") == 0)
+    sys_lxt_register();
 
-      else if (strcmp(dumper, "lxt") == 0)
-	    sys_lxt_register();
+  else if (strcmp(dumper, "LXT") == 0)
+    sys_lxt_register();
 
-      else if (strcmp(dumper, "LXT") == 0)
-	    sys_lxt_register();
+  else if (strcmp(dumper, "lxt2") == 0)
+    sys_lxt2_register();
 
-      else if (strcmp(dumper, "lxt2") == 0)
-	    sys_lxt2_register();
+  else if (strcmp(dumper, "LXT2") == 0)
+    sys_lxt2_register();
 
-      else if (strcmp(dumper, "LXT2") == 0)
-	    sys_lxt2_register();
+  else if (strcmp(dumper, "lx2") == 0)
+    sys_lxt2_register();
 
-      else if (strcmp(dumper, "lx2") == 0)
-	    sys_lxt2_register();
+  else if (strcmp(dumper, "LX2") == 0)
+    sys_lxt2_register();
 
-      else if (strcmp(dumper, "LX2") == 0)
-	    sys_lxt2_register();
+  else if (strcmp(dumper, "none") == 0)
+    sys_vcdoff_register();
 
-      else if (strcmp(dumper, "none") == 0)
-	    sys_vcdoff_register();
+  else if (strcmp(dumper, "NONE") == 0)
+    sys_vcdoff_register();
 
-      else if (strcmp(dumper, "NONE") == 0)
-	    sys_vcdoff_register();
-
-      else {
-	    vpi_mcd_printf(1, "system.vpi: Unknown dumper format: %s,"
-		           " using VCD instead.\n", dumper);
-	    sys_vcd_register();
-      }
+  else {
+    vpi_mcd_printf(1,
+                   "system.vpi: Unknown dumper format: %s,"
+                   " using VCD instead.\n",
+                   dumper);
+    sys_vcd_register();
+  }
 }
 
-void (*vlog_startup_routines[])() = {
-      sys_convert_register,
-      sys_fileio_register,
-      sys_finish_register,
-      sys_deposit_register,
-      sys_display_register,
-      sys_plusargs_register,
-      sys_queue_register,
-      sys_random_register,
-      sys_random_mti_register,
-      sys_readmem_register,
-      sys_scanf_register,
-      sys_time_register,
-      sys_lxt_or_vcd_register,
-      sys_sdf_register,
-      sys_special_register,
-      vams_simparam_register,
-      0
-};
+void (*vlog_startup_routines[])() = {sys_convert_register,
+                                     sys_fileio_register,
+                                     sys_finish_register,
+                                     sys_deposit_register,
+                                     sys_display_register,
+                                     sys_plusargs_register,
+                                     sys_queue_register,
+                                     sys_random_register,
+                                     sys_random_mti_register,
+                                     sys_readmem_register,
+                                     sys_scanf_register,
+                                     sys_time_register,
+                                     sys_lxt_or_vcd_register,
+                                     sys_sdf_register,
+                                     sys_special_register,
+                                     vams_simparam_register,
+                                     0};

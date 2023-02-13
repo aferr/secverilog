@@ -27,22 +27,22 @@ struct vcd_names_s;
 extern struct stringheap_s name_heap;
 
 struct vcd_names_list_s {
-      struct vcd_names_s *vcd_names_list;
-      const char **vcd_names_sorted;
-      int listed_names, sorted_names;
+  struct vcd_names_s *vcd_names_list;
+  const char **vcd_names_sorted;
+  int listed_names, sorted_names;
 };
 
-extern void vcd_names_add(struct vcd_names_list_s*tab, const char *name);
+extern void vcd_names_add(struct vcd_names_list_s *tab, const char *name);
 
-extern const char *vcd_names_search(struct vcd_names_list_s*tab,
-				    const char *key);
+extern const char *vcd_names_search(struct vcd_names_list_s *tab,
+                                    const char *key);
 
-extern void vcd_names_sort(struct vcd_names_list_s*tab);
+extern void vcd_names_sort(struct vcd_names_list_s *tab);
 
-extern void vcd_names_delete(struct vcd_names_list_s*tab);
+extern void vcd_names_delete(struct vcd_names_list_s *tab);
 
-extern const char*find_nexus_ident(int nex);
-extern void       set_nexus_ident(int nex, const char *id);
+extern const char *find_nexus_ident(int nex);
+extern void set_nexus_ident(int nex, const char *id);
 
 extern void nexus_ident_delete();
 

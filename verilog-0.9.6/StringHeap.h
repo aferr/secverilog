@@ -19,46 +19,48 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  "config.h"
-# include  <string>
+#include "config.h"
+#include <string>
 
 using namespace std;
 
 class perm_string {
 
-    public:
-      perm_string() : text_(0) { }
-      perm_string(const perm_string&that) : text_(that.text_) { }
-      ~perm_string() { }
+public:
+  perm_string() : text_(0) {}
+  perm_string(const perm_string &that) : text_(that.text_) {}
+  ~perm_string() {}
 
-      perm_string& operator = (const perm_string&that)
-      { text_ = that.text_; return *this; }
+  perm_string &operator=(const perm_string &that) {
+    text_ = that.text_;
+    return *this;
+  }
 
-      const char*str() const { return text_; }
-      operator const char* () const { return str(); }
+  const char *str() const { return text_; }
+  operator const char *() const { return str(); }
 
-	// This is an escape for making perm_string objects out of
-	// literals. For example, perm_string::literal("Label"); Please
-	// do *not* cheat and pass arbitrary const char* items here.
-      static perm_string literal(const char*t) { return perm_string(t); }
+  // This is an escape for making perm_string objects out of
+  // literals. For example, perm_string::literal("Label"); Please
+  // do *not* cheat and pass arbitrary const char* items here.
+  static perm_string literal(const char *t) { return perm_string(t); }
 
-    private:
-      friend class StringHeap;
-      friend class StringHeapLex;
-      perm_string(const char*t) : text_(t) { };
+private:
+  friend class StringHeap;
+  friend class StringHeapLex;
+  perm_string(const char *t) : text_(t){};
 
-    private:
-      const char*text_;
+private:
+  const char *text_;
 };
 
-extern bool operator == (const perm_string a, const perm_string b);
-extern bool operator == (const perm_string a, const char* b);
-extern bool operator != (const perm_string a, const perm_string b);
-extern bool operator != (const perm_string a, const char* b);
-extern bool operator >  (const perm_string a, const perm_string b);
-extern bool operator <  (const perm_string a, const perm_string b);
-extern bool operator >= (const perm_string a, const perm_string b);
-extern bool operator <= (const perm_string a, const perm_string b);
+extern bool operator==(const perm_string a, const perm_string b);
+extern bool operator==(const perm_string a, const char *b);
+extern bool operator!=(const perm_string a, const perm_string b);
+extern bool operator!=(const perm_string a, const char *b);
+extern bool operator>(const perm_string a, const perm_string b);
+extern bool operator<(const perm_string a, const perm_string b);
+extern bool operator>=(const perm_string a, const perm_string b);
+extern bool operator<=(const perm_string a, const perm_string b);
 
 /*
  * The string heap is a way to permanently allocate strings
@@ -67,23 +69,23 @@ extern bool operator <= (const perm_string a, const perm_string b);
  */
 class StringHeap {
 
-    public:
-      StringHeap();
-      ~StringHeap();
+public:
+  StringHeap();
+  ~StringHeap();
 
-      const char*add(const char*);
-      perm_string make(const char*);
+  const char *add(const char *);
+  perm_string make(const char *);
 
-    private:
-      enum { HEAPCELL = 0x10000 };
+private:
+  enum { HEAPCELL = 0x10000 };
 
-      char*cell_base_;
-      unsigned cell_ptr_;
-      unsigned cell_count_;
+  char *cell_base_;
+  unsigned cell_ptr_;
+  unsigned cell_count_;
 
-    private: // not implemented
-      StringHeap(const StringHeap&);
-      StringHeap& operator= (const StringHeap&);
+private: // not implemented
+  StringHeap(const StringHeap &);
+  StringHeap &operator=(const StringHeap &);
 };
 
 /*
@@ -92,30 +94,30 @@ class StringHeap {
  * space by not allocating duplicate strings, so in a system with lots
  * of identifiers, this can theoretically save more space.
  */
-class StringHeapLex  : private StringHeap {
+class StringHeapLex : private StringHeap {
 
-    public:
-      StringHeapLex();
-      ~StringHeapLex();
+public:
+  StringHeapLex();
+  ~StringHeapLex();
 
-      const char*add(const char*);
-      perm_string make(const char*);
-      perm_string make(const string&);
+  const char *add(const char *);
+  perm_string make(const char *);
+  perm_string make(const string &);
 
-      unsigned add_count() const;
-      unsigned add_hit_count() const;
-      void cleanup();
+  unsigned add_count() const;
+  unsigned add_hit_count() const;
+  void cleanup();
 
-    private:
-      enum { HASH_SIZE = 4096 };
-      const char*hash_table_[HASH_SIZE];
+private:
+  enum { HASH_SIZE = 4096 };
+  const char *hash_table_[HASH_SIZE];
 
-      unsigned add_count_;
-      unsigned hit_count_;
+  unsigned add_count_;
+  unsigned hit_count_;
 
-    private: // not implemented
-      StringHeapLex(const StringHeapLex&);
-      StringHeapLex& operator= (const StringHeapLex&);
+private: // not implemented
+  StringHeapLex(const StringHeapLex &);
+  StringHeapLex &operator=(const StringHeapLex &);
 };
 
 #endif

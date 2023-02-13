@@ -22,7 +22,7 @@
 #ident "$Id: generic.h,v 1.3 2003/08/26 16:26:02 steve Exp $"
 #endif
 
-# include  "edif.h"
+#include "edif.h"
 
 extern edif_t edf;
 extern edif_xlibrary_t xlib;
@@ -41,7 +41,6 @@ extern edif_cell_t cell_1;
 extern edif_cell_t cell_ipad;
 extern edif_cell_t cell_opad;
 extern edif_cell_t cell_iopad;
-
 
 /*
  * $Log: generic.h,v $

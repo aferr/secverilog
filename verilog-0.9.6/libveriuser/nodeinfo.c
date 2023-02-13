@@ -20,29 +20,26 @@
 #ident "$Id: nodeinfo.c,v 1.1 2003/10/10 02:57:46 steve Exp $"
 #endif
 
-# include  <assert.h>
-# include  <ctype.h>
-# include  <veriuser.h>
-# include  <vpi_user.h>
-# include  "priv.h"
+#include "priv.h"
+#include <assert.h>
+#include <ctype.h>
+#include <veriuser.h>
+#include <vpi_user.h>
 
-struct t_tfnoeinfo* tf_nodeinfo(PLI_INT32 a, struct t_tfnodeinfo*ip)
-{
-      if (pli_trace) {
-	    fprintf(pli_trace, "tf_nodeinfo: enter.\n");
-	    fflush(pli_trace);
-      }
+struct t_tfnoeinfo *tf_nodeinfo(PLI_INT32 a, struct t_tfnodeinfo *ip) {
+  if (pli_trace) {
+    fprintf(pli_trace, "tf_nodeinfo: enter.\n");
+    fflush(pli_trace);
+  }
 
-      fprintf(stderr, "tf_nodeinfo: XXXX not implemented. XXXX\n");
+  fprintf(stderr, "tf_nodeinfo: XXXX not implemented. XXXX\n");
 
-      if (pli_trace) {
-	    fprintf(pli_trace, "tf_nodeinfo: return.\n");
-	    fflush(pli_trace);
-      }
-      return 0;
+  if (pli_trace) {
+    fprintf(pli_trace, "tf_nodeinfo: return.\n");
+    fflush(pli_trace);
+  }
+  return 0;
 }
-
-
 
 /*
  * $Log: nodeinfo.c,v $
@@ -50,4 +47,3 @@ struct t_tfnoeinfo* tf_nodeinfo(PLI_INT32 a, struct t_tfnodeinfo*ip)
  *  Some PLI1 stubs.
  *
  */
-

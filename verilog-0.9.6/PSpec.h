@@ -19,68 +19,68 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-# include  "LineInfo.h"
-# include  "StringHeap.h"
-# include  <vector>
+#include "LineInfo.h"
+#include "StringHeap.h"
+#include <vector>
 
 class PExpr;
 
 /*
-* The PSpecPath is the parse of a specify path, which is in its most
-* general form <path> = <delays>. The <delays> are collected into the
-* "delays" vector in all cases, and the variety is in the other
-* members.
-*
-* All paths also have a list of source names in the src vector, and a
-* list of destination names in the dst vector. These pairs are the
-* actual paths.
-*
-* If the path is a simple path, then:
-*      condition == nil
-*      edge == 0
-*      data_source_expression == nil
-*
-* If the path is conditional, then conditional == true and condition
-* is the condition expression. If the condition expression is nil,
-* then this is an ifnone conditional path.
-*
-* If data_source_expression != nil, then the path is edge sensitive
-* and the edge might not be 0.
-*
-* The full flag is used to verify that only vectors of the same size
-* are used in a parallel connection. Icarus always creates a full
-* connection between the source and destination. The polarity is for
-* informational (display) purposes only. The polarity is either '+',
-* '-' or 0.
-*/
-class PSpecPath  : public LineInfo {
+ * The PSpecPath is the parse of a specify path, which is in its most
+ * general form <path> = <delays>. The <delays> are collected into the
+ * "delays" vector in all cases, and the variety is in the other
+ * members.
+ *
+ * All paths also have a list of source names in the src vector, and a
+ * list of destination names in the dst vector. These pairs are the
+ * actual paths.
+ *
+ * If the path is a simple path, then:
+ *      condition == nil
+ *      edge == 0
+ *      data_source_expression == nil
+ *
+ * If the path is conditional, then conditional == true and condition
+ * is the condition expression. If the condition expression is nil,
+ * then this is an ifnone conditional path.
+ *
+ * If data_source_expression != nil, then the path is edge sensitive
+ * and the edge might not be 0.
+ *
+ * The full flag is used to verify that only vectors of the same size
+ * are used in a parallel connection. Icarus always creates a full
+ * connection between the source and destination. The polarity is for
+ * informational (display) purposes only. The polarity is either '+',
+ * '-' or 0.
+ */
+class PSpecPath : public LineInfo {
 
-    public:
-      PSpecPath(unsigned src_cnt, unsigned dst_cnt);
-      ~PSpecPath();
+public:
+  PSpecPath(unsigned src_cnt, unsigned dst_cnt);
+  ~PSpecPath();
 
-      void elaborate(class Design*des, class NetScope*scope) const;
+  void elaborate(class Design *des, class NetScope *scope) const;
 
-      void dump(std::ostream&out, unsigned ind) const;
+  void dump(std::ostream &out, unsigned ind) const;
 
-    public:
-	// Condition expression, if present.
-      bool conditional;
-      class PExpr* condition;
-	// Edge specification (-1==negedge, 0 = no edge, 1==posedge)
-      int edge;
-	// Is this a full connection.
-      bool full_flag;
-	// What is the polarity of the connection.
-      char polarity;
-	// Ordered set of source nodes of a path
-      std::vector<perm_string> src;
-	// Ordered set of destination nodes of a path
-      std::vector<perm_string> dst;
-	// Data source expression
-      class PExpr* data_source_expression;
+public:
+  // Condition expression, if present.
+  bool conditional;
+  class PExpr *condition;
+  // Edge specification (-1==negedge, 0 = no edge, 1==posedge)
+  int edge;
+  // Is this a full connection.
+  bool full_flag;
+  // What is the polarity of the connection.
+  char polarity;
+  // Ordered set of source nodes of a path
+  std::vector<perm_string> src;
+  // Ordered set of destination nodes of a path
+  std::vector<perm_string> dst;
+  // Data source expression
+  class PExpr *data_source_expression;
 
-      std::vector<class PExpr*>delays;
+  std::vector<class PExpr *> delays;
 };
 
 #endif

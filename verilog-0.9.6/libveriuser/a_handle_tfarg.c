@@ -20,41 +20,38 @@
 #ident "$Id: a_handle_tfarg.c,v 1.6 2004/10/04 01:10:56 steve Exp $"
 #endif
 
-#include  <acc_user.h>
-#include  <vpi_user.h>
+#include <acc_user.h>
+#include <vpi_user.h>
 
 /*
  * acc_handle_tfarg implemented using VPI interface
  */
-handle acc_handle_tfarg(int n)
-{
-      vpiHandle sys_h, sys_i, rtn_h = 0;
+handle acc_handle_tfarg(int n) {
+  vpiHandle sys_h, sys_i, rtn_h = 0;
 
-      if (n > 0) {
-	    sys_h = vpi_handle(vpiSysTfCall, 0 /* NULL */);
-	    sys_i = vpi_iterate(vpiArgument, sys_h);
+  if (n > 0) {
+    sys_h = vpi_handle(vpiSysTfCall, 0 /* NULL */);
+    sys_i = vpi_iterate(vpiArgument, sys_h);
 
-	    /* find nth arg */
-	    while (n > 0) {
-		  rtn_h = vpi_scan(sys_i);
-		  if (rtn_h == 0)
-			break;
-		  n--;
-	    }
+    /* find nth arg */
+    while (n > 0) {
+      rtn_h = vpi_scan(sys_i);
+      if (rtn_h == 0)
+        break;
+      n--;
+    }
 
-	    if (rtn_h) vpi_free_object(sys_i);
+    if (rtn_h)
+      vpi_free_object(sys_i);
 
-      } else {
-	    rtn_h = (vpiHandle) 0;
-      }
+  } else {
+    rtn_h = (vpiHandle)0;
+  }
 
-      return rtn_h;
+  return rtn_h;
 }
 
-handle acc_handle_tfinst(void)
-{
-      return vpi_handle(vpiSysTfCall, 0);
-}
+handle acc_handle_tfinst(void) { return vpi_handle(vpiSysTfCall, 0); }
 
 /*
  * $Log: a_handle_tfarg.c,v $

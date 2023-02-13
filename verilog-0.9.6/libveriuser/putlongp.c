@@ -20,47 +20,47 @@
 #ident "$Id: putlongp.c,v 1.4 2004/09/10 23:13:05 steve Exp $"
 #endif
 
-#include  <stdio.h>
-#include  <assert.h>
-#include  <veriuser.h>
-#include  <vpi_user.h>
+#include <assert.h>
+#include <stdio.h>
+#include <veriuser.h>
+#include <vpi_user.h>
 
 /*
  * tf_putlongp implemented using VPI interface
  */
-void tf_putlongp(int n, int lowvalue, int highvalue)
-{
-      vpiHandle sys_h, sys_i, arg_h = 0;
-      s_vpi_value val;
-      int type;
-      char str[20];
+void tf_putlongp(int n, int lowvalue, int highvalue) {
+  vpiHandle sys_h, sys_i, arg_h = 0;
+  s_vpi_value val;
+  int type;
+  char str[20];
 
+  assert(n >= 0);
 
-      assert(n >= 0);
+  /* get task/func handle */
+  sys_h = vpi_handle(vpiSysTfCall, 0);
+  sys_i = vpi_iterate(vpiArgument, sys_h);
 
-      /* get task/func handle */
-      sys_h = vpi_handle(vpiSysTfCall, 0);
-      sys_i = vpi_iterate(vpiArgument, sys_h);
+  type = vpi_get(vpiType, sys_h);
 
-      type = vpi_get(vpiType, sys_h);
+  /* verify function */
+  assert(!(n == 0 && type != vpiSysFuncCall));
 
-      /* verify function */
-      assert(!(n == 0 && type != vpiSysFuncCall));
+  /* find nth arg */
+  while (n > 0) {
+    if (!(arg_h = vpi_scan(sys_i)))
+      assert(0);
+    n--;
+  }
+  if (!arg_h)
+    arg_h = sys_h;
 
-      /* find nth arg */
-      while (n > 0) {
-	    if (!(arg_h = vpi_scan(sys_i))) assert(0);
-	    n--;
-      }
-      if (!arg_h) arg_h = sys_h;
+  /* fill in vpi_value */
+  sprintf(str, "%x%08x", highvalue, lowvalue);
+  val.format    = vpiHexStrVal;
+  val.value.str = str;
+  vpi_put_value(arg_h, &val, 0, vpiNoDelay);
 
-      /* fill in vpi_value */
-      sprintf(str, "%x%08x", highvalue, lowvalue);
-      val.format = vpiHexStrVal;
-      val.value.str = str;
-      vpi_put_value(arg_h, &val, 0, vpiNoDelay);
-
-      vpi_free_object(sys_i);
+  vpi_free_object(sys_i);
 }
 
 /*

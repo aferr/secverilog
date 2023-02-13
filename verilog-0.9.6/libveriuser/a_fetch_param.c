@@ -17,31 +17,30 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-#include  <assert.h>
-#include  <vpi_user.h>
-#include  <acc_user.h>
-#include  "priv.h"
+#include "priv.h"
+#include <acc_user.h>
+#include <assert.h>
+#include <vpi_user.h>
 
-double acc_fetch_paramval(handle object)
-{
-      s_vpi_value val;
+double acc_fetch_paramval(handle object) {
+  s_vpi_value val;
 
-      val.format = vpiObjTypeVal;
-      vpi_get_value(object, &val);
+  val.format = vpiObjTypeVal;
+  vpi_get_value(object, &val);
 
-      switch (val.format) {
+  switch (val.format) {
 
-	  case vpiStringVal:
-	    if (pli_trace) {
-		  fprintf(pli_trace, "acc_fetch_paramval(%s) --> \"%s\"\n",
-			  vpi_get_str(vpiName, object), val.value.str);
-	    }
-	    return (double) (long)val.value.str;
+  case vpiStringVal:
+    if (pli_trace) {
+      fprintf(pli_trace, "acc_fetch_paramval(%s) --> \"%s\"\n",
+              vpi_get_str(vpiName, object), val.value.str);
+    }
+    return (double)(long)val.value.str;
 
-	  default:
-	    vpi_printf("XXXX: parameter %s has type %d\n",
-		       vpi_get_str(vpiName, object), (int)val.format);
-	    assert(0);
-	    return 0.0;
-      }
+  default:
+    vpi_printf("XXXX: parameter %s has type %d\n", vpi_get_str(vpiName, object),
+               (int)val.format);
+    assert(0);
+    return 0.0;
+  }
 }

@@ -18,141 +18,141 @@
  */
 
 #include "sys_priv.h"
-#include <string.h>
-#include <math.h>
 #include <assert.h>
+#include <math.h>
+#include <string.h>
 
-static PLI_INT32 sys_time_calltf(PLI_BYTE8*name)
-{
-      s_vpi_value val;
-      s_vpi_time  now;
-      vpiHandle call_handle;
-      vpiHandle mod;
-      int units, prec;
-      long scale;
-      long frac;
+static PLI_INT32 sys_time_calltf(PLI_BYTE8 *name) {
+  s_vpi_value val;
+  s_vpi_time now;
+  vpiHandle call_handle;
+  vpiHandle mod;
+  int units, prec;
+  long scale;
+  long frac;
 
-      call_handle = vpi_handle(vpiSysTfCall, 0);
-      assert(call_handle);
+  call_handle = vpi_handle(vpiSysTfCall, 0);
+  assert(call_handle);
 
-      mod = sys_func_module(call_handle);
+  mod = sys_func_module(call_handle);
 
-      now.type = vpiSimTime;
-      vpi_get_time(0, &now);
+  now.type = vpiSimTime;
+  vpi_get_time(0, &now);
 
-	/* All the variants but $simtime return the time in units of
-	   the local scope. The $simtime function returns the
-	   simulation time. */
-      if (strcmp(name, "$simtime") == 0)
-	    units = vpi_get(vpiTimePrecision, 0);
-      else
-	    units = vpi_get(vpiTimeUnit, mod);
+  /* All the variants but $simtime return the time in units of
+     the local scope. The $simtime function returns the
+     simulation time. */
+  if (strcmp(name, "$simtime") == 0)
+    units = vpi_get(vpiTimePrecision, 0);
+  else
+    units = vpi_get(vpiTimeUnit, mod);
 
-      prec  = vpi_get(vpiTimePrecision, 0);
-      scale = 1;
-      while (units > prec) {
-	    scale *= 10;
-	    units -= 1;
-      }
+  prec  = vpi_get(vpiTimePrecision, 0);
+  scale = 1;
+  while (units > prec) {
+    scale *= 10;
+    units -= 1;
+  }
 
-      assert(8*sizeof(long long) >= 64);
-      { long long tmp_now = ((long long)now.high) << 32;
-        tmp_now += (long long)now.low;
-	frac = tmp_now % (long long)scale;
-	tmp_now /= (long long)scale;
+  assert(8 * sizeof(long long) >= 64);
+  {
+    long long tmp_now = ((long long)now.high) << 32;
+    tmp_now += (long long)now.low;
+    frac = tmp_now % (long long)scale;
+    tmp_now /= (long long)scale;
 
-	  /* Round to the nearest integer, which may be up. */
-	if ((scale > 1) && (frac >= scale/2))
-	      tmp_now += 1;
+    /* Round to the nearest integer, which may be up. */
+    if ((scale > 1) && (frac >= scale / 2))
+      tmp_now += 1;
 
-	now.low = tmp_now & 0xffffffff;
-	now.high = tmp_now >> 32LL;
-      }
+    now.low  = tmp_now & 0xffffffff;
+    now.high = tmp_now >> 32LL;
+  }
 
-      val.format = vpiTimeVal;
-      val.value.time = &now;
+  val.format     = vpiTimeVal;
+  val.value.time = &now;
 
-      vpi_put_value(call_handle, &val, 0, vpiNoDelay);
+  vpi_put_value(call_handle, &val, 0, vpiNoDelay);
 
-      return 0;
+  return 0;
 }
 
 /* This also supports $abstime() from VAMS-2.3. */
-static PLI_INT32 sys_realtime_calltf(PLI_BYTE8*name)
-{
-      s_vpi_value val;
-      s_vpi_time  now;
-      vpiHandle callh;
-      vpiHandle mod;
+static PLI_INT32 sys_realtime_calltf(PLI_BYTE8 *name) {
+  s_vpi_value val;
+  s_vpi_time now;
+  vpiHandle callh;
+  vpiHandle mod;
 
-      callh = vpi_handle(vpiSysTfCall, 0);
-      assert(callh);
+  callh = vpi_handle(vpiSysTfCall, 0);
+  assert(callh);
 
-      mod = sys_func_module(callh);
+  mod = sys_func_module(callh);
 
-      now.type = vpiScaledRealTime;
-      vpi_get_time(mod, &now);
+  now.type = vpiScaledRealTime;
+  vpi_get_time(mod, &now);
 
-	/* For $abstime() we return the time in second. */
-      if (strcmp(name, "$abstime") == 0) {
-	    PLI_INT32 scale = vpi_get(vpiTimeUnit, mod);
-	    if (scale >= 0) now.real *= pow(10.0, scale);
-	    else now.real /= pow(10.0, -scale);
-      }
+  /* For $abstime() we return the time in second. */
+  if (strcmp(name, "$abstime") == 0) {
+    PLI_INT32 scale = vpi_get(vpiTimeUnit, mod);
+    if (scale >= 0)
+      now.real *= pow(10.0, scale);
+    else
+      now.real /= pow(10.0, -scale);
+  }
 
-      val.format = vpiRealVal;
-      val.value.real = now.real;
-      vpi_put_value(callh, &val, 0, vpiNoDelay);
+  val.format     = vpiRealVal;
+  val.value.real = now.real;
+  vpi_put_value(callh, &val, 0, vpiNoDelay);
 
-      return 0;
+  return 0;
 }
 
-void sys_time_register()
-{
-      s_vpi_systf_data tf_data;
+void sys_time_register() {
+  s_vpi_systf_data tf_data;
 
-      tf_data.type        = vpiSysFunc;
-      tf_data.tfname      = "$time";
-      tf_data.sysfunctype = vpiTimeFunc;
-      tf_data.calltf      = sys_time_calltf;
-      tf_data.compiletf   = sys_no_arg_compiletf;
-      tf_data.sizetf      = 0;
-      tf_data.user_data   = "$time";
-      vpi_register_systf(&tf_data);
+  tf_data.type        = vpiSysFunc;
+  tf_data.tfname      = "$time";
+  tf_data.sysfunctype = vpiTimeFunc;
+  tf_data.calltf      = sys_time_calltf;
+  tf_data.compiletf   = sys_no_arg_compiletf;
+  tf_data.sizetf      = 0;
+  tf_data.user_data   = "$time";
+  vpi_register_systf(&tf_data);
 
-      tf_data.type        = vpiSysFunc;
-      tf_data.tfname      = "$realtime";
-      tf_data.sysfunctype = vpiRealFunc;
-      tf_data.calltf      = sys_realtime_calltf;
-      tf_data.compiletf   = sys_no_arg_compiletf;
-      tf_data.sizetf      = 0;
-      tf_data.user_data   = "$realtime";
-      vpi_register_systf(&tf_data);
+  tf_data.type        = vpiSysFunc;
+  tf_data.tfname      = "$realtime";
+  tf_data.sysfunctype = vpiRealFunc;
+  tf_data.calltf      = sys_realtime_calltf;
+  tf_data.compiletf   = sys_no_arg_compiletf;
+  tf_data.sizetf      = 0;
+  tf_data.user_data   = "$realtime";
+  vpi_register_systf(&tf_data);
 
-      tf_data.type        = vpiSysFunc;
-      tf_data.tfname      = "$stime";
-      tf_data.sysfunctype = vpiIntFunc;
-      tf_data.calltf      = sys_time_calltf;
-      tf_data.compiletf   = sys_no_arg_compiletf;
-      tf_data.sizetf      = 0;
-      tf_data.user_data   = "$stime";
-      vpi_register_systf(&tf_data);
+  tf_data.type        = vpiSysFunc;
+  tf_data.tfname      = "$stime";
+  tf_data.sysfunctype = vpiIntFunc;
+  tf_data.calltf      = sys_time_calltf;
+  tf_data.compiletf   = sys_no_arg_compiletf;
+  tf_data.sizetf      = 0;
+  tf_data.user_data   = "$stime";
+  vpi_register_systf(&tf_data);
 
-      tf_data.type        = vpiSysFunc;
-      tf_data.tfname      = "$simtime";
-      tf_data.sysfunctype = vpiTimeFunc;
-      tf_data.calltf      = sys_time_calltf;
-      tf_data.compiletf   = sys_no_arg_compiletf;
-      tf_data.sizetf      = 0;
-      tf_data.user_data   = "$simtime";
-      vpi_register_systf(&tf_data);
+  tf_data.type        = vpiSysFunc;
+  tf_data.tfname      = "$simtime";
+  tf_data.sysfunctype = vpiTimeFunc;
+  tf_data.calltf      = sys_time_calltf;
+  tf_data.compiletf   = sys_no_arg_compiletf;
+  tf_data.sizetf      = 0;
+  tf_data.user_data   = "$simtime";
+  vpi_register_systf(&tf_data);
 
-      tf_data.type        = vpiSysFunc;
-      tf_data.tfname      = "$abstime";
-      tf_data.sysfunctype = vpiRealFunc;
-      tf_data.calltf      = sys_realtime_calltf;
-      tf_data.compiletf   = sys_no_arg_compiletf;
-      tf_data.sizetf      = 0;
-      tf_data.user_data   = "$abstime";
-      vpi_register_systf(&tf_data);
+  tf_data.type        = vpiSysFunc;
+  tf_data.tfname      = "$abstime";
+  tf_data.sysfunctype = vpiRealFunc;
+  tf_data.calltf      = sys_realtime_calltf;
+  tf_data.compiletf   = sys_no_arg_compiletf;
+  tf_data.sizetf      = 0;
+  tf_data.user_data   = "$abstime";
+  vpi_register_systf(&tf_data);
 }

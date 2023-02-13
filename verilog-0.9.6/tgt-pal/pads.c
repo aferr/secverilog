@@ -20,63 +20,61 @@
 #ident "$Id: pads.c,v 1.4 2002/08/12 01:35:03 steve Exp $"
 #endif
 
-# include "config.h"
+#include "config.h"
 
-# include  "priv.h"
-# include  <stdio.h>
-# include  <stdlib.h>
-# include  <assert.h>
+#include "priv.h"
+#include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 /*
  * This function scans the netlist for all the pin assignments that
  * are fixed by a PAD attribute. Search the scopes recursively,
  * looking for signals that may have PAD attributes.
  */
-int get_pad_bindings(ivl_scope_t net, void*x)
-{
-      unsigned idx;
+int get_pad_bindings(ivl_scope_t net, void *x) {
+  unsigned idx;
 
-      int rc = ivl_scope_children(net, get_pad_bindings, 0);
-      if (rc)
-	    return rc;
+  int rc = ivl_scope_children(net, get_pad_bindings, 0);
+  if (rc)
+    return rc;
 
-      for (idx = 0 ;  idx < ivl_scope_sigs(net) ;  idx += 1) {
+  for (idx = 0; idx < ivl_scope_sigs(net); idx += 1) {
 
-	    ivl_signal_t sig;
-	    const char*pad;
-	    int pin;
+    ivl_signal_t sig;
+    const char *pad;
+    int pin;
 
-	    sig = ivl_scope_sig(net, idx);
-	    pad = ivl_signal_attr(sig, "PAD");
-	    if (pad == 0)
-		  continue;
+    sig = ivl_scope_sig(net, idx);
+    pad = ivl_signal_attr(sig, "PAD");
+    if (pad == 0)
+      continue;
 
-	    pin = strtol(pad+1, 0, 10);
-	    if ((pin == 0) || (pin > pins)) {
-		  printf("%s: Invalid PAD assignment: %s\n",
-			 ivl_signal_name(sig), pad);
-		  error_count += 1;
-		  continue;
-	    }
+    pin = strtol(pad + 1, 0, 10);
+    if ((pin == 0) || (pin > pins)) {
+      printf("%s: Invalid PAD assignment: %s\n", ivl_signal_name(sig), pad);
+      error_count += 1;
+      continue;
+    }
 
-	    assert(ivl_signal_pins(sig) == 1);
+    assert(ivl_signal_pins(sig) == 1);
 
-	    if (bind_pin[pin-1].nexus) {
+    if (bind_pin[pin - 1].nexus) {
 
-		  if (bind_pin[pin-1].nexus != ivl_signal_pin(sig, 0)) {
+      if (bind_pin[pin - 1].nexus != ivl_signal_pin(sig, 0)) {
 
-			printf("%s: Unconnected signals share pin %d\n",
-			       ivl_signal_name(sig), pin);
-			error_count += 1;
-		  }
-
-		  continue;
-	    }
-
-	    bind_pin[pin-1].nexus = ivl_signal_pin(sig, 0);
+        printf("%s: Unconnected signals share pin %d\n", ivl_signal_name(sig),
+               pin);
+        error_count += 1;
       }
 
-      return 0;
+      continue;
+    }
+
+    bind_pin[pin - 1].nexus = ivl_signal_pin(sig, 0);
+  }
+
+  return 0;
 }
 
 /*
@@ -95,4 +93,3 @@ int get_pad_bindings(ivl_scope_t net, void*x)
  *  Add the pal loadable target.
  *
  */
-
