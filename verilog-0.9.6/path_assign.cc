@@ -1,18 +1,22 @@
 #include "path_assign.h"
 #include "Module.h"
+#include "PExpr.h"
 #include "Statement.h"
+#include "sectypes.h"
 #include "sexp_printer.h"
 
 PathAnalysis get_paths(Module &m, TypeEnv &env) {
   PathAnalysis paths;
   for (auto b : m.behaviors) {
     Predicate emptyPred;
+    emptyPred.hypotheses.insert(new Hypothesis(new PEBoolean(false)));
     b->statement()->collect_assign_paths(paths, env, emptyPred);
   }
 
   // debug printing of paths
   for (auto &p : paths) {
     std::cout << p.first << ":\n";
+    std::cout << p.second.size() << "\n";
     for (auto &pred : p.second) {
       std::cout << pred;
     }
@@ -25,7 +29,7 @@ void dump_no_overlap_anal(SexpPrinter &p, PathAnalysis &paths) {
     p.singleton("push");
     p.startList("assert");
     p.startList("or");
-    if (paths.size() == 1)
+    if (paths.size() <= 1)
       p.printAtom("false");
     for (auto i = paths.cbegin(); i != paths.cend(); ++i) {
       for (auto j = i + 1; j != paths.cend(); ++j) {

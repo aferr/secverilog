@@ -541,3 +541,10 @@ NetAssign_ *PENumber::elaborate_lval(Design *des, NetScope *, bool) const {
   des->errors += 1;
   return 0;
 }
+
+NetAssign_ *PEBoolean::elaborate_lval(Design *des, NetScope *, bool) const {
+  cerr << get_fileline() << ": error: Constant values not allowed "
+       << "in l-value expressions." << endl;
+  des->errors += 1;
+  return 0;
+}

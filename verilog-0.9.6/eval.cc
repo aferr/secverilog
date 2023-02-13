@@ -208,6 +208,10 @@ verinum *PENumber::eval_const(Design *, NetScope *) const {
   return new verinum(value());
 }
 
+verinum *PEBoolean::eval_const(Design *, NetScope *) const {
+  return new verinum(value() ? 1 : 0);
+}
+
 verinum *PEString::eval_const(Design *, NetScope *) const {
   return new verinum(string(text_));
 }

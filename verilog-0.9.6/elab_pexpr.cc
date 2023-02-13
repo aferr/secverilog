@@ -292,6 +292,10 @@ NetExpr *PENumber::elaborate_pexpr(Design *des, NetScope *sc) const {
   return elaborate_expr(des, sc, -1, false);
 }
 
+NetExpr *PEBoolean::elaborate_pexpr(Design *des, NetScope *sc) const {
+  return elaborate_expr(des, sc, -1, false);
+}
+
 NetEConst *PEString::elaborate_pexpr(Design *des, NetScope *scope) const {
   return elaborate_expr(des, scope, -1, false);
 }

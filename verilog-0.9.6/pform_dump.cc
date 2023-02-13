@@ -258,6 +258,14 @@ void PENumber::dumpz3(SexpPrinter &printer) const {
   printer << std::to_string(value().as_long());
 }
 
+void PEBoolean::dump(ostream &out) const {
+  out << (value() ? "true" : "false");
+}
+
+void PEBoolean::dumpz3(SexpPrinter &printer) const {
+  printer << std::string(value() ? "true" : "false");
+}
+
 void PEIdent::dump(ostream &out) const { out << path(); }
 
 void PEIdent::dumpz3(SexpPrinter &printer) const {

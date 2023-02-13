@@ -3366,6 +3366,40 @@ NetEConst *PENumber::elaborate_expr(Design *des, NetScope *, int expr_width__,
   return tmp;
 }
 
+unsigned PEBoolean::test_width(Design *, NetScope *, unsigned min,
+                               unsigned lval,
+                               ivl_variable_type_t &use_expr_type,
+                               bool &unsized_flag) {
+  expr_type_ = IVL_VT_LOGIC;
+
+  use_expr_type = expr_type_;
+  expr_width_   = 1;
+  return 1;
+}
+
+NetEConst *PEBoolean::elaborate_expr(Design *des, NetScope *, int expr_width__,
+                                     bool) const {
+
+  verinum tvalue(value_ ? 1 : 0);
+
+  // If the expr_width is >0, then the context is requesting a
+  // specific size (for example this is part of the r-values of
+  // an assignment) so we pad to the desired width and ignore
+  // the self-determined size.
+  if (expr_width__ > 0) {
+    tvalue = pad_to_width(tvalue, expr_width__);
+    if (tvalue.len() > (unsigned)expr_width__) {
+      verinum tmp(tvalue, expr_width__);
+      tmp.has_sign(tvalue.has_sign());
+      tvalue = tmp;
+    }
+  }
+
+  NetEConst *tmp = new NetEConst(tvalue);
+  tmp->set_line(*this);
+  return tmp;
+}
+
 unsigned PEString::test_width(Design *des, NetScope *scope, unsigned min,
                               unsigned lval, ivl_variable_type_t &expr_type__,
                               bool &unsized_flag) {

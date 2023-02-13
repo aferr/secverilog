@@ -157,6 +157,13 @@ SecType *PENumber::typecheck(SexpPrinter &printer,
   return ConstType::BOT;
 }
 void PENumber::collect_idens(set<perm_string> &s) const { return; }
+
+SecType *PEBoolean::typecheck(SexpPrinter &printer,
+                              map<perm_string, SecType *> &varsToType) const {
+  return ConstType::BOT;
+}
+void PEBoolean::collect_idens(set<perm_string> &s) const { return; }
+
 // string constants have label Low
 SecType *PEString::typecheck(SexpPrinter &,
                              map<perm_string, SecType *> &varsToType) const {

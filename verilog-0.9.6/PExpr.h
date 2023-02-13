@@ -548,6 +548,38 @@ private:
   verinum *const value_;
 };
 
+class PEBoolean : public PExpr {
+
+public:
+  explicit PEBoolean(bool vp);
+
+  const bool value() const;
+
+  virtual void dump(ostream &) const;
+  virtual void dumpz3(SexpPrinter &) const;
+  virtual SecType *typecheck(SexpPrinter &,
+                             map<perm_string, SecType *> &varsToType) const;
+  virtual void collect_idens(set<perm_string> &s) const;
+  virtual unsigned test_width(Design *des, NetScope *scope, unsigned min,
+                              unsigned lval, ivl_variable_type_t &expr_type,
+                              bool &unsized_flag);
+
+  virtual NetEConst *elaborate_expr(Design *des, NetScope *, int expr_width,
+                                    bool) const;
+  virtual NetExpr *elaborate_pexpr(Design *des, NetScope *sc) const;
+  virtual NetAssign_ *elaborate_lval(Design *des, NetScope *scope,
+                                     bool is_force) const;
+
+  virtual verinum *eval_const(Design *des, NetScope *sc) const;
+
+  virtual bool is_the_same(const PExpr *that) const;
+  virtual bool is_wellformed(set<perm_string> s);
+  virtual PExpr *to_wellformed(set<perm_string> s);
+
+private:
+  bool value_;
+};
+
 /*
  * This represents a string constant in an expression.
  *

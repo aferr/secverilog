@@ -331,6 +331,22 @@ bool PENumber::is_wellformed(set<perm_string> s) { return true; }
 
 PExpr *PENumber::to_wellformed(set<perm_string> s) { return this; }
 
+PEBoolean::PEBoolean(bool vp) : value_(vp) {}
+
+const bool PEBoolean::value() const { return value_; }
+
+bool PEBoolean::is_the_same(const PExpr *that) const {
+  const PEBoolean *obj = dynamic_cast<const PEBoolean *>(that);
+  if (obj == 0)
+    return false;
+
+  return value_ == obj->value_;
+}
+
+bool PEBoolean::is_wellformed(set<perm_string> s) { return true; }
+
+PExpr *PEBoolean::to_wellformed(set<perm_string> s) { return this; }
+
 PEString::PEString(char *s) : text_(s) {}
 
 PEString::~PEString() { delete[] text_; }
