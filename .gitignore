@@ -6,3 +6,6 @@ bin/*
 .git
 *~
 verilog-0.9.6/conf.done
+lib/
+include/
+share/
