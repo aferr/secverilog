@@ -244,8 +244,9 @@ Statement *PCondit::next_cycle_transform(SexpPrinter &printer, TypeEnv &env) {
 
 void PCondit::collect_index_exprs(set<perm_string> &exprs,
                                   map<perm_string, SecType *> &env) {
-  if (debug_typecheck)
+  if (debug_typecheck) {
     cerr << "collect_index_exprs on if" << endl;
+  }
   if (if_ != NULL) {
     if_->collect_index_exprs(exprs, env);
   }
@@ -253,6 +254,8 @@ void PCondit::collect_index_exprs(set<perm_string> &exprs,
     else_->collect_index_exprs(exprs, env);
   }
   expr_->collect_index_exprs(exprs, env);
+  // also collect all the identifiers in the condition:
+  expr_->collect_idens(exprs);
 }
 
 bool PCondit::collect_dep_invariants(SexpPrinter &printer, TypeEnv &env,
