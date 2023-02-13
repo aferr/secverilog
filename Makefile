@@ -26,6 +26,6 @@ test: install
 clean:
 	@rm $(VDIR)/conf.done $(VDIR)/configure
 	@$(MAKE) -C $(VDIR) clean
-
+	@$(MAKE) -C $(TDIR) clean
 
 .PHONY: clean

@@ -20,7 +20,8 @@
  */
 
 #include "pointers.h"
-
+#include "vthread.h"
+#include "vvp_net.h"
 /*
  * The .ufunc statement creates functors to represent user defined
  * functions within the netlist (as opposed to within behavioral
