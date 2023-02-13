@@ -24,7 +24,7 @@ test: install
 	@$(MAKE) -C $(TDIR)
 
 clean:
-	@rm $(VDIR)/conf.done
+	@rm $(VDIR)/conf.done $(VDIR)/configure
 	@$(MAKE) -C $(VDIR) clean
 
 
