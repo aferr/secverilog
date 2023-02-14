@@ -1,29 +1,47 @@
 #include "path_assign.h"
 #include "Module.h"
 #include "PExpr.h"
+#include "PGenerate.h"
 #include "Statement.h"
+#include "compiler.h"
 #include "ivl_target.h"
 #include "sectypes.h"
 #include "sexp_printer.h"
+#include <algorithm>
+
+static inline void collectPathsBehavior(PathAnalysis &p, PProcess &b,
+                                        TypeEnv &env) {
+  if (b.type() != IVL_PR_INITIAL) {
+    Predicate emptyPred;
+    emptyPred.hypotheses.insert(new Hypothesis(new PEBoolean(true)));
+    b.statement()->collect_assign_paths(p, env, emptyPred);
+  }
+}
+
+static inline void collectPathsGenerate(PathAnalysis &p, const PGenerate &gen,
+                                        TypeEnv &env) {
+  for (auto g : gen.generate_schemes)
+    collectPathsGenerate(p, *g, env);
+  for (auto b : gen.behaviors)
+    collectPathsBehavior(p, *b, env);
+}
 
 PathAnalysis get_paths(Module &m, TypeEnv &env) {
   PathAnalysis paths;
-  for (auto b : m.behaviors) {
-    if (b->type() != IVL_PR_INITIAL) {
-      Predicate emptyPred;
-      emptyPred.hypotheses.insert(new Hypothesis(new PEBoolean(true)));
-      b->statement()->collect_assign_paths(paths, env, emptyPred);
-    }
-  }
+  for (auto g : m.generate_schemes)
+    collectPathsGenerate(paths, *g, env);
+  for (auto b : m.behaviors)
+    collectPathsBehavior(paths, *b, env);
 
   // debug printing of paths
-  for (auto &p : paths) {
-    std::cout << p.first << ":\n";
-    std::cout << p.second.size() << "\n";
-    for (auto &pred : p.second) {
-      std::cout << pred;
+  if (debug_typecheck)
+    for (auto &p : paths) {
+      std::cerr << p.first << ":\n";
+      std::cerr << p.second.size() << "\n";
+      for (auto &pred : p.second) {
+        std::cerr << pred;
+      }
     }
-  }
   return paths;
 }
 
