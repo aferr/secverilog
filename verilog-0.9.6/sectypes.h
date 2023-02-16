@@ -427,12 +427,15 @@ struct Invariant {
   set<Equality *> invariants;
 };
 
+using PathAnalysis = std::map<perm_string, std::vector<Predicate>>;
+
 struct TypeEnv {
   map<perm_string, SecType *> varsToType;
   map<perm_string, BaseType *> varsToBase;
   SecType *pc;
   set<perm_string>
       dep_exprs; // a list of expressions where a dependent type may depend on
+  PathAnalysis analysis;
   set<perm_string> seqVars;
   Invariant *invariants;
   Module *module;
@@ -451,6 +454,10 @@ struct TypeEnv {
   TypeEnv &operator=(const TypeEnv &);
 };
 
+// TODO real logic for this that handles array
+bool isDepExpr(PEIdent *exp, TypeEnv *env) {
+  return exp != NULL && env->dep_exprs.contains(exp->get_name());
+}
 struct Constraint {
   SecType *left;
   SecType *right;

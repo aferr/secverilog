@@ -72,6 +72,10 @@ void dump_no_overlap_anal(SexpPrinter &p, PathAnalysis &paths) {
   }
 }
 
+bool isDefinitelyAssigned(PEIdent *varname, PathAnalysis &paths) {
+  return true;
+}
+
 void Statement::collect_assign_paths(PathAnalysis &, TypeEnv &, Predicate &) {}
 
 void PAssign_::collect_assign_paths(PathAnalysis &paths, TypeEnv &,

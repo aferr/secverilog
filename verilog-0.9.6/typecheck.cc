@@ -772,7 +772,8 @@ void Module::typecheck(SexpPrinter &printer, TypeEnv &env,
     cerr << "typechecking wires" << endl;
   typecheck_wires_(printer, env);
 
-  auto anal = get_paths(*this, env);
+  auto analysis = get_paths(*this, env);
+  env.analysis  = analysis;
 
   if (debug_typecheck)
     cerr << "next-cycle transform" << endl;
@@ -791,7 +792,7 @@ void Module::typecheck(SexpPrinter &printer, TypeEnv &env,
     cerr << "collecting dependent invariants" << endl;
   CollectDepInvariants(printer, env);
 
-  dump_no_overlap_anal(printer, anal);
+  dump_no_overlap_anal(printer, analysis);
 
   // TODO probably delete this
   //  remove an invariant if some variable does not show up
@@ -963,20 +964,22 @@ void typecheck_assignment(SexpPrinter &printer, PExpr *lhs, PExpr *rhs,
   // to the equivalent statements
   PETernary *ternary = dynamic_cast<PETernary *>(rhs);
   if (ternary == NULL) {
-    SecType *ltype, *rtype;
+    SecType *ltype, *rtype, *ltype_orig;
     BaseType *lbase;
     PEIdent *lident = dynamic_cast<PEIdent *>(lhs);
     if (lident != NULL) {
       // lhs is v[x], only want to put type(v) in the type
-      ltype = lident->typecheckName(printer, env->varsToType);
+      ltype_orig = lident->typecheckName(printer, env->varsToType);
     } else {
-      ltype = lhs->typecheck(printer, env->varsToType);
+      ltype_orig = lhs->typecheck(printer, env->varsToType);
     }
     lbase = lhs->check_base_type(printer, env->varsToBase);
     // If ltype is sequential, substitute its free variables with the
     // next-cycle version of that variable.
     if (lbase->isNextType()) {
-      ltype = ltype->next_cycle(env);
+      ltype = ltype_orig->next_cycle(env);
+    } else {
+      ltype = ltype_orig;
     }
     rtype = new JoinType(rhs->typecheck(printer, env->varsToType), env->pc);
     if (lident != NULL) {
@@ -1003,14 +1006,18 @@ void typecheck_assignment(SexpPrinter &printer, PExpr *lhs, PExpr *rhs,
       cerr << "postcond: " << postcond << endl;
     }
 
-    // we used to treat recursive labels differently
-    // which would be necessary if we allowed non-input wires
-    // to appear in dependent types
-    //    if (is_recursive) { do old thing
-    //    if (lhs->typecheck(printer,
-    //    env->varsToType)->hasExpr(lhs->get_name())) {
     typecheck_assignment_constraint(printer, ltype, rtype, precond, note, "",
                                     env);
+    // need no-sensitive-upgrade check when:
+    //   - lident appears in a dep type
+    //   - lident is not definitely assigned
+    //   - lident is a NEXT type (i.e., it's a register assignment)
+    if (isDepExpr(lident, env) &&
+        !isDefinitelyAssigned(lident, env->analysis) && lbase->isNextType()) {
+      // rtype also flows to cur cycle label of lident
+      typecheck_assignment_constraint(printer, ltype_orig, rtype, precond, note,
+                                      "", env);
+    }
   } else {
     ternary->translate(lhs)->typecheck(printer, *env, precond);
   }

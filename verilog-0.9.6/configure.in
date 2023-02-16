@@ -76,7 +76,7 @@ AC_SUBST(DEPENDENCY_FLAG, [-MD])
 AC_SUBST(WARNING_FLAGS, ["-Wall -Wshadow"])
 fi
 
-AC_SUBST(VERSION_FLAGS, ["-std=c++17"])
+AC_SUBST(VERSION_FLAGS, ["-std=c++20"])
 AC_LANG(C++)
 
 # Check that we are using either the GNU compilers or the Sun compilers

@@ -8,7 +8,7 @@ BENCH_LATTICE=$(BENCHS:.v=.lattice)
 BENCH_FUN=$(BENCHS:.v=.fun)
 
 
-all: $(BENCH_OUT)
+all: $(BENCH_OUT) ../bin/iverilog
 	@echo "All Tests passed!"
 
 .PRECIOUS: %.z3

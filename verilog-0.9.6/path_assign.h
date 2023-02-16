@@ -15,20 +15,21 @@ using PathAnalysis = std::map<perm_string, std::vector<Predicate>>;
  * conditions under which each variable is assigned during a given clock cycle.
  */
 PathAnalysis get_paths(Module &m, TypeEnv &env);
-// TODO you'll probably need to pass some typing information to this analysis
-// also
 
 /**
+ * Dump constraints to the solver to check that every variable
+ * is assigned on AT MOST one path.
+ * @param p an S-Exp printer used to generate z3 output
  * @param paths a path analyis returned from get_paths
  */
 void dump_no_overlap_anal(SexpPrinter &p, PathAnalysis &paths);
 
 /**
- * @param varname Variable to check for definite assignment.
+ * @param varname PEIdent* to check for definite assignment.
  * @param paths The path analysis data structure use to compute the result.
  * @return True if varname is assigned on all program paths, else false.
  */
-bool isDefinitelyAssigned(perm_string varname, PathAnalysis &paths);
+bool isDefinitelyAssigned(PEIdent *varname, PathAnalysis &paths);
 
 /**
  * Based on all of the given variable assignments,
