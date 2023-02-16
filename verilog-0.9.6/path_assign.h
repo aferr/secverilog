@@ -7,8 +7,6 @@
 #include <map>
 #include <vector>
 
-using PathAnalysis = std::map<perm_string, std::vector<Predicate>>;
-
 /**
  * @param m The module to analyze
  * @return A map from variable names to expressions that represent the
