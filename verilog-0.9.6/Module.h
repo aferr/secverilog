@@ -160,7 +160,7 @@ public:
   void dumpExprDefs(SexpPrinter &, set<perm_string> exprs) const;
   void CollectDepExprs(SexpPrinter &, TypeEnv &env,
                        map<perm_string, Module *> modules) const;
-  void CollectDepInvariants(SexpPrinter &printer, TypeEnv &env) const;
+  bool CollectDepInvariants(SexpPrinter &printer, TypeEnv &env) const;
   PProcess *gen_assign_next_block(perm_string);
 
 private:

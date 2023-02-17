@@ -255,7 +255,7 @@ void PCondit::collect_index_exprs(set<perm_string> &exprs,
   }
   expr_->collect_index_exprs(exprs, env);
   // also collect all the identifiers in the condition:
-  expr_->collect_idens(exprs);
+  // expr_->collect_idens(exprs);
 }
 
 bool PCondit::collect_dep_invariants(SexpPrinter &printer, TypeEnv &env,
@@ -670,8 +670,9 @@ void Module::CollectDepExprs(SexpPrinter &printer, TypeEnv &env,
  * Generate invariants about the next cycle values of labels.
  * Only generate if expr is in a dependent label but skip the automatic
  * next_cycle_transform assignment
+ * Returns true if any invariants were generated
  */
-void Module::CollectDepInvariants(SexpPrinter &printer, TypeEnv &env) const {
+bool Module::CollectDepInvariants(SexpPrinter &printer, TypeEnv &env) const {
   printer.addComment("invariants about dependent variables");
   set<perm_string> oldDeps = env.dep_exprs;
   // collect invariants and print them after definining new variables
@@ -695,7 +696,9 @@ void Module::CollectDepInvariants(SexpPrinter &printer, TypeEnv &env) const {
                       oldDeps.begin(), oldDeps.end(),
                       std::inserter(newDeps, newDeps.end()));
   dumpExprDefs(printer, newDeps);
-  printer.writeRawLine(invs.str());
+  auto outStr = invs.str();
+  printer.writeRawLine(outStr);
+  return !outStr.empty();
 }
 
 PExpr *Module::getAssumptions() const {
@@ -789,7 +792,7 @@ void Module::typecheck(SexpPrinter &printer, TypeEnv &env,
   makeAssumptions(this, printer, env);
   if (debug_typecheck)
     cerr << "collecting dependent invariants" << endl;
-  CollectDepInvariants(printer, env);
+  bool foundInvs = CollectDepInvariants(printer, env);
 
   dump_no_overlap_anal(printer, analysis, env.dep_exprs);
 
@@ -817,14 +820,21 @@ void Module::typecheck(SexpPrinter &printer, TypeEnv &env,
   // end TODO of delete
 
   printer.lineBreak();
-  printer.startList("echo");
-  printer << "\"base conditions are satisfiable? (should be sat)\"";
-  printer.endList();
-  printer.singleton("check-sat");
+  if (foundInvs) {
+    // Only check base conditions if we actually _have_ base conditions
+    // Otherwise the solver tends to hang
+    printer.startList("echo");
+    printer << "\"base conditions are satisfiable? (should be sat)\"";
+    printer.endList();
+    printer.singleton("check-sat");
+    printer.lineBreak();
+  } else {
+    printer.startList("echo");
+    printer << "\"Skipping base conditions check\"";
+    printer.endList();
+  }
 
-  printer.lineBreak();
   printer.addComment("assertions to be verified");
-
   if (debug_typecheck)
     cerr << "checking generates" << endl;
   typedef list<PGenerate *>::const_iterator genscheme_iter_t;

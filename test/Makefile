@@ -4,14 +4,15 @@ BENCHS=$(shell ls *.v)
 BENCH_EXP=$(BENCHS:.v=.expected)
 BENCH_SMT=$(BENCHS:.v=.z3)
 BENCH_OUT=$(BENCHS:.v=.out)
+BENCH_DIFF=$(BENCHS:.v=.diff)
 BENCH_LATTICE=$(BENCHS:.v=.lattice)
 BENCH_FUN=$(BENCHS:.v=.fun)
 
 
-all: $(BENCH_OUT) ../bin/iverilog
+all: $(BENCH_DIFF) ../bin/iverilog
 	@echo "All Tests passed!"
 
-.PRECIOUS: %.z3
+.PRECIOUS: %.z3 %.out
 
 z3files: $(BENCH_SMT)
 
@@ -19,10 +20,13 @@ z3files: $(BENCH_SMT)
 	@echo "Generating $@"
 	@../bin/iverilog -F $*.fun -l $*.lattice -z $*.v
 
-%.out: %.z3 %.expected
-	@echo "Checking $*.z3"
-	@diff $*.expected <(z3 -smt2  -T:30 $< | grep "sat\|unknown\|error") > $@
+%.out: %.z3
+	@echo "Generating $@"
+	@z3 -smt2 -T:30 $< | grep "sat\|unknown\|error" > $@
 
+%.diff: %.out %.expected
+	@echo "Checking Diff"
+	@diff $*.expected $<
 
 .PHONY: clean
 clean:

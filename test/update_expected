@@ -1,0 +1,8 @@
+#!/bin/bash
+
+TESTNAME_L="$1"
+TESTNAME=${TESTNAME_L%.*}
+OUT="$TESTNAME".out
+EXP="$TESTNAME".expected
+echo "Updating exptected file ""$EXP"" with contents of $OUT"
+mv "$OUT" "$EXP"

@@ -48,35 +48,38 @@ PathAnalysis get_paths(Module &m, TypeEnv &env) {
 
 void dump_no_overlap_anal(SexpPrinter &p, PathAnalysis &paths,
                           set<perm_string> &vars) {
-  auto isDepVar = [&vars](std::pair<perm_string, std::vector<Predicate>> &p) {
-    return vars.contains(p.first);
-  };
-  for (auto &[var, paths] :
-       paths | std::views::values | std::views::filter(isDepVar)) {
-
-    p.singleton("push");
-    p.startList("assert");
-    p.startList("or");
-    if (paths.size() <= 1)
-      p.printAtom("false");
-    for (auto i = paths.cbegin(); i != paths.cend(); ++i) {
-      for (auto j = i + 1; j != paths.cend(); ++j) {
-        // p.startList("not");
-        p.startList("and");
-        p << *i << *j;
-        // p.endList();
-        p.endList();
+  p.startList("echo");
+  p.printAtom("\"Starting assigned-once checks\"");
+  p.endList();
+  for (auto &[var, paths] : paths) {
+    if (vars.contains(var)) {
+      p.singleton("push");
+      p.startList("assert");
+      p.startList("or");
+      if (paths.size() <= 1)
+        p.printAtom("false");
+      for (auto i = paths.cbegin(); i != paths.cend(); ++i) {
+        for (auto j = i + 1; j != paths.cend(); ++j) {
+          // p.startList("not");
+          p.startList("and");
+          p << *i << *j;
+          // p.endList();
+          p.endList();
+        }
       }
+      p.endList();
+      p.endList();
+      p.startList("echo");
+      std::string msg = std::string("\"checking paths of ") + var.str() + "\"";
+      p.printAtom(msg);
+      p.endList();
+      p.singleton("check-sat");
+      p.singleton("pop");
     }
-    p.endList();
-    p.endList();
-    p.startList("echo");
-    std::string msg = std::string("\"checking paths of ") + var.str() + "\"";
-    p.printAtom(msg);
-    p.endList();
-    p.singleton("check-sat");
-    p.singleton("pop");
   }
+  p.startList("echo");
+  p.printAtom("\"Ending assigned-once checks\"");
+  p.endList();
 }
 
 bool isDefinitelyAssigned(PEIdent *varname, PathAnalysis &paths) {
