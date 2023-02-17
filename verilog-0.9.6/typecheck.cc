@@ -663,7 +663,6 @@ void Module::CollectDepExprs(SexpPrinter &printer, TypeEnv &env,
 
   // declare the expressions as variables in z3 file
   printer.addComment("variables to be solved");
-
   dumpExprDefs(printer, env.dep_exprs);
 }
 
@@ -792,7 +791,7 @@ void Module::typecheck(SexpPrinter &printer, TypeEnv &env,
     cerr << "collecting dependent invariants" << endl;
   CollectDepInvariants(printer, env);
 
-  dump_no_overlap_anal(printer, analysis);
+  dump_no_overlap_anal(printer, analysis, env.dep_exprs);
 
   // TODO probably delete this
   //  remove an invariant if some variable does not show up

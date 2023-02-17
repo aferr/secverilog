@@ -8,6 +8,7 @@
 #include "sectypes.h"
 #include "sexp_printer.h"
 #include <algorithm>
+#include <ranges>
 
 static inline void collectPathsBehavior(PathAnalysis &p, PProcess &b,
                                         TypeEnv &env) {
@@ -45,8 +46,14 @@ PathAnalysis get_paths(Module &m, TypeEnv &env) {
   return paths;
 }
 
-void dump_no_overlap_anal(SexpPrinter &p, PathAnalysis &paths) {
-  for (auto &[var, paths] : paths) {
+void dump_no_overlap_anal(SexpPrinter &p, PathAnalysis &paths,
+                          set<perm_string> &vars) {
+  auto isDepVar = [&vars](std::pair<perm_string, std::vector<Predicate>> &p) {
+    return vars.contains(p.first);
+  };
+  for (auto &[var, paths] :
+       paths | std::views::values | std::views::filter(isDepVar)) {
+
     p.singleton("push");
     p.startList("assert");
     p.startList("or");

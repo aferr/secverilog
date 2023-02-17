@@ -19,8 +19,10 @@ PathAnalysis get_paths(Module &m, TypeEnv &env);
  * is assigned on AT MOST one path.
  * @param p an S-Exp printer used to generate z3 output
  * @param paths a path analyis returned from get_paths
+ * @param vars the set of variable names from paths to dump
  */
-void dump_no_overlap_anal(SexpPrinter &p, PathAnalysis &paths);
+void dump_no_overlap_anal(SexpPrinter &p, PathAnalysis &paths,
+                          set<perm_string> &vars);
 
 /**
  * @param varname PEIdent* to check for definite assignment.
