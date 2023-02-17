@@ -9,14 +9,14 @@ BENCH_LATTICE=$(BENCHS:.v=.lattice)
 BENCH_FUN=$(BENCHS:.v=.fun)
 
 
-all: $(BENCH_DIFF) ../bin/iverilog
+all: $(BENCH_DIFF)
 	@echo "All Tests passed!"
 
 .PRECIOUS: %.z3 %.out
 
 z3files: $(BENCH_SMT)
 
-%.z3: %.v %.lattice %.fun
+%.z3: %.v %.lattice %.fun ../bin/iverilog
 	@echo "Generating $@"
 	@../bin/iverilog -F $*.fun -l $*.lattice -z $*.v
 

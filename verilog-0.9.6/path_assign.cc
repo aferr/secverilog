@@ -7,7 +7,6 @@
 #include "ivl_target.h"
 #include "sectypes.h"
 #include "sexp_printer.h"
-#include <algorithm>
 #include <ranges>
 
 static inline void collectPathsBehavior(PathAnalysis &p, PProcess &b,
@@ -46,36 +45,39 @@ PathAnalysis get_paths(Module &m, TypeEnv &env) {
   return paths;
 }
 
-void dump_no_overlap_anal(SexpPrinter &p, PathAnalysis &paths,
+void dump_no_overlap_anal(SexpPrinter &p, PathAnalysis &path_analysis,
                           set<perm_string> &vars) {
   p.startList("echo");
   p.printAtom("\"Starting assigned-once checks\"");
   p.endList();
-  for (auto &[var, paths] : paths) {
-    if (vars.contains(var)) {
-      p.singleton("push");
-      p.startList("assert");
-      p.startList("or");
-      if (paths.size() <= 1)
-        p.printAtom("false");
-      for (auto i = paths.cbegin(); i != paths.cend(); ++i) {
-        for (auto j = i + 1; j != paths.cend(); ++j) {
-          // p.startList("not");
-          p.startList("and");
-          p << *i << *j;
-          // p.endList();
-          p.endList();
-        }
+  auto isDepVar =
+      [&vars](const std::pair<perm_string, std::vector<Predicate>> &p) {
+        return vars.contains(p.first);
+      };
+  for (auto &[var, paths] : std::ranges::filter_view(path_analysis, isDepVar)) {
+
+    // for (auto &[var, paths] : path_analysis) {
+
+    p.singleton("push");
+    p.startList("assert");
+    p.startList("or");
+    if (paths.size() <= 1)
+      p.printAtom("false");
+    for (auto i = paths.cbegin(); i != paths.cend(); ++i) {
+      for (auto j = i + 1; j != paths.cend(); ++j) {
+        p.startList("and");
+        p << *i << *j;
+        p.endList();
       }
-      p.endList();
-      p.endList();
-      p.startList("echo");
-      std::string msg = std::string("\"checking paths of ") + var.str() + "\"";
-      p.printAtom(msg);
-      p.endList();
-      p.singleton("check-sat");
-      p.singleton("pop");
     }
+    p.endList();
+    p.endList();
+    p.startList("echo");
+    std::string msg = std::string("\"checking paths of ") + var.str() + "\"";
+    p.printAtom(msg);
+    p.endList();
+    p.singleton("check-sat");
+    p.singleton("pop");
   }
   p.startList("echo");
   p.printAtom("\"Ending assigned-once checks\"");
