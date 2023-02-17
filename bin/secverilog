@@ -79,28 +79,41 @@ foreach my $file (@files) {
     # then find "unsat" assertions, and output the corrensponding comment in constraint source file
     my $errors = "";
     my $prevLine = "";
+    my $lookingForAssignedOnce = 0;
+    my $lookingForBaseSat = 0;
     my @lines = split(/^/, $str);
-    if (scalar @lines < 2) {
-	print_fail();
-	print "Invalid output, missing basic assertions check\n";
-	exit $1;
-    }
-    if (@lines[0] ne $base_expected_str || @lines[1] ne "sat\n") {	
-	print_fail();
-	print "Basic assertions not satisfiable, test invalid\n";
-	exit $1;
-    }    
-    shift(@lines);
-    shift(@lines);
     for(@lines) {
-      if (/^sat|^unknown/) {
-	  $errors .= $prevLine;
-	  $fail_counter ++;
-	  $counter ++;
-      }
-      elsif (/^unsat/) {
-	  $counter ++;
-      }
+	if (/^Starting assigned-once/) {
+	    $lookingForAssignedOnce = 1;
+	    last;
+	}
+	if (/^Ending assigned-once/) {
+	    $lookingForAssignedOnce = 0;
+	    last;
+	}
+	if (/^Start base conditions/) {
+	    $lookingForBaseSat = 1;
+	    last;
+	}
+	if (/^End base conditions/) {
+	    $lookingForBaseSat = 0;
+	    last;
+	}
+	if ($lookingForBaseSat) {
+	    if (/^unsat|unknown/) {
+		$errors .= $prevLine;
+		$fail_counter ++;
+		$counter ++;
+	    }
+	} else {
+	    if (/^sat|^unknown/) {
+		$errors .= $prevLine;
+		$fail_counter ++;
+		$counter ++;		
+	    } elsif (/^unsat/) {
+		$counter ++;
+	    }
+	}	
       $prevLine = $_;
     }
     if ($errors eq "") {

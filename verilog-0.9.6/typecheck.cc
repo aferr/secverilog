@@ -824,10 +824,13 @@ void Module::typecheck(SexpPrinter &printer, TypeEnv &env,
     // Only check base conditions if we actually _have_ base conditions
     // Otherwise the solver tends to hang
     printer.startList("echo");
-    printer << "\"base conditions are satisfiable? (should be sat)\"";
+    printer << "\"Start base conditions are satisfiable? (should be sat)\"";
     printer.endList();
     printer.singleton("check-sat");
     printer.lineBreak();
+    printer.startList("echo");
+    printer << "\"End base conditions are satisfiable?\"";
+    printer.endList();
   } else {
     printer.startList("echo");
     printer << "\"Skipping base conditions check\"";
