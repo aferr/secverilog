@@ -12,8 +12,8 @@ module labelchange_reg(
    wire    seq {H} data_out;
    
    wire    com {L} w_en2;
-   wire    seq {L} lbl_in_2;
-   wire    seq {LH lbl_in_2}  data_in_2;
+   wire    com {L} lbl_in_2;
+   wire    com {LH lbl_in_2}  data_in_2;
    
    reg 	   seq {L} pub_data;
    reg 	   seq {L} lbl_reg;

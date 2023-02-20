@@ -45,6 +45,20 @@ PathAnalysis get_paths(Module &m, TypeEnv &env) {
   return paths;
 }
 
+void dump_is_def_assign(SexpPrinter &p, PathAnalysis &path_analysis,
+                        PEIdent *var) {
+  perm_string varname = var->get_name();
+  if (!path_analysis.contains(varname)) {
+    throw "Not assigned in PathAnalysis";
+  }
+  std::vector<Predicate> branches = path_analysis[varname];
+  p.startList("or");
+  for (auto &path : branches) {
+    p << path;
+  }
+  p.endList();
+}
+
 void dump_no_overlap_anal(SexpPrinter &p, PathAnalysis &path_analysis,
                           set<perm_string> &vars) {
   p.startList("echo");

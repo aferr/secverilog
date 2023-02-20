@@ -75,6 +75,7 @@ public:
   virtual SecType *subst(map<perm_string, perm_string> m) { return this; };
   virtual SecType *next_cycle(TypeEnv *env) { return this; }
   virtual void collect_dep_expr(set<perm_string> &m){};
+  virtual bool isDepType() { return false; };
   virtual bool hasExpr(perm_string str) { return false; };
   virtual SecType *freshVars(unsigned int lineno,
                              map<perm_string, perm_string> &m) {
@@ -165,6 +166,7 @@ public:
   void collect_dep_expr(set<perm_string> &m);
   SecType *freshVars(unsigned int lineno, map<perm_string, perm_string> &m);
   bool hasExpr(perm_string str);
+  bool isDepType() { return true; };
 
 public:
   static IndexType *RL;
@@ -205,6 +207,7 @@ public:
   SecType *freshVars(unsigned int lineno, map<perm_string, perm_string> &m);
   bool hasExpr(perm_string str);
   virtual void emitFlowsTo(SexpPrinter &printer, SecType *rhs);
+  bool isDepType() { return comp1_->isDepType() || comp2_->isDepType(); }
 
 private:
   SecType *comp1_;
@@ -240,6 +243,7 @@ public:
   SecType *freshVars(unsigned int lineno, map<perm_string, perm_string> &m);
   bool hasExpr(perm_string str);
   virtual void emitFlowsTo(SexpPrinter &printer, SecType *rhs);
+  bool isDepType() { return comp1_->isDepType() || comp2_->isDepType(); }
 
 private:
   SecType *comp1_;
@@ -285,6 +289,7 @@ public:
     SecType *result       = new QuantType(_index_var, replacedType);
     return result;
   }
+  bool isDepType() { return _sectype->isDepType(); }
 
 private:
   perm_string _index_var;
@@ -384,6 +389,7 @@ public:
 
   virtual void emitFlowsTo(SexpPrinter &printer, SecType *rhs);
   virtual bool equals(SecType *st);
+  bool isDepType() { return true; };
 
 private:
   bool _isNext;
@@ -500,22 +506,6 @@ inline SexpPrinter &operator<<(SexpPrinter &printer, const Predicate &pred) {
   if (l.size() > 1)
     printer.endList();
   return printer;
-  // set<Hypothesis*> l = pred.hypotheses;
-  // set<Hypothesis*>::iterator i = l.begin();
-  // if (l.size() > 1) {
-  //   o << "(and ";
-  // }
-  // if (i != l.end()) {
-  // 	(*i)->bexpr_->dumpz3(o);
-  // 	i++;
-  // }
-  // for (; i != l.end() ; i++) {
-  //   (*i)->bexpr_->dumpz3(o);
-  // }
-  // if (l.size() > 1) {
-  //   o << ") ";
-  // }
-  // return o;
 }
 
 inline ostream &operator<<(ostream &o, Predicate &t) {
@@ -531,18 +521,6 @@ inline SexpPrinter &operator<<(SexpPrinter &printer, Invariant &invs) {
     printer.endList();
   }
   return printer;
-  // set<Equality*> l = invs.invariants;
-  // set<Equality*>::iterator i = l.begin();
-  // if (i != l.end()) {
-  // 	o << "(";
-  // 	(*i)->dump(o);
-  // 	o << ")";
-  // 	i++;
-  // }
-  // for (; i != l.end() ; i++) {
-  // 	o << " ("; (*i)->dump(o); o << ")";
-  // }
-  // return o;
 }
 
 inline ostream &operator<<(ostream &o, Invariant &t) {
@@ -556,7 +534,6 @@ inline SexpPrinter &operator<<(SexpPrinter &printer, Constraint &c) {
   printer << "assert";
   bool hashypo = c.pred != NULL && c.pred->hypotheses.size() != 0;
   bool hasinv  = c.invariant != NULL && c.invariant->invariants.size() != 0;
-  ;
 
   if (hashypo || hasinv)
     printer.startList("and");
@@ -572,26 +549,6 @@ inline SexpPrinter &operator<<(SexpPrinter &printer, Constraint &c) {
     printer.endList();
   printer.endList();
   return printer;
-  // 	o << "(assert ";
-  // 	bool hashypo = c.pred != NULL && c.pred->hypotheses.size() != 0;
-  // 	bool hasinv = c.invariant != NULL && c.invariant->invariants.size() !=
-  // 0;;
-
-  // 	if (hashypo || hasinv)
-  // 		o << "(and ";
-  // 	if (hashypo)
-  // 		o << (*c.pred) << " ";
-  // 	if (hasinv)
-  // 		o << (*c.invariant);
-
-  // 	o << " (not ";
-  // 	c.right->simplify()->emitFlowsTo(o, c.left->simplify());
-  // 	o << ") ";
-
-  // 	if (hashypo || hasinv)
-  // 		o << ")";
-  // 	o << ")";
-  // return o;
 }
 
 inline ostream &operator<<(ostream &o, Constraint &t) {

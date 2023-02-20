@@ -48,6 +48,10 @@ perm_string nextify_perm_string(perm_string s) {
   return lex_strings.make((name + "_next_").c_str());
 }
 
+perm_string un_nextify_perm_string(perm_string s) {
+  std::string name = s.str();
+  return lex_strings.make(name.substr(0, name.length() - 6).c_str());
+}
 svector<named_pexpr_t *> *
 nextify_named_pexpr_list(svector<named_pexpr_t *> *namelist) {
   svector<named_pexpr_t *> *ret =

@@ -15,6 +15,15 @@
 PathAnalysis get_paths(Module &m, TypeEnv &env);
 
 /**
+ * Dump a constraint to the solver to check that the given
+ * variable is definitely assigned - this is true whenever
+ * at least one branch condition in the analysis is true.
+ * @param p an S-Exp printer used to generate z3 output
+ * @param paths a path analyis returned from get_paths
+ * @param var the name of the variable from paths to check
+ */
+void dump_is_def_assign(SexpPrinter &p, PathAnalysis &paths, PEIdent *var);
+/**
  * Dump constraints to the solver to check that every variable
  * is assigned on AT MOST one path.
  * @param p an S-Exp printer used to generate z3 output

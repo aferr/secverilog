@@ -323,7 +323,8 @@ bool PAssign_::collect_dep_invariants(SexpPrinter &printer, TypeEnv &env,
       isNextAssign = rtyp->isNextType();
     }
   }
-  BaseType *ltyp = lval()->check_base_type(printer, env.varsToBase);
+  // make sure basetype is appropriate
+  lval()->check_base_type(printer, env.varsToBase);
   // if lhs appears in dependent type, and  this is not the generated assignment
   // (x = x_next_)
   if ((env.dep_exprs.find(lval()->get_name()) != env.dep_exprs.end()) &&
@@ -945,17 +946,20 @@ void AContrib::typecheck(SexpPrinter &printer, TypeEnv &env,
  *       For example, (x==1).
  * note: The line of code in the source file. This information is used to trace
  *       a security violation back to SecVerilog source code.
- * vardecl: Fresh variable generated for an assingment. See rule (T-ASSIGN-REC)
- *       in the paper "A Hardware Design Language for Timing-Sensitive
- *       Information-Flow Security" by Zhang et al. at ASPLOS'15 for more
  * details. env: A typing environment.
  */
 void typecheck_assignment_constraint(SexpPrinter &printer, SecType *lhs,
                                      SecType *rhs, Predicate pred, string note,
-                                     string vardecl, TypeEnv *env) {
+                                     PEIdent *checkDefAssign, TypeEnv *env) {
   printer.lineBreak();
   printer.singleton("push");
-  printer.writeRawLine(vardecl);
+  if (checkDefAssign) {
+    printer.startList("assert");
+    printer.startList("not");
+    dump_is_def_assign(printer, env->analysis, checkDefAssign);
+    printer.endList();
+    printer.endList();
+  }
   Constraint *c = new Constraint(lhs, rhs, env->invariants, &pred);
   printer << *c;
   printer.addComment(note);
@@ -980,7 +984,7 @@ void typecheck_assignment(SexpPrinter &printer, PExpr *lhs, PExpr *rhs,
     BaseType *lbase;
     PEIdent *lident = dynamic_cast<PEIdent *>(lhs);
     if (lident != NULL) {
-      // lhs is v[x], only want to put type(v) in the type
+      // if lhs is v[x], only want to put type(v) in the type
       ltype_orig = lident->typecheckName(printer, env->varsToType);
     } else {
       ltype_orig = lhs->typecheck(printer, env->varsToType);
@@ -995,7 +999,7 @@ void typecheck_assignment(SexpPrinter &printer, PExpr *lhs, PExpr *rhs,
     }
     rtype = new JoinType(rhs->typecheck(printer, env->varsToType), env->pc);
     if (lident != NULL) {
-      // lhs is v[x], want to include type(x) in the rhs type
+      // if lhs is v[x], want to include type(x) in the rhs type
       rtype =
           new JoinType(rtype, lident->typecheckIdx(printer, env->varsToType));
     }
@@ -1018,17 +1022,21 @@ void typecheck_assignment(SexpPrinter &printer, PExpr *lhs, PExpr *rhs,
       cerr << "postcond: " << postcond << endl;
     }
 
-    typecheck_assignment_constraint(printer, ltype, rtype, precond, note, "",
+    typecheck_assignment_constraint(printer, ltype, rtype, precond, note, NULL,
                                     env);
     // need no-sensitive-upgrade check when:
-    //   - lident appears in a dep type
+    //   - lident has a dep type
     //   - lident is not definitely assigned
     //   - lident is a NEXT type (i.e., it's a register assignment)
-    if (isDepExpr(lident, env) &&
-        !isDefinitelyAssigned(lident, env->analysis) && lbase->isNextType()) {
-      // rtype also flows to cur cycle label of lident
-      typecheck_assignment_constraint(printer, ltype_orig, rtype, precond, note,
-                                      "", env);
+    if (ltype_orig->isDepType() && lbase->isNextType()) {
+      // either  isDefAssigned(lident) OR forall contexts. (leq pc ltype_orig)
+      //  rtype also flows to cur cycle label of lident in any context
+      PEIdent *origName =
+          new PEIdent(un_nextify_perm_string(lident->get_name()));
+      string newNote = note.append("--No-sensitive-upgrade-check;");
+      Predicate emptyPred;
+      typecheck_assignment_constraint(printer, ltype_orig, env->pc, emptyPred,
+                                      newNote, origName, env);
     }
   } else {
     ternary->translate(lhs)->typecheck(printer, *env, precond);
