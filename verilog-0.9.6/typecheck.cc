@@ -1028,7 +1028,6 @@ void typecheck_assignment(SexpPrinter &printer, PExpr *lhs, PExpr *rhs,
       // trusted, compiler-generated assignment
       rtype = ConstType::BOT;
     }
-
     if (debug_typecheck) {
       cerr << "line no" << lineno << endl;
       cerr << "pctype: " << *env->pc << endl;
@@ -1334,14 +1333,14 @@ void PAssign::typecheck(SexpPrinter &printer, TypeEnv &env,
 void PAssignNB::typecheck(SexpPrinter &printer, TypeEnv &env,
                           Predicate &pred) const {
   if (debug_typecheck) {
-    cout << "PAssignNB::check " << *lval() << " <= ";
+    cerr << "PAssignNB::check " << *lval() << " <= ";
     if (delay_)
-      cout << "#" << *delay_ << " ";
+      cerr << "#" << *delay_ << " ";
     if (count_)
-      cout << "repeat(" << *count_ << ") ";
+      cerr << "repeat(" << *count_ << ") ";
     if (event_)
-      cout << *event_ << " ";
-    cout << *rval() << ";" << endl;
+      cerr << *event_ << " ";
+    cerr << *rval() << ";" << endl;
   }
 
   stringstream ss;

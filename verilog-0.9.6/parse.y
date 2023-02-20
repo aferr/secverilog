@@ -3397,6 +3397,7 @@ register_variable
 	      }
 	      index = $2->front();
 	      pform_set_reg_idx(ident_name, index.msb, index.lsb);
+	      pform_set_reg_idx(nextify_perm_string(ident_name), index.msb, index.lsb);	      
 	      delete $2;
 	}
 	$$ = $1;
@@ -3484,6 +3485,7 @@ net_variable
 	      }
 	      index = $2->front();
 	      pform_set_reg_idx(name, index.msb, index.lsb);
+	      pform_set_reg_idx(nextify_perm_string(name), index.msb, index.lsb);
 	      delete $2;
 	}
 	$$ = $1;
