@@ -444,6 +444,9 @@ public:
 
   const pform_name_t &path() const { return path_; }
 
+  // un-nextify the top level names
+  virtual PEIdent *get_this_cycle_name();
+
 private:
   pform_name_t path_;
 

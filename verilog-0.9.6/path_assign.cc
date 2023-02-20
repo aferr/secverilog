@@ -49,6 +49,7 @@ void dump_is_def_assign(SexpPrinter &p, PathAnalysis &path_analysis,
                         PEIdent *var) {
   perm_string varname = var->get_name();
   if (!path_analysis.contains(varname)) {
+    cerr << varname << " is is not in path analysis" << endl;
     throw "Not assigned in PathAnalysis";
   }
   std::vector<Predicate> branches = path_analysis[varname];

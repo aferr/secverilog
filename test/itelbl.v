@@ -9,7 +9,7 @@ module labelprop(
    reg                 seq {L} old_lbl;
    wire 	       seq {L} isMisspec;
    reg                 seq {L} tmp_data_tag;
-   reg 		       seq {SPEC isMisspec, old_lbl} tmp_data;   
+   reg 		       seq {SPEC isMisspec, old_lbl} tmp_data;
    reg                 seq {LH old_lbl} down;
    
    //begin all should succeed

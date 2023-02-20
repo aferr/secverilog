@@ -290,6 +290,7 @@ public:
     return result;
   }
   bool isDepType() { return _sectype->isDepType(); }
+  bool hasExpr(perm_string str) { return _sectype->hasExpr(str); }
 
 private:
   perm_string _index_var;

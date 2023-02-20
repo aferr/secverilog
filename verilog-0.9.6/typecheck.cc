@@ -387,6 +387,25 @@ PExpr *PEIdent::next_cycle_transform(SexpPrinter &printer, TypeEnv &env) {
   return this;
 }
 
+PEIdent *PEIdent::get_this_cycle_name() {
+  name_component_t topName     = path().back();
+  perm_string lastName         = un_nextify_perm_string(topName.name);
+  name_component_t *newTopName = new name_component_t(lastName);
+  newTopName->index            = topName.index;
+  pform_name_t newPath;
+  list<name_component_t>::const_iterator stop = path().end();
+  --stop;
+  for (list<name_component_t>::const_iterator it = path().begin(); it != stop;
+       ++it) {
+    newPath.push_back(*it);
+  }
+  newPath.push_back(*newTopName);
+  if (debug_typecheck) {
+    cout << "Nextify " << path() << " to " << newPath << endl;
+  }
+  return new PEIdent(newPath);
+}
+
 void PGenerate::next_cycle_transform(SexpPrinter &printer, TypeEnv env) {
   for (list<PProcess *>::const_iterator behav = behaviors.begin();
        behav != behaviors.end(); behav++) {
@@ -1025,18 +1044,20 @@ void typecheck_assignment(SexpPrinter &printer, PExpr *lhs, PExpr *rhs,
     typecheck_assignment_constraint(printer, ltype, rtype, precond, note, NULL,
                                     env);
     // need no-sensitive-upgrade check when:
-    //   - lident has a dep type
+    //   - lident has a recursive dep type
     //   - lident is not definitely assigned
     //   - lident is a NEXT type (i.e., it's a register assignment)
     if (ltype_orig->isDepType() && lbase->isNextType()) {
-      // either  isDefAssigned(lident) OR forall contexts. (leq pc ltype_orig)
-      //  rtype also flows to cur cycle label of lident in any context
-      PEIdent *origName =
-          new PEIdent(un_nextify_perm_string(lident->get_name()));
-      string newNote = note.append("--No-sensitive-upgrade-check;");
-      Predicate emptyPred;
-      typecheck_assignment_constraint(printer, ltype_orig, env->pc, emptyPred,
-                                      newNote, origName, env);
+      PEIdent *origName = lident->get_this_cycle_name();
+      // is recursive if ltype contains lident
+      if (ltype_orig->hasExpr(origName->get_name())) {
+        // either  isDefAssigned(lident) OR forall contexts. (leq pc ltype_orig)
+        //  rtype also flows to cur cycle label of lident in any context
+        string newNote = note.append("--No-sensitive-upgrade-check;");
+        Predicate emptyPred;
+        typecheck_assignment_constraint(printer, ltype_orig, env->pc, emptyPred,
+                                        newNote, origName, env);
+      }
     }
   } else {
     ternary->translate(lhs)->typecheck(printer, *env, precond);
