@@ -2,4 +2,3 @@
 
 (assert (forall ((x (Array Int Int)) (y Int))
 	(= (LH_ARRAY x y) (LH (select x y)))))
-

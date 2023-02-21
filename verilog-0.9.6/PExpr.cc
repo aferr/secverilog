@@ -53,6 +53,8 @@ const perm_string PExpr::get_name() const {
   return perm_string::literal(tmp->c_str());
 }
 
+const perm_string PEIdent::get_name() const { return peek_tail_name(path_); }
+
 NetNet *PExpr::elaborate_lnet(Design *des, NetScope *) const {
   cerr << get_fileline()
        << ": error: expression not valid in assign l-value: " << *this << endl;

@@ -109,7 +109,7 @@ public:
   // return valid results.
   ivl_variable_type_t expr_type() const { return expr_type_; }
   unsigned expr_width() const { return expr_width_; }
-  const perm_string get_name() const;
+  virtual const perm_string get_name() const;
   // During the elaborate_sig phase, we may need to scan
   // expressions to find implicit net declarations.
   virtual bool elaborate_sig(Design *des, NetScope *scope) const;
@@ -393,7 +393,7 @@ public:
   // current identifier.
   void append_name(perm_string);
   virtual PExpr *next_cycle_transform(SexpPrinter &, TypeEnv &env);
-
+  virtual const perm_string get_name() const;
   virtual void dump(ostream &) const;
   virtual void dumpz3(SexpPrinter &) const;
   virtual void dumpEq(SexpPrinter &out, int val) const;

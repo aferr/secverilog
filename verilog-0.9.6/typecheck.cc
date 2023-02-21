@@ -119,11 +119,18 @@ void Module::next_cycle_transform(SexpPrinter &printer, TypeEnv &env) {
     }
     (*behav)->next_cycle_transform(printer, env);
   }
-  typedef set<perm_string>::const_iterator seqvar_iter_t;
-  for (seqvar_iter_t cur = env.seqVars.begin(); cur != env.seqVars.end();
-       cur++) {
-    behaviors.push_back(gen_assign_next_block(*cur));
-  }
+  /*
+   * This is deleted since we don't really need to transform
+   * the program, we just want to rename variables -> which we should
+   * realy just do during constraint generation, skip all the nonsense
+   * of re-writing the AST.
+   */
+  // typedef set<perm_string>::const_iterator seqvar_iter_t;
+  // for (seqvar_iter_t cur = env.seqVars.begin(); cur != env.seqVars.end();
+  //      cur++) {
+  //   behaviors.push_back(gen_assign_next_block(*cur));
+  // }
+
   // transform the code in the generate blocks too
   typedef list<PGenerate *>::const_iterator genscheme_iter_t;
   for (genscheme_iter_t cur = generate_schemes.begin();
@@ -313,22 +320,14 @@ void PAssign_::collect_index_exprs(set<perm_string> &exprs,
 
 bool PAssign_::collect_dep_invariants(SexpPrinter &printer, TypeEnv &env,
                                       Predicate &pred) {
-  if (debug_typecheck)
+  if (debug_typecheck) {
     cerr << "collect_dep_invariants on passign" << endl;
-  PEIdent *rident   = dynamic_cast<PEIdent *>(rval());
-  bool isNextAssign = false;
-  if (rident != NULL) {
-    BaseType *rtyp = rident->check_base_type(printer, env.varsToBase);
-    if (rtyp) {
-      isNextAssign = rtyp->isNextType();
-    }
+    cerr << "lval is: " << *lval() << endl;
   }
   // make sure basetype is appropriate
   lval()->check_base_type(printer, env.varsToBase);
-  // if lhs appears in dependent type, and  this is not the generated assignment
-  // (x = x_next_)
-  if ((env.dep_exprs.find(lval()->get_name()) != env.dep_exprs.end()) &&
-      !isNextAssign) {
+  // if lhs appears in dependent type
+  if ((env.dep_exprs.find(lval()->get_name()) != env.dep_exprs.end())) {
     bool hasPreds = !pred.hypotheses.empty();
     printer.startList("assert");
     if (hasPreds) {
@@ -606,14 +605,10 @@ void Module::dumpExprDefs(SexpPrinter &printer, set<perm_string> exprs) const {
         printer.endList();
       }
     } else {
-      // in this case, its probably a genvar, just declare it as an unbound int
+      // in this case, its probably a genvar, do nothing
       if (debug_typecheck) {
         cout << "couldn't find wire for " << temp << endl;
       }
-      printer.startList("declare-fun");
-      printer << temp.str() << "()"
-              << "Int";
-      printer.endList();
     }
   }
 }
@@ -709,6 +704,10 @@ bool Module::CollectDepInvariants(SexpPrinter &printer, TypeEnv &env) const {
     if (pgassign != NULL) {
       pgassign->collect_dep_invariants(tmp_printer, env);
     }
+  }
+  for (list<PGenerate *>::const_iterator cur = generate_schemes.begin();
+       cur != generate_schemes.end(); cur++) {
+    (*cur)->collect_dep_invariants(tmp_printer, env);
   }
 
   set<perm_string> newDeps;
@@ -1700,6 +1699,17 @@ void PGenerate::collect_index_exprs(set<perm_string> &exprs,
       cout << "collect_index_exprs for behavior: " << (*idx) << endl;
     }
     (*idx)->collect_index_exprs(exprs, env);
+  }
+}
+
+void PGenerate::collect_dep_invariants(SexpPrinter &printer, TypeEnv &env) {
+  for (list<PProcess *>::const_iterator idx = behaviors.begin();
+       idx != behaviors.end(); idx++) {
+    if (debug_typecheck) {
+      cerr << "collect_dep_invariants for behavior: " << (*idx) << endl;
+    }
+    Predicate emptyPred;
+    (*idx)->collect_dep_invariants(printer, env, emptyPred);
   }
 }
 

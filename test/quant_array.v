@@ -7,11 +7,13 @@ module quant_array();
    input [2:0] {L} low_data;
    input [2:0] {H} high_data;   
    
-   reg {L} tags[15:0];
+   reg seq {L} tags[15:0];
    
-   reg [2:0] {|i| LH_ARRAY tags,i} data[15:0];
+   reg [2:0] seq {|i| LH_ARRAY tags,i} data[15:0];
 
-   reg [2:0] {|j| LH_ARRAY tags,j} data2[15:0];
+   reg [2:0] seq {|j| LH_ARRAY tags,j} data2[15:0];
+
+   reg 	seq {|k| LH_ARRAY recData, k} recData[15:0];
    
    genvar    datai;
    generate
@@ -19,7 +21,10 @@ module quant_array();
 	begin
 	   always @(posedge clk) begin
 	      tags[datai] <= tags[datai];	   
-	      data[datai] <= data[datai];	 
+	      data[datai] <= data[datai];
+	      if (high_data == 0) begin
+		 recData[datai] <= 1;		 
+	      end
 	   end
 	end
    endgenerate
@@ -36,4 +41,6 @@ module quant_array();
      begin
 	data2[idx2] <= high_data;	
      end
+
+
 endmodule

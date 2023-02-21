@@ -124,6 +124,7 @@ public:
                  map<perm_string, Module *> modules);
   void collect_index_exprs(set<perm_string> &exprs,
                            map<perm_string, SecType *> &env);
+  void collect_dep_invariants(SexpPrinter &printer, TypeEnv &env);
 
 private:
   bool generate_scope_loop_(Design *des, NetScope *container);
