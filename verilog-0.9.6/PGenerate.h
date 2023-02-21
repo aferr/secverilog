@@ -125,6 +125,8 @@ public:
   void collect_index_exprs(set<perm_string> &exprs,
                            map<perm_string, SecType *> &env);
   void collect_dep_invariants(SexpPrinter &printer, TypeEnv &env);
+  void fill_genvar_vals(perm_string root,
+                        std::map<perm_string, std::list<int>> &gendefs);
 
 private:
   bool generate_scope_loop_(Design *des, NetScope *container);

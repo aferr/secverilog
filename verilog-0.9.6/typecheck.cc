@@ -413,6 +413,70 @@ void PGenerate::next_cycle_transform(SexpPrinter &printer, TypeEnv env) {
     (*behav)->next_cycle_transform(printer, env);
   }
 }
+
+void PGenerate::fill_genvar_vals(
+    perm_string root, std::map<perm_string, std::list<int>> &gendefs) {
+  // Check that the loop_index variable was declared in a
+  // genvar statement.
+  Design *des         = new Design;
+  NetScope *container = des->make_root_scope(root);
+
+  // setup output list
+  std::list<int> genVals;
+  //
+  int genvar;
+  probe_expr_width(des, container, loop_init);
+  need_constant_expr = true;
+  NetExpr *init_ex   = elab_and_eval(des, container, loop_init, -1);
+  need_constant_expr = false;
+  NetEConst *init    = dynamic_cast<NetEConst *>(init_ex);
+  if (init == 0) {
+    cerr << get_fileline() << ": error: Cannot evaluate genvar"
+         << " init expression: " << *loop_init << endl;
+    des->errors += 1;
+    return;
+  }
+  genvar = init->value().as_long();
+  delete init_ex;
+
+  container->genvar_tmp     = loop_index;
+  container->genvar_tmp_val = genvar;
+  probe_expr_width(des, container, loop_test);
+  need_constant_expr = true;
+  NetExpr *test_ex   = elab_and_eval(des, container, loop_test, -1);
+  need_constant_expr = false;
+  NetEConst *test    = dynamic_cast<NetEConst *>(test_ex);
+  if (test == 0) {
+    cerr << get_fileline() << ": error: Cannot evaluate genvar"
+         << " conditional expression: " << *loop_test << endl;
+    des->errors += 1;
+    return;
+  }
+  while (test->value().as_long()) {
+    genVals.push_back(genvar); // insert genvar value for this iteration
+    // Calculate the step for the loop variable.
+    probe_expr_width(des, container, loop_step);
+    need_constant_expr = true;
+    NetExpr *step_ex   = elab_and_eval(des, container, loop_step, -1);
+    need_constant_expr = false;
+    NetEConst *step    = dynamic_cast<NetEConst *>(step_ex);
+    if (step == 0) {
+      des->errors += 1;
+      return;
+    }
+    genvar                    = step->value().as_long();
+    container->genvar_tmp_val = genvar;
+    delete step;
+    delete test_ex;
+    probe_expr_width(des, container, loop_test);
+    test_ex = elab_and_eval(des, container, loop_test, -1);
+    test    = dynamic_cast<NetEConst *>(test_ex);
+    assert(test);
+  }
+  gendefs[loop_index] = std::move(genVals);
+  return;
+}
+
 // PCallTask
 // PCase
 // PCAssign
@@ -859,10 +923,23 @@ void Module::typecheck(SexpPrinter &printer, TypeEnv &env,
   printer.addComment("assertions to be verified");
   if (debug_typecheck)
     cerr << "checking generates" << endl;
+  std::map<perm_string, std::list<int>> genvardefs;
   typedef list<PGenerate *>::const_iterator genscheme_iter_t;
   for (genscheme_iter_t cur = generate_schemes.begin();
        cur != generate_schemes.end(); cur++) {
+    (*cur)->fill_genvar_vals(mod_name(), genvardefs);
     (*cur)->typecheck(printer, env, modules);
+  }
+  if (debug_typecheck) {
+    cerr << "genvar possible values" << endl;
+    for (auto &g : genvardefs) {
+      cerr << "genvar: " << g.first << "->" << endl;
+      cerr << "(";
+      for (auto &e : g.second) {
+        cerr << e << ", ";
+      }
+      cerr << ")" << endl;
+    }
   }
 
   // Dump the task definitions.
