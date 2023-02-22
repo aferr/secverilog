@@ -2071,6 +2071,10 @@ port_declaration
 	port_declaration_context.sign_flag = $4;
 	delete port_declaration_context.range;
 	port_declaration_context.range = $5;
+	if (bt->isSeqType()) {
+	  pform_module_define_port(@2, nextify_perm_string(name), NetNet::PINPUT,
+				   $3, $7, $6, $4, $5, $1);
+	}
 	// delete $1;
 	//delete[]$8;
 	$$ = ptmp;
@@ -2092,6 +2096,10 @@ port_declaration
 	port_declaration_context.sign_flag = $4;
 	delete port_declaration_context.range;
 	port_declaration_context.range = $5;
+	if (bt->isSeqType()) {
+	  pform_module_define_port(@2, nextify_perm_string(name), NetNet::PINOUT,
+				   $3, $7, $6, $4, $5, $1);
+	}
 	// delete $1;
 	// delete[]$8;
 	$$ = ptmp;
@@ -2115,6 +2123,10 @@ port_declaration
 	port_declaration_context.sign_flag = $4;
 	delete port_declaration_context.range;
 	port_declaration_context.range = $5;
+	if (bt->isSeqType()) {
+	  pform_module_define_port(@2, nextify_perm_string(name), NetNet::POUTPUT,
+				 $3, $7, $6, $4, $5, $1);
+	}
 	// delete $1;
 	//delete[]$7; not sure what this was supposed to delete
     // memory management is for actual grown-ups with actual code.
@@ -2137,6 +2149,10 @@ port_declaration
 	port_declaration_context.sign_flag = $4;
 	delete port_declaration_context.range;
 	port_declaration_context.range = $5;
+	if (bt->isSeqType()) {
+	  pform_module_define_port(@2, nextify_perm_string(name), NetNet::POUTPUT,
+				 $3, $7, $6, $4, $5, $1);
+	}
 	// delete $1;
 	// delete[]$8;
 	$$ = ptmp;
@@ -2161,7 +2177,10 @@ port_declaration
 	port_declaration_context.range = $5;
 
 	pform_make_reginit(@8, name, $10);
-
+	if (bt->isSeqType()) {
+	  pform_module_define_port(@2,nextify_perm_string(name), NetNet::POUTPUT,
+				   $3, $7, $6, $4, $5, $1);
+	}
 	// delete $1;
 	// delete[]$8;
 	$$ = ptmp;
