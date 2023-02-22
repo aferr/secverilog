@@ -69,6 +69,12 @@ NetNet *PExpr::elaborate_bi_net(Design *des, NetScope *) const {
 
 bool PExpr::is_collapsible_net(Design *, NetScope *) const { return false; }
 
+bool contains_iden(PExpr *e, perm_string iden) {
+  set<perm_string> ids;
+  e->collect_idens(ids);
+  return ids.contains(iden);
+}
+
 //-----------------------------------------------------------------------------
 // PEDeclassified
 //-----------------------------------------------------------------------------

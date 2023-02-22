@@ -25,10 +25,10 @@
  */
 #include "sectypes.h"
 #include "PExpr.h"
+#include "genvars.h"
 #include <sstream>
 #include <string>
 
-extern StringHeap lex_strings;
 extern perm_string nextify_perm_string(perm_string s);
 
 void dumpZ3Func(SexpPrinter &printer, perm_string name,
@@ -735,4 +735,32 @@ void Equality::dump(SexpPrinter &printer) const {
     printer << "leq" << *left << *right;
   else
     printer << "=" << *left << *right;
+}
+
+void dump_constraint(SexpPrinter &printer, Constraint &c,
+                     std::set<perm_string> genvars, TypeEnv &env) {
+  printer.startList("assert");
+  start_dump_genvar_quantifiers(printer, genvars, env);
+  bool hashypo = c.pred != NULL && c.pred->hypotheses.size() != 0;
+  bool hasinv  = c.invariant != NULL && c.invariant->invariants.size() != 0;
+
+  if (hashypo || hasinv) {
+    printer.startList("and");
+  }
+  if (hashypo) {
+    printer << (*c.pred);
+  }
+  if (hasinv) {
+    printer << (*c.invariant);
+  }
+
+  printer.startList("not");
+  c.right->simplify()->emitFlowsTo(printer, c.left->simplify());
+  printer.endList();
+  if (hashypo || hasinv) {
+    printer.endList();
+  }
+
+  end_dump_genvar_quantifiers(printer, genvars);
+  printer.endList(); // end assert
 }

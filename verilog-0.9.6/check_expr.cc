@@ -26,6 +26,17 @@
 #include "basetypes.h"
 #include "sectypes.h"
 
+void PExpr::collect_used_genvars(set<perm_string> &res, TypeEnv &env) {
+  set<perm_string> tmp;
+  collect_idens(tmp);
+  for (auto i : tmp) {
+    if (env.genVarVals.count(i)) {
+      // it's a genvar!
+      res.insert(i);
+    }
+  }
+}
+
 SecType *PEBinary::typecheck(SexpPrinter &printer,
                              map<perm_string, SecType *> &varsToType) const {
   SecType *ty1 = left_->typecheck(printer, varsToType);

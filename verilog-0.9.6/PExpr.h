@@ -59,6 +59,7 @@ public:
                                    map<perm_string, SecType *> &varsToType) {
     return;
   };
+  virtual void collect_used_genvars(set<perm_string> &res, TypeEnv &env);
   // This method tests whether the expression contains any
   // references to automatically allocated variables.
   virtual bool has_aa_term(Design *des, NetScope *scope) const;
@@ -177,6 +178,8 @@ private: // not implemented
   PExpr(const PExpr &);
   PExpr &operator=(const PExpr &);
 };
+
+bool contains_iden(PExpr *e, perm_string iden);
 
 ostream &operator<<(ostream &, const PExpr &);
 

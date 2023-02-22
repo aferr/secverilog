@@ -17,13 +17,13 @@ module quant_array();
    
    genvar    datai;
    generate
-      for (datai = 0; datai < 15; datai = datai + 1)
+      for (datai = 0; datai <= 15; datai = datai + 1)
 	begin
 	   always @(posedge clk) begin
 	      tags[datai] <= tags[datai];	   
 	      data[datai] <= data[datai];
 	      if (high_data == 0) begin
-		 recData[datai] <= 1;		 
+		 recData[datai] <= 1;	 
 	      end
 	   end
 	end

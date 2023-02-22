@@ -442,6 +442,7 @@ struct TypeEnv {
   SecType *pc;
   set<perm_string>
       dep_exprs; // a list of expressions where a dependent type may depend on
+  map<perm_string, list<int>> genVarVals;
   PathAnalysis analysis;
   set<perm_string> seqVars;
   Invariant *invariants;
@@ -530,32 +531,7 @@ inline ostream &operator<<(ostream &o, Invariant &t) {
   return o;
 }
 
-inline SexpPrinter &operator<<(SexpPrinter &printer, Constraint &c) {
-  printer.startList();
-  printer << "assert";
-  bool hashypo = c.pred != NULL && c.pred->hypotheses.size() != 0;
-  bool hasinv  = c.invariant != NULL && c.invariant->invariants.size() != 0;
-
-  if (hashypo || hasinv)
-    printer.startList("and");
-  if (hashypo)
-    printer << (*c.pred);
-  if (hasinv)
-    printer << (*c.invariant);
-
-  printer.startList("not");
-  c.right->simplify()->emitFlowsTo(printer, c.left->simplify());
-  printer.endList();
-  if (hashypo || hasinv)
-    printer.endList();
-  printer.endList();
-  return printer;
-}
-
-inline ostream &operator<<(ostream &o, Constraint &t) {
-  SexpPrinter sp(o, 9999, 2, true);
-  sp << t;
-  return o;
-}
+void dump_constraint(SexpPrinter &printer, Constraint &c,
+                     std::set<perm_string> genvars, TypeEnv &env);
 
 #endif
