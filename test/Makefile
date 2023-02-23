@@ -16,7 +16,7 @@ all: $(BENCH_DIFF)
 
 z3files: $(BENCH_SMT)
 
-%.z3: %.v %.lattice %.fun ../bin/iverilog ../bin/iverilog-vpi
+%.z3: %.v %.lattice %.fun ../verilog-0.9.6/ivl
 	@echo "Generating $@"
 	@../bin/iverilog -F $*.fun -l $*.lattice -z $*.v
 
