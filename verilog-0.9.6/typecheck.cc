@@ -386,7 +386,7 @@ PExpr *PEIdent::next_cycle_transform(SexpPrinter &printer, TypeEnv &env) {
     }
     newPath.push_back(*newTopName);
     if (debug_typecheck) {
-      cout << "Nextify " << path() << " to " << newPath << endl;
+      cerr << "Nextify " << path() << " to " << newPath << endl;
     }
     return new PEIdent(newPath);
   }
@@ -407,7 +407,7 @@ PEIdent *PEIdent::get_this_cycle_name() {
   }
   newPath.push_back(*newTopName);
   if (debug_typecheck) {
-    cout << "Nextify " << path() << " to " << newPath << endl;
+    cerr << "Nextify " << path() << " to " << newPath << endl;
   }
   return new PEIdent(newPath);
 }
@@ -470,63 +470,63 @@ void PWire::typecheck(SexpPrinter &printer,
                       map<perm_string, BaseType *> &varsToBase,
                       set<perm_string> &seqVars) const {
   if (debug_typecheck) {
-    cout << "PWire::check " << type_;
+    cerr << "PWire::check " << type_;
 
     switch (port_type_) {
     case NetNet::PIMPLICIT:
-      cout << " implicit input";
+      cerr << " implicit input";
       break;
     case NetNet::PINPUT:
-      cout << " input";
+      cerr << " input";
       break;
     case NetNet::POUTPUT:
-      cout << " output";
+      cerr << " output";
       break;
     case NetNet::PINOUT:
-      cout << " inout";
+      cerr << " inout";
       break;
     case NetNet::NOT_A_PORT:
       break;
     }
 
-    cout << " " << data_type_;
+    cerr << " " << data_type_;
 
     if (signed_) {
-      cout << " signed";
+      cerr << " signed";
     }
 
     if (discipline_) {
-      cout << " discipline<" << discipline_->name() << ">";
+      cerr << " discipline<" << discipline_->name() << ">";
     }
 
     if (port_set_) {
       if (port_msb_ == 0) {
-        cout << " port<scalar>";
+        cerr << " port<scalar>";
       } else {
-        cout << " port[" << *port_msb_ << ":" << *port_lsb_ << "]";
+        cerr << " port[" << *port_msb_ << ":" << *port_lsb_ << "]";
       }
     }
     if (net_set_) {
       if (net_msb_ == 0) {
-        cout << " net<scalar>";
+        cerr << " net<scalar>";
       } else {
-        cout << " net[" << *net_msb_ << ":" << *net_lsb_ << "]";
+        cerr << " net[" << *net_msb_ << ":" << *net_lsb_ << "]";
       }
     }
 
-    cout << " " << name_;
+    cerr << " " << name_;
 
     // If the wire has indices, dump them.
     if (lidx_ || ridx_) {
-      cout << "[";
+      cerr << "[";
       if (lidx_)
-        cout << *lidx_;
+        cerr << *lidx_;
       if (ridx_)
-        cout << ":" << *ridx_;
-      cout << "]";
+        cerr << ":" << *ridx_;
+      cerr << "]";
     }
 
-    cout << ";" << endl;
+    cerr << ";" << endl;
   }
   varsToType[basename()] = sectype_;
   varsToBase[basename()] = basetype_;
@@ -957,7 +957,7 @@ void Module::typecheck(SexpPrinter &printer, TypeEnv &env,
  */
 void PProcess::typecheck(SexpPrinter &printer, TypeEnv &env) const {
   if (debug_typecheck) {
-    cout << "PProcess:check "
+    cerr << "PProcess:check "
          << " /* " << get_fileline() << " */" << endl;
   }
 
@@ -978,8 +978,8 @@ void PProcess::typecheck(SexpPrinter &printer, TypeEnv &env) const {
 void AContrib::typecheck(SexpPrinter &printer, TypeEnv &env,
                          Predicate &pred) const {
   if (debug_typecheck) {
-    cout << "AContrib::check ";
-    cout << *lval_ << " <+ " << *rval_ << endl;
+    cerr << "AContrib::check ";
+    cerr << *lval_ << " <+ " << *rval_ << endl;
   }
   throw "AContrib";
 }
@@ -1144,7 +1144,7 @@ bool PGAssign::collect_dep_invariants(SexpPrinter &printer, TypeEnv &env) {
 void PGAssign::typecheck(SexpPrinter &printer, TypeEnv &env,
                          Predicate pred) const {
   if (debug_typecheck) {
-    cout << "assign " << *pin(0) << " = " << *pin(1) << ";" << endl;
+    cerr << "assign " << *pin(0) << " = " << *pin(1) << ";" << endl;
   }
 
   stringstream ss;
@@ -1212,7 +1212,7 @@ void PGModule::typecheck(SexpPrinter &printer, TypeEnv &env,
                          map<perm_string, Module *> modules) {
 
   if (debug_typecheck)
-    cout << "pc context for module instantiation?" << endl;
+    cerr << "pc context for module instantiation?" << endl;
 
   this->pin_count();
   this->get_pin_count();
@@ -1354,14 +1354,14 @@ void PGModule::typecheck(SexpPrinter &printer, TypeEnv &env,
 void PAssign::typecheck(SexpPrinter &printer, TypeEnv &env,
                         Predicate &pred) const {
   if (debug_typecheck) {
-    cout << "PAssign::check " << *lval() << " = ";
+    cerr << "PAssign::check " << *lval() << " = ";
     if (delay_)
-      cout << "#" << *delay_ << " ";
+      cerr << "#" << *delay_ << " ";
     if (count_)
-      cout << "repeat(" << *count_ << ") ";
+      cerr << "repeat(" << *count_ << ") ";
     if (event_)
-      cout << *event_ << " ";
-    cout << *rval() << ";" << endl;
+      cerr << *event_ << " ";
+    cerr << *rval() << ";" << endl;
   }
 
   stringstream ss;
@@ -1404,11 +1404,11 @@ void PAssignNB::typecheck(SexpPrinter &printer, TypeEnv &env,
 void PBlock::typecheck(SexpPrinter &printer, TypeEnv &env,
                        Predicate &pred) const {
   if (debug_typecheck) {
-    cout << "PBlock::check "
+    cerr << "PBlock::check "
          << "begin";
     if (pscope_name() != 0)
-      cout << " : " << pscope_name();
-    cout << endl;
+      cerr << " : " << pscope_name();
+    cerr << endl;
   }
 
   if (pscope_name() != 0) {
@@ -1434,24 +1434,24 @@ void PBlock::typecheck(SexpPrinter &printer, TypeEnv &env,
 void PCallTask::typecheck(SexpPrinter &printer, TypeEnv &env,
                           Predicate &pred) const {
   if (debug_typecheck) {
-    cout << "PCallTask::check " << path_;
+    cerr << "PCallTask::check " << path_;
 
     if (parms_.count() > 0) {
-      cout << "(";
+      cerr << "(";
       if (parms_[0])
-        cout << *parms_[0];
+        cerr << *parms_[0];
 
       for (unsigned idx = 1; idx < parms_.count(); idx += 1) {
-        cout << ", ";
+        cerr << ", ";
         if (parms_[idx])
-          cout << *parms_[idx];
+          cerr << *parms_[idx];
       }
-      cout << ")";
+      cerr << ")";
     }
-    cout << endl;
+    cerr << endl;
   }
   // throw "PCallTask";
-  cout << "PCallTask is ignored" << endl;
+  cerr << "PCallTask is ignored" << endl;
 }
 
 /**
@@ -1460,20 +1460,20 @@ void PCallTask::typecheck(SexpPrinter &printer, TypeEnv &env,
 void PCase::typecheck(SexpPrinter &printer, TypeEnv &env,
                       Predicate &pred) const {
   if (debug_typecheck) {
-    cout << "PCase::check ";
+    cerr << "PCase::check ";
 
-    cout << " (" << *expr_ << ") " << endl;
+    cerr << " (" << *expr_ << ") " << endl;
 
     for (unsigned idx = 0; idx < items_->count(); idx += 1) {
       PCase::Item *cur = (*items_)[idx];
 
       if (cur->expr.count() != 0) {
-        cout << "case item " << *cur->expr[0];
+        cerr << "case item " << *cur->expr[0];
 
         for (unsigned e = 1; e < cur->expr.count(); e += 1)
-          cout << ", " << *cur->expr[e];
+          cerr << ", " << *cur->expr[e];
 
-        cout << ":";
+        cerr << ":";
       }
     }
   }
@@ -1554,7 +1554,7 @@ void PCondit::typecheck(SexpPrinter &printer, TypeEnv &env,
 void PCAssign::typecheck(SexpPrinter &printer, TypeEnv &env,
                          Predicate &pred) const {
   if (debug_typecheck) {
-    cout << "PCAssign::check "
+    cerr << "PCAssign::check "
          << "assign " << *lval_ << " = " << *expr_ << endl;
   }
   throw "PCAssign";
@@ -1566,7 +1566,7 @@ void PCAssign::typecheck(SexpPrinter &printer, TypeEnv &env,
 void PDeassign::typecheck(SexpPrinter &printer, TypeEnv &env,
                           Predicate &pred) const {
   if (debug_typecheck) {
-    cout << "PDeassign::check " << *lval_ << "; " << endl;
+    cerr << "PDeassign::check " << *lval_ << "; " << endl;
   }
   throw "PDeassign";
 }
@@ -1577,12 +1577,12 @@ void PDeassign::typecheck(SexpPrinter &printer, TypeEnv &env,
 void PDelayStatement::typecheck(SexpPrinter &printer, TypeEnv &env,
                                 Predicate &pred) const {
   if (debug_typecheck) {
-    cout << "PDelayStatement::check "
+    cerr << "PDelayStatement::check "
          << "#" << *delay_;
     if (statement_) {
-      cout << endl;
+      cerr << endl;
     } else {
-      cout << " /* noop */;" << endl;
+      cerr << " /* noop */;" << endl;
     }
   }
   throw "PDelay";
@@ -1594,7 +1594,7 @@ void PDelayStatement::typecheck(SexpPrinter &printer, TypeEnv &env,
 void PDisable::typecheck(SexpPrinter &printer, TypeEnv &env,
                          Predicate &pred) const {
   if (debug_typecheck) {
-    cout << "PDisable::check " << scope_ << ";" << endl;
+    cerr << "PDisable::check " << scope_ << ";" << endl;
   }
   throw "PDisable";
 }
@@ -1648,7 +1648,7 @@ void PEventStatement::typecheck(SexpPrinter &printer, TypeEnv &env,
 void PForce::typecheck(SexpPrinter &printer, TypeEnv &env,
                        Predicate &pred) const {
   if (debug_typecheck) {
-    cout << "PForce::check " << *lval_ << " = " << *expr_ << ";" << endl;
+    cerr << "PForce::check " << *lval_ << " = " << *expr_ << ";" << endl;
   }
   throw "PForce";
 }
@@ -1659,7 +1659,7 @@ void PForce::typecheck(SexpPrinter &printer, TypeEnv &env,
 void PForever::typecheck(SexpPrinter &printer, TypeEnv &env,
                          Predicate &pred) const {
   if (debug_typecheck) {
-    cout << "PForever::check " << endl;
+    cerr << "PForever::check " << endl;
   }
   throw "PForever";
 }
@@ -1670,7 +1670,7 @@ void PForever::typecheck(SexpPrinter &printer, TypeEnv &env,
 void PForStatement::typecheck(SexpPrinter &printer, TypeEnv &env,
                               Predicate &pred) const {
   if (debug_typecheck) {
-    cout << "PForStatement::check "
+    cerr << "PForStatement::check "
          << "for (" << *name1_ << " = " << *expr1_ << "; " << *cond_ << "; "
          << *name2_ << " = " << *expr2_ << ")" << endl;
   }
@@ -1743,7 +1743,7 @@ void PGenerate::collect_index_exprs(set<perm_string> &exprs,
   for (list<PProcess *>::const_iterator idx = behaviors.begin();
        idx != behaviors.end(); idx++) {
     if (debug_typecheck) {
-      cout << "collect_index_exprs for behavior: " << (*idx) << endl;
+      cerr << "collect_index_exprs for behavior: " << (*idx) << endl;
     }
     (*idx)->collect_index_exprs(exprs, env);
   }
@@ -1766,7 +1766,7 @@ void PGenerate::collect_dep_invariants(SexpPrinter &printer, TypeEnv &env) {
 void PNoop::typecheck(SexpPrinter &printer, TypeEnv &env,
                       Predicate &pred) const {
   if (debug_typecheck) {
-    cout << "check PNoop " << endl;
+    cerr << "check PNoop " << endl;
   }
   throw "PNoop";
 }
@@ -1777,7 +1777,7 @@ void PNoop::typecheck(SexpPrinter &printer, TypeEnv &env,
 void PRelease::typecheck(SexpPrinter &printer, TypeEnv &env,
                          Predicate &pred) const {
   if (debug_typecheck) {
-    cout << "PRelease::check " << *lval_ << ";" << endl;
+    cerr << "PRelease::check " << *lval_ << ";" << endl;
   }
   throw "PRelease";
 }
@@ -1788,7 +1788,7 @@ void PRelease::typecheck(SexpPrinter &printer, TypeEnv &env,
 void PRepeat::typecheck(SexpPrinter &printer, TypeEnv &env,
                         Predicate &pred) const {
   if (debug_typecheck) {
-    cout << "PRepeat::check (" << *expr_ << ")" << endl;
+    cerr << "PRepeat::check (" << *expr_ << ")" << endl;
   }
   throw "PRepeat";
 }
@@ -1799,7 +1799,7 @@ void PRepeat::typecheck(SexpPrinter &printer, TypeEnv &env,
 void PTrigger::typecheck(SexpPrinter &printer, TypeEnv &env,
                          Predicate &pred) const {
   if (debug_typecheck) {
-    cout << "PTrigger::check"
+    cerr << "PTrigger::check"
          << "-> " << event_ << ";" << endl;
   }
   throw "PTrigger";
@@ -1811,7 +1811,7 @@ void PTrigger::typecheck(SexpPrinter &printer, TypeEnv &env,
 void PWhile::typecheck(SexpPrinter &printer, TypeEnv &env,
                        Predicate &pred) const {
   if (debug_typecheck) {
-    cout << "PWhile::check (" << *cond_ << ")" << endl;
+    cerr << "PWhile::check (" << *cond_ << ")" << endl;
   }
   throw "PWhile";
 }
