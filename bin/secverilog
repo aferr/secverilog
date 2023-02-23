@@ -100,13 +100,13 @@ foreach my $file (@files) {
 	    last;
 	}
 	if ($lookingForBaseSat) {
-	    if (/^unsat|unknown/) {
+	    if (/^unsat|unknown|error/) {
 		$errors .= $prevLine;
 		$fail_counter ++;
 		$counter ++;
 	    }
 	} else {
-	    if (/^sat|^unknown/) {
+	    if (/^sat|^unknown|error/) {
 		$errors .= $prevLine;
 		$fail_counter ++;
 		$counter ++;		
