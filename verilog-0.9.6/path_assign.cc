@@ -3,6 +3,7 @@
 #include "PExpr.h"
 #include "PGenerate.h"
 #include "Statement.h"
+#include "StringHeap.h"
 #include "compiler.h"
 #include "ivl_target.h"
 #include "sectypes.h"
@@ -47,7 +48,7 @@ PathAnalysis get_paths(Module &m, TypeEnv &env) {
 
 void dump_is_def_assign(SexpPrinter &p, PathAnalysis &path_analysis,
                         PEIdent *var) {
-  perm_string varname = var->get_name();
+  perm_string varname = var->get_full_name();
   if (!path_analysis.contains(varname)) {
     cerr << varname << " is is not in path analysis" << endl;
     throw "Not assigned in PathAnalysis";
@@ -67,7 +68,12 @@ void dump_no_overlap_anal(SexpPrinter &p, PathAnalysis &path_analysis,
   p.endList();
   auto isDepVar =
       [&vars](const std::pair<perm_string, std::vector<Predicate>> &p) {
-        return vars.contains(p.first);
+        auto str       = std::string(p.first);
+        auto brack_idx = str.find_first_of('[');
+        if (brack_idx == 0)
+          brack_idx = str.size();
+        auto lit = perm_string::literal(str.substr(0, brack_idx).c_str());
+        return vars.contains(lit);
       };
   for (auto &[var, paths] : std::ranges::filter_view(path_analysis, isDepVar)) {
 
@@ -107,7 +113,7 @@ void Statement::collect_assign_paths(PathAnalysis &, TypeEnv &, Predicate &) {}
 
 void PAssign_::collect_assign_paths(PathAnalysis &paths, TypeEnv &,
                                     Predicate &pred) {
-  paths[lval()->get_name()].push_back(pred);
+  paths[lval()->get_full_name()].push_back(pred);
 }
 
 void PBlock::collect_assign_paths(PathAnalysis &paths, TypeEnv &env,
@@ -118,7 +124,7 @@ void PBlock::collect_assign_paths(PathAnalysis &paths, TypeEnv &env,
 
 void PCAssign::collect_assign_paths(PathAnalysis &paths, TypeEnv &,
                                     Predicate &pred) {
-  paths[lval_->get_name()].push_back(pred);
+  paths[lval_->get_full_name()].push_back(pred);
 }
 
 void PCondit::collect_assign_paths(PathAnalysis &paths, TypeEnv &env,

@@ -55,6 +55,15 @@ const perm_string PExpr::get_name() const {
 
 const perm_string PEIdent::get_name() const { return peek_tail_name(path_); }
 
+const perm_string PExpr::get_full_name() const { return get_name(); }
+
+const perm_string PEIdent::get_full_name() const {
+  std::stringstream ss;
+  ss << path();
+  auto tmp = new string(ss.str());
+  return perm_string::literal(tmp->c_str());
+}
+
 NetNet *PExpr::elaborate_lnet(Design *des, NetScope *) const {
   cerr << get_fileline()
        << ": error: expression not valid in assign l-value: " << *this << endl;

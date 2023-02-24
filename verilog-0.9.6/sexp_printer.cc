@@ -154,3 +154,10 @@ void SexpPrinter::writeRawLine(const std::string &str) {
     throw Sexception("cannot write raw line inside of S-expression");
   o << str << std::endl;
 }
+
+void SexpPrinter::inList(const std::string &first,
+                         const std::function<void()> &lambda) {
+  startList(first);
+  lambda();
+  endList();
+}

@@ -21,6 +21,7 @@
 #include "PExpr.h"
 #include "config.h"
 #include <cassert>
+#include <stdexcept>
 
 PWire::PWire(perm_string n, NetNet::Type t, NetNet::PortType pt, SecType *st,
              BaseType *bt, ivl_variable_type_t dt)
@@ -227,6 +228,32 @@ long PWire::getRange() const {
   }
 
   return msb - lsb;
+}
+
+long PWire::getArrayRange() const {
+  long msb, lsb;
+  /* If they exist get the port definition MSB and LSB */
+  if (get_isarray()) {
+    PENumber *num = dynamic_cast<PENumber *>(lidx_);
+    if (num != NULL) {
+      msb = num->value().as_long();
+    } else {
+      cerr << "Range expressions must be constant." << endl;
+      return -1;
+    }
+
+    num = dynamic_cast<PENumber *>(ridx_);
+    if (num != NULL) {
+      lsb = num->value().as_long();
+    } else {
+      cerr << "Range expressions must be constant." << endl;
+      return -1;
+    }
+  } else {
+    throw std::runtime_error("non array has no array range!");
+  }
+
+  return (msb - lsb) + 1;
 }
 
 void PWire::set_memory_idx(PExpr *ldx, PExpr *rdx) {

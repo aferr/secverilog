@@ -2,6 +2,7 @@
 #define SEXP_WRITER
 
 #include <fstream>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -28,6 +29,8 @@ public:
   void startList(const std::string &first);
   void singleton(const std::string &atom);
   void writeRawLine(const std::string &str);
+  void inList(const std::string &first,
+              const std::function<void(void)> &lambda);
 
   friend SexpPrinter &operator<<(SexpPrinter &sp, const std::string &atom) {
     sp.printAtom(atom);

@@ -99,6 +99,7 @@ public:
 
   NetNet *elaborate_sig(Design *, NetScope *scope) const;
   long getRange() const;
+  long getArrayRange() const;
 
 private:
   perm_string name_;

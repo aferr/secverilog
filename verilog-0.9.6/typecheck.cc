@@ -42,7 +42,10 @@
 #include <algorithm>
 #include <cstdlib>
 #include <fstream>
+#include <ranges>
+#include <regex>
 #include <sstream>
+#include <type_traits>
 #include <typeinfo>
 
 #define ASSUME_NAME "assume"
@@ -546,21 +549,27 @@ void PWire::typecheck(SexpPrinter &printer,
 }
 
 void Module::dumpExprDefs(SexpPrinter &printer, set<perm_string> exprs) const {
-  for (std::set<perm_string>::iterator ite = exprs.begin(); ite != exprs.end();
-       ite++) {
-    perm_string temp                              = *ite;
-    map<perm_string, PWire *>::const_iterator cur = wires.find(temp);
+  for (auto &expr : exprs) {
+    map<perm_string, PWire *>::const_iterator cur = wires.find(expr);
     if (cur != wires.end()) {
       PWire *def = (*cur).second;
       // assume wires are either arrays or ints
       if (def->get_isarray()) {
-        printer.startList("declare-fun");
-        printer << ite->str() << "()";
-        printer.startList("Array");
-        printer << "Int"
-                << "Int";
-        printer.endList();
-        printer.endList();
+        printer.inList("declare-fun", [&]() {
+          printer << expr.str() << "()";
+          printer.inList("Array", [&]() {
+            printer << "Int"
+                    << "Int";
+          });
+        });
+
+        // printer.startList("declare-fun");
+        // printer << expr.str() << "()";
+        // printer.startList("Array");
+        // printer << "Int"
+        //         << "Int";
+        // printer.endList();
+        // printer.endList();
 
         printer.startList("assert");
         printer.startList("forall");
@@ -572,7 +581,7 @@ void Module::dumpExprDefs(SexpPrinter &printer, set<perm_string> exprs) const {
         printer.startList("<=");
         printer << "0";
         printer.startList("select");
-        printer << ite->str() << "x";
+        printer << expr.str() << "x";
         printer.endList();
         printer.endList();
         printer.endList();
@@ -587,7 +596,7 @@ void Module::dumpExprDefs(SexpPrinter &printer, set<perm_string> exprs) const {
         printer.endList();
         printer.startList("<=");
         printer.startList("select");
-        printer << ite->str() << "x";
+        printer << expr.str() << "x";
         printer.endList();
         printer << std::to_string((1 << (def->getRange() + 1)) - 1);
         printer.endList();
@@ -595,19 +604,19 @@ void Module::dumpExprDefs(SexpPrinter &printer, set<perm_string> exprs) const {
         printer.endList();
       } else {
         printer.startList("declare-fun");
-        printer << ite->str() << "()"
+        printer << expr.str() << "()"
                 << "Int";
         printer.endList();
 
         printer.startList("assert");
         printer.startList("<=");
-        printer << "0" << ite->str();
+        printer << "0" << expr.str();
         printer.endList();
         printer.endList();
 
         printer.startList("assert");
         printer.startList("<=");
-        printer << ite->str()
+        printer << expr.str()
                 << std::to_string((1 << (def->getRange() + 1)) - 1);
         printer.endList();
         printer.endList();
@@ -615,7 +624,7 @@ void Module::dumpExprDefs(SexpPrinter &printer, set<perm_string> exprs) const {
     } else {
       // in this case, its probably a genvar, do nothing
       if (debug_typecheck) {
-        cerr << "couldn't find wire for " << temp << endl;
+        cerr << "couldn't find wire for " << expr << endl;
       }
     }
   }
@@ -700,21 +709,18 @@ bool Module::CollectDepInvariants(SexpPrinter &printer, TypeEnv &env) const {
   // collect invariants and print them after definining new variables
   stringstream invs;
   SexpPrinter tmp_printer(invs, printer.margin);
-  for (list<PProcess *>::const_iterator behav = behaviors.begin();
-       behav != behaviors.end(); behav++) {
+  for (auto behav : behaviors) {
     Predicate emptyPred;
-    (*behav)->collect_dep_invariants(tmp_printer, env, emptyPred);
+    behav->collect_dep_invariants(tmp_printer, env, emptyPred);
   }
-  for (list<PGate *>::const_iterator gate = gates_.begin();
-       gate != gates_.end(); gate++) {
-    PGAssign *pgassign = dynamic_cast<PGAssign *>(*gate);
+  for (auto gate : gates_) {
+    PGAssign *pgassign = dynamic_cast<PGAssign *>(gate);
     if (pgassign != NULL) {
       pgassign->collect_dep_invariants(tmp_printer, env);
     }
   }
-  for (list<PGenerate *>::const_iterator cur = generate_schemes.begin();
-       cur != generate_schemes.end(); cur++) {
-    (*cur)->collect_dep_invariants(tmp_printer, env);
+  for (auto cur : generate_schemes) {
+    cur->collect_dep_invariants(tmp_printer, env);
   }
 
   set<perm_string> newDeps;
@@ -724,6 +730,105 @@ bool Module::CollectDepInvariants(SexpPrinter &printer, TypeEnv &env) const {
   dumpExprDefs(printer, newDeps);
   auto outStr = invs.str();
   printer.writeRawLine(outStr);
+
+  for (auto &depVar : std::ranges::filter_view(env.dep_exprs, [&](auto v) {
+         auto wire = wires.find(v);
+         return env.varsToBase[v]->isSeqType();
+       })) {
+    // for (auto &depVar : env.dep_exprs) {
+    std::cout << depVar << std::endl;
+    // if (env.varsToType[depVar]->isDepType())
+
+    auto wire      = wires.find(depVar);
+    auto def       = wire->second;
+    auto nextified = nextify_perm_string(depVar);
+
+    if (def->get_isarray()) {
+      /*
+      auto all_relevant_view =
+          std::ranges::filter_view(env.analysis,
+                                   [depVar](auto &v) {
+                                     auto str       = std::string(v.first);
+                                     auto brack_idx = str.find_first_of('[');
+                                     if (brack_idx == 0)
+                                       brack_idx = str.size();
+                                     auto lit = perm_string::literal(
+                                         str.substr(0, brack_idx).c_str());
+                                     return lit == depVar;
+                                   }) |
+          std::views::transform([](auto &v) {
+            std::regex regex("\\[([^\\[]*)\\]");
+            auto str = std::string(v.first);
+            std::smatch match;
+            if (std::regex_search(str, match, regex)) {
+
+              // auto lit = perm_string::literal(match[1].str().c_str());
+              return std::make_pair(match[1].str(), v.second);
+            }
+            std::cout << v.first << std::endl;
+            throw std::runtime_error("failed to match");
+          });
+      std::vector all_relevant_vec(all_relevant_view.begin(),
+                                   all_relevant_view.end());
+      auto all_relevant =
+          std::ranges::filter_view(all_relevant_vec, [&env](auto &v) {
+            auto lit = perm_string::literal(v.first.c_str());
+            return !env.genVarVals.contains(lit);
+          });
+      int range = def->getArrayRange(); // 1 << (def->getRange() + 1);
+      std::cout << "arr: " << depVar.str() << " : " << range << ";\n";
+      if (!all_relevant.empty()) {
+        for (int i = 0; i < range; ++i) {
+          printer.inList("assert", [&]() {
+            printer.inList("=>", [&]() {
+              printer.inList("not", [&]() {
+                printer.inList("or", [&]() {
+                  for (const auto &a : all_relevant) {
+                    std::cout << a.first << std::endl;
+                    printer.inList("and", [&]() {
+                      printer.inList("=", [&]() {
+                        printer << std::to_string(i) << a.first;
+                      });
+                      printer.inList("not", [&]() {
+                        printer.inList("or", [&]() {
+                          for (const auto &path : a.second)
+                            printer << path;
+                        });
+                      });
+                    });
+                  }
+                });
+              });
+              auto i_str = std::to_string(i);
+              printer.inList("=", [&]() {
+                printer.inList("select",
+                               [&]() { printer << nextified.str() << i_str; });
+                printer.inList("select",
+                               [&]() { printer << depVar.str() << i_str; });
+              });
+            });
+          });
+        }
+        } */
+    } else {
+      auto &branches = env.analysis[depVar];
+      if (!branches.empty()) {
+        printer.inList("assert", [&]() {
+          printer.inList("=>", [&]() {
+            printer.inList("not", [&]() {
+              printer.inList("or", [&]() {
+                for (auto &path : branches)
+                  printer << path;
+              });
+            });
+            printer.inList(
+                "=", [&]() { printer << nextified.str() << depVar.str(); });
+          });
+        });
+      }
+    }
+  }
+
   return !outStr.empty();
 }
 
@@ -752,7 +857,6 @@ void makeAssumptions(Module *mod, SexpPrinter &printer, TypeEnv &env) {
  */
 void Module::typecheck(SexpPrinter &printer, TypeEnv &env,
                        map<perm_string, Module *> modules, char *depfun) {
-
   if (debug_typecheck) {
     cerr << "Module::check " << mod_name() << endl;
     for (unsigned idx = 0; idx < ports.size(); idx += 1) {
@@ -840,26 +944,28 @@ void Module::typecheck(SexpPrinter &printer, TypeEnv &env,
     cerr << "collecting dependent invariants" << endl;
   bool foundInvs = CollectDepInvariants(printer, env);
 
-  dump_no_overlap_anal(printer, analysis, env.dep_exprs);
+  dump_no_overlap_anal(printer, analysis, env.seqVars);
 
   // TODO probably delete this
   //  remove an invariant if some variable does not show up
-  if (debug_typecheck)
-    cerr << "optimizing invariants" << endl;
-  for (set<Equality *>::iterator invite = env.invariants->invariants.begin();
-       invite != env.invariants->invariants.end();) {
-    set<perm_string> vars, diff;
-    (*invite)->left->collect_dep_expr(vars);
-    (*invite)->right->collect_dep_expr(vars);
+  if (0) {
+    if (debug_typecheck)
+      cerr << "optimizing invariants" << endl;
+    for (set<Equality *>::iterator invite = env.invariants->invariants.begin();
+         invite != env.invariants->invariants.end();) {
+      set<perm_string> vars, diff;
+      (*invite)->left->collect_dep_expr(vars);
+      (*invite)->right->collect_dep_expr(vars);
 
-    set<Equality *>::iterator current = invite++;
+      set<Equality *>::iterator current = invite++;
 
-    // if the invariant has free variables, then remove it
-    for (set<perm_string>::iterator varite = vars.begin(); varite != vars.end();
-         varite++) {
-      if (env.dep_exprs.find(*varite) == env.dep_exprs.end()) {
-        env.invariants->invariants.erase(current);
-        break;
+      // if the invariant has free variables, then remove it
+      for (set<perm_string>::iterator varite = vars.begin();
+           varite != vars.end(); varite++) {
+        if (env.dep_exprs.find(*varite) == env.dep_exprs.end()) {
+          env.invariants->invariants.erase(current);
+          break;
+        }
       }
     }
   }
@@ -988,11 +1094,10 @@ void AContrib::typecheck(SexpPrinter &printer, TypeEnv &env,
  * Generate constraints for an assignment
  * lhs <= rhs
  *
- * pred: A predication on hardware state that holds when the assignment occurs.
- *       For example, (x==1).
- * note: The line of code in the source file. This information is used to trace
- *       a security violation back to SecVerilog source code.
- * details. env: A typing environment.
+ * pred: A predication on hardware state that holds when the assignment
+ * occurs. For example, (x==1). note: The line of code in the source file.
+ * This information is used to trace a security violation back to SecVerilog
+ * source code. details. env: A typing environment.
  */
 void typecheck_assignment_constraint(SexpPrinter &printer, SecType *lhs,
                                      SecType *rhs, Predicate pred, string note,
@@ -1031,8 +1136,8 @@ void typecheck_assignment_constraint(SexpPrinter &printer, SecType *lhs,
 void typecheck_assignment(SexpPrinter &printer, PExpr *lhs, PExpr *rhs,
                           TypeEnv *env, Predicate precond, Predicate postcond,
                           unsigned int lineno, string note) {
-  // when the RHS is a PETernary expression, i.e. e1?e2:e3, we first translate
-  // to the equivalent statements
+  // when the RHS is a PETernary expression, i.e. e1?e2:e3, we first
+  // translate to the equivalent statements
   PETernary *ternary = dynamic_cast<PETernary *>(rhs);
   if (ternary == NULL) {
     SecType *ltype, *rtype, *ltype_orig;
@@ -1086,13 +1191,25 @@ void typecheck_assignment(SexpPrinter &printer, PExpr *lhs, PExpr *rhs,
       PEIdent *origName = lident->get_this_cycle_name();
       // is recursive if ltype contains lident
       if (ltype_orig->hasExpr(origName->get_name())) {
-        // either  isDefAssigned(lident) OR forall contexts. (leq pc ltype_orig)
+        // either  isDefAssigned(lident) OR forall contexts. (leq pc
+        // ltype_orig)
         //  rtype also flows to cur cycle label of lident in any context
-        string newNote = note.append("--No-sensitive-upgrade-check;");
+        string newNote = note + "--No-sensitive-upgrade-check;";
         Predicate emptyPred;
         typecheck_assignment_constraint(printer, ltype_orig, env->pc, emptyPred,
                                         newNote, origName, env);
       }
+    }
+    // need unasigned-path-check when:
+    //   - lident has a dependant type
+    //   - lident is not assigned
+    //   - lident is a NEXT type
+    if (ltype_orig->isDepType() && lbase->isNextType()) {
+      auto newNote = note + "--Unasigned-path-check;";
+      Predicate emptyPred;
+      auto origName = lident->get_this_cycle_name();
+      typecheck_assignment_constraint(printer, ltype, ltype_orig, emptyPred,
+                                      newNote, origName, env);
     }
   } else {
     ternary->translate(lhs)->typecheck(printer, *env, precond);
@@ -1113,7 +1230,8 @@ bool PGAssign::collect_dep_invariants(SexpPrinter &printer, TypeEnv &env) {
   PEIdent *lval = dynamic_cast<PEIdent *>(l);
   PExpr *rval   = pin(1);
   if (!lval) {
-    cerr << "Skipping assign to non identifier in gate when collecting dep "
+    cerr << "Skipping assign to non identifier in gate when collecting "
+            "dep "
             "invariants"
          << endl;
     return false;
@@ -1130,7 +1248,8 @@ bool PGAssign::collect_dep_invariants(SexpPrinter &printer, TypeEnv &env) {
     printer.endList(); // end "="
     end_dump_genvar_quantifiers(printer, genvars);
     printer.endList(); // end "assert"
-    // also collect rhs variables in the dep_exprs to define them in z3 file
+    // also collect rhs variables in the dep_exprs to define them in z3
+    // file
     rval->collect_idens(env.dep_exprs);
     return true;
   } else {
@@ -1210,7 +1329,6 @@ void PGModule::fillParamMap(map<perm_string, perm_string> &paraSubst,
  */
 void PGModule::typecheck(SexpPrinter &printer, TypeEnv &env,
                          map<perm_string, Module *> modules) {
-
   if (debug_typecheck)
     cerr << "pc context for module instantiation?" << endl;
 
@@ -1243,8 +1361,9 @@ void PGModule::typecheck(SexpPrinter &printer, TypeEnv &env,
         if (param != NULL) {
           printer.lineBreak();
           printer.singleton("push");
-          // the direction (input, output) determines def or use should be more
-          // restrictive: def <= use for outputs use <= def for inputs
+          // the direction (input, output) determines def or use should be
+          // more restrictive: def <= use for outputs use <= def for
+          // inputs
           PWire *port               = (*ite).second;
           NetNet::PortType porttype = port->get_port_type();
 
@@ -1840,37 +1959,47 @@ void output_lattice(ostream &out, char *lattice) {
   out << "(declare-fun meet (Label Label) Label)" << endl;
 
   out << "(assert (forall ((x Label)) (leq x x)))" << endl;
-  out << "(assert (forall ((x Label) (y Label) (z Label)) (implies (and (leq x "
+  out << "(assert (forall ((x Label) (y Label) (z Label)) (implies (and "
+         "(leq x "
          "y) (leq y z)) (leq x z))))"
       << endl;
-  out << "(assert (forall ((x Label) (y Label)) (implies (and (leq x y) (leq y "
+  out << "(assert (forall ((x Label) (y Label)) (implies (and (leq x y) "
+         "(leq y "
          "x)) (= x y))))"
       << endl;
 
   out << endl << "; axioms for join" << endl;
-  out << "(assert (forall ((x Label) (y Label) (z Label)) (implies (leq (join "
+  out << "(assert (forall ((x Label) (y Label) (z Label)) (implies (leq "
+         "(join "
          "x y) z) (and (leq x z) (leq y z)))))"
       << endl;
-  out << "(assert (forall ((x Label) (y Label) (z Label)) (implies (and (leq x "
+  out << "(assert (forall ((x Label) (y Label) (z Label)) (implies (and "
+         "(leq x "
          "z) (leq y z)) (leq (join x y) z))))"
       << endl;
-  out << "(assert (forall ((x Label) (y Label)) (and (leq x (join x y)) (leq y "
+  out << "(assert (forall ((x Label) (y Label)) (and (leq x (join x y)) "
+         "(leq y "
          "(join x y)))))"
       << endl;
-  out << "(assert (forall ((x Label) (y Label)) (= (join x y) (join y x))))"
+  out << "(assert (forall ((x Label) (y Label)) (= (join x y) (join y "
+         "x))))"
       << endl;
 
   out << endl << "; axioms for meet" << endl;
-  out << "(assert (forall ((x Label) (y Label) (z Label)) (implies (leq x "
+  out << "(assert (forall ((x Label) (y Label) (z Label)) (implies (leq "
+         "x "
          "(meet y z)) (and (leq x y) (leq x z)))))"
       << endl;
-  out << "(assert (forall ((x Label) (y Label) (z Label)) (implies (and (leq x "
+  out << "(assert (forall ((x Label) (y Label) (z Label)) (implies (and "
+         "(leq x "
          "y) (leq x z)) (leq x (meet y z)))))"
       << endl;
-  out << "(assert (forall ((x Label) (y Label)) (and (leq (meet x y) x) (leq "
+  out << "(assert (forall ((x Label) (y Label)) (and (leq (meet x y) x) "
+         "(leq "
          "(meet x y) y))))"
       << endl;
-  out << "(assert (forall ((x Label) (y Label)) (= (meet x y) (meet y x))))"
+  out << "(assert (forall ((x Label) (y Label)) (= (meet x y) (meet y "
+         "x))))"
       << endl;
 
   out << endl << "; lattice elements" << endl;
@@ -1924,7 +2053,6 @@ void output_type_families(SexpPrinter &printer, char *depfun) {
  */
 void typecheck(map<perm_string, Module *> modules, char *lattice_file_name,
                char *depfun_file_name) {
-
   // Scan the root modules by name, and output the name.
   for (map<perm_string, Module *>::const_iterator mod = modules.begin();
        mod != modules.end(); mod++) {
