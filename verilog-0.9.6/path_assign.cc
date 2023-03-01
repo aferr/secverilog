@@ -54,21 +54,19 @@ void dump_is_def_assign(SexpPrinter &p, PathAnalysis &path_analysis,
     throw "Not assigned in PathAnalysis";
   }
   std::vector<Predicate> branches = path_analysis[varname];
-  p.startList("or");
-  for (auto &path : branches) {
-    p << path;
-  }
-  p.endList();
+  p.inList("or", [&]() {
+    for (auto &path : branches) {
+      p << path;
+    }
+  });
 }
 
 void dump_no_overlap_anal(SexpPrinter &p, PathAnalysis &path_analysis,
                           set<perm_string> &vars) {
-  p.startList("echo");
-  p.printAtom("\"Starting assigned-once checks\"");
-  p.endList();
+  p.inList("echo", [&]() { p.printAtom("\"Starting assigned-once checks\""); });
   auto isDepVar =
-      [&vars](const std::pair<perm_string, std::vector<Predicate>> &p) {
-        auto str       = std::string(p.first);
+      [&vars](const std::pair<perm_string, std::vector<Predicate>> &pred) {
+        auto str       = std::string(pred.first);
         auto brack_idx = str.find_first_of('[');
         if (brack_idx == 0)
           brack_idx = str.size();
@@ -80,29 +78,24 @@ void dump_no_overlap_anal(SexpPrinter &p, PathAnalysis &path_analysis,
     // for (auto &[var, paths] : path_analysis) {
 
     p.singleton("push");
-    p.startList("assert");
-    p.startList("or");
-    if (paths.size() <= 1)
-      p.printAtom("false");
-    for (auto i = paths.cbegin(); i != paths.cend(); ++i) {
-      for (auto j = i + 1; j != paths.cend(); ++j) {
-        p.startList("and");
-        p << *i << *j;
-        p.endList();
-      }
-    }
-    p.endList();
-    p.endList();
-    p.startList("echo");
+
+    p.inList("assert", [&]() {
+      p.inList("or", [&]() {
+        if (paths.size() <= 1)
+          p.printAtom("false");
+        for (auto i = paths.cbegin(); i != paths.cend(); ++i) {
+          for (auto j = i + 1; j != paths.cend(); ++j) {
+            p.inList("and", [&]() { p << *i << *j; });
+          }
+        }
+      });
+    });
     std::string msg = std::string("\"checking paths of ") + var.str() + "\"";
-    p.printAtom(msg);
-    p.endList();
+    p.inList("echo", [&]() { p.printAtom(msg); });
     p.singleton("check-sat");
     p.singleton("pop");
   }
-  p.startList("echo");
-  p.printAtom("\"Ending assigned-once checks\"");
-  p.endList();
+  p.inList("echo", [&]() { p.printAtom("\"Ending assigned-once checks\""); });
 }
 
 bool isDefinitelyAssigned(PEIdent *varname, PathAnalysis &paths) {

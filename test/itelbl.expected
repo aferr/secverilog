@@ -1,5 +1,8 @@
 unsat
+sat
 unsat
+unsat
+sat
 unsat
 Start base conditions are satisfiable? (should be sat)
 sat
@@ -15,6 +18,11 @@ unsat
 unsat
 unsat
 unsat
+unsat
+unsat
+unsat
+unsat
 sat
+unsat
 sat
 unsat

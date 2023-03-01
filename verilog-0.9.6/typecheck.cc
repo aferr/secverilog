@@ -17,6 +17,7 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
+#include "StringHeap.h"
 #include "config.h"
 
 /*
@@ -727,23 +728,55 @@ bool Module::CollectDepInvariants(SexpPrinter &printer, TypeEnv &env) const {
   std::set_difference(env.dep_exprs.begin(), env.dep_exprs.end(),
                       oldDeps.begin(), oldDeps.end(),
                       std::inserter(newDeps, newDeps.end()));
-  dumpExprDefs(printer, newDeps);
+
+  auto tmp = newDeps;
+  for (auto v : tmp) {
+    if (env.varsToBase[v]->isSeqType()) {
+      newDeps.insert(nextify_perm_string(v));
+    }
+  }
+
+  set<perm_string>
+      pathVariables; // inputs that show up on a path need to be declared
+  auto portVars =
+      std::ranges::transform_view(ports, [](auto &port) { return port->name; });
+
+  for (auto &p : env.analysis) {
+    for (auto &pred : p.second) {
+      for (auto h : pred.hypotheses) {
+        h->bexpr_->collect_idens(pathVariables);
+      }
+    }
+  }
+  set<perm_string> inputPathVariables;
+  std::set_intersection(
+      pathVariables.begin(), pathVariables.end(), portVars.begin(),
+      portVars.end(),
+      std::inserter(inputPathVariables, inputPathVariables.end()));
+
+  for (auto &de : env.dep_exprs) {
+    inputPathVariables.erase(de);
+  }
+
+  set<perm_string> newVars;
+  std::set_union(newDeps.begin(), newDeps.end(), inputPathVariables.begin(),
+                 inputPathVariables.end(),
+                 std::inserter(newVars, newVars.end()));
+  dumpExprDefs(printer, newVars);
+
   auto outStr = invs.str();
   printer.writeRawLine(outStr);
 
   for (auto &depVar : std::ranges::filter_view(env.dep_exprs, [&](auto &v) {
          return env.varsToBase.contains(v) && env.varsToBase.at(v)->isSeqType();
        })) {
-    // for (auto &depVar : env.dep_exprs) {
-    // std::cout << depVar << std::endl;
-    // if (env.varsToType[depVar]->isDepType())
 
     auto wire      = wires.find(depVar);
     auto def       = wire->second;
     auto nextified = nextify_perm_string(depVar);
 
     if (def->get_isarray()) {
-      /*
+
       auto all_relevant_view =
           std::ranges::filter_view(env.analysis,
                                    [depVar](auto &v) {
@@ -764,7 +797,6 @@ bool Module::CollectDepInvariants(SexpPrinter &printer, TypeEnv &env) const {
               // auto lit = perm_string::literal(match[1].str().c_str());
               return std::make_pair(match[1].str(), v.second);
             }
-            std::cout << v.first << std::endl;
             throw std::runtime_error("failed to match");
           });
       std::vector all_relevant_vec(all_relevant_view.begin(),
@@ -775,7 +807,6 @@ bool Module::CollectDepInvariants(SexpPrinter &printer, TypeEnv &env) const {
             return !env.genVarVals.contains(lit);
           });
       int range = def->getArrayRange(); // 1 << (def->getRange() + 1);
-      std::cout << "arr: " << depVar.str() << " : " << range << ";\n";
       if (!all_relevant.empty()) {
         for (int i = 0; i < range; ++i) {
           printer.inList("assert", [&]() {
@@ -783,7 +814,6 @@ bool Module::CollectDepInvariants(SexpPrinter &printer, TypeEnv &env) const {
               printer.inList("not", [&]() {
                 printer.inList("or", [&]() {
                   for (const auto &a : all_relevant) {
-                    std::cout << a.first << std::endl;
                     printer.inList("and", [&]() {
                       printer.inList("=", [&]() {
                         printer << std::to_string(i) << a.first;
@@ -808,7 +838,7 @@ bool Module::CollectDepInvariants(SexpPrinter &printer, TypeEnv &env) const {
             });
           });
         }
-        } */
+      }
     } else {
       auto &branches = env.analysis[depVar];
       if (!branches.empty()) {
