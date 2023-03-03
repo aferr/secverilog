@@ -17,6 +17,7 @@
  *    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
+#include "PExpr.h"
 #include "StringHeap.h"
 #include "config.h"
 
@@ -38,6 +39,7 @@
 #include "parse_misc.h"
 #include "path_assign.h"
 #include "pform.h"
+#include "sectypes.h"
 #include "sexp_printer.h"
 #include "util.h"
 #include <algorithm>
@@ -975,6 +977,106 @@ void Module::typecheck(SexpPrinter &printer, TypeEnv &env,
 
   dump_no_overlap_anal(printer, analysis, env.seqVars);
 
+  for (auto v : env.seqVars) {
+    auto sectype = env.varsToType[v];
+    if (sectype->isDepType()) {
+      auto wire = wires[v];
+
+      std::string note = "\"checking unassigned paths of ";
+      note += v.str();
+      note += "\"";
+      if (wire->get_isarray()) {
+        // do array stuff;
+        auto all_relevant_view =
+            std::ranges::filter_view(env.analysis,
+                                     [v](auto &var) {
+                                       auto str       = std::string(var.first);
+                                       auto brack_idx = str.find_first_of('[');
+                                       if (brack_idx == 0)
+                                         brack_idx = str.size();
+                                       auto lit = perm_string::literal(
+                                           str.substr(0, brack_idx).c_str());
+                                       return lit == v;
+                                     }) |
+            std::views::transform([](auto &v) {
+              std::regex regex("\\[([^\\[]*)\\]");
+              auto str = std::string(v.first);
+              std::smatch match;
+              if (std::regex_search(str, match, regex)) {
+
+                // auto lit = perm_string::literal(match[1].str().c_str());
+                return std::make_pair(match[1].str(), v.second);
+              }
+              throw std::runtime_error("failed to match");
+            });
+        std::vector all_relevant_vec(all_relevant_view.begin(),
+                                     all_relevant_view.end());
+        auto all_relevant =
+            std::ranges::filter_view(all_relevant_vec, [&env](auto &v) {
+              auto lit = perm_string::literal(v.first.c_str());
+              return !env.genVarVals.contains(lit);
+            });
+        int range = wire->getArrayRange(); // 1 << (def->getRange() + 1);
+        if (!all_relevant.empty()) {
+          for (int i = 0; i < range; ++i) {
+            printer.singleton("push");
+            printer.inList("echo", [&]() { printer << note; });
+            printer.inList("assert", [&]() {
+              printer.inList("not", [&]() {
+                printer.inList("or", [&]() {
+                  for (const auto &a : all_relevant) {
+                    printer.inList("=", [&]() {
+                      printer << std::to_string(i) << a.first;
+                    });
+                  }
+                });
+              });
+            });
+            std::stringstream ss;
+            SexpPrinter tmp(ss, 99999);
+            sectype->dump(tmp);
+            auto quantified = dynamic_cast<QuantType *>(sectype);
+
+            verinum veridx(i);
+            PENumber idx(new verinum(i));
+            auto applied = quantified->apply_index(&idx);
+
+            auto next_sectype = quantified->next_cycle(&env);
+
+            Predicate empty;
+            Constraint c(next_sectype, applied, env.invariants, &empty);
+            set<perm_string> empty_genvars;
+            dump_constraint(printer, c, empty_genvars, env);
+
+            std::cout << "TYPE OF " << v << " IS " << ss.str() << std::endl;
+            std::cout << "quant?: " << (quantified ? "true" : "false")
+                      << std::endl;
+
+            printer.singleton("check-sat");
+            printer.singleton("pop");
+          }
+        }
+
+      } else {
+        printer.singleton("push");
+        printer.inList("echo", [&]() { printer << note; });
+
+        printer.inList("assert", [&]() {
+          printer.inList(
+              "not", [&]() { dump_is_def_assign(printer, env.analysis, v); });
+        });
+
+        auto next_sectype = env.varsToType[nextify_perm_string(v)];
+        Predicate empty;
+        Constraint c(next_sectype, sectype, env.invariants, &empty);
+        set<perm_string> empty_genvars;
+        dump_constraint(printer, c, empty_genvars, env);
+        printer.singleton("check-sat");
+        printer.singleton("pop");
+      }
+    }
+  }
+
   // TODO probably delete this
   //  remove an invariant if some variable does not show up
   if (0) {
@@ -1143,7 +1245,7 @@ void typecheck_assignment_constraint(SexpPrinter &printer, SecType *lhs,
     // for only this assertion
     start_dump_genvar_quantifiers(printer, genvars, *env);
     printer.startList("not");
-    dump_is_def_assign(printer, env->analysis, checkDefAssign);
+    dump_is_def_assign(printer, env->analysis, checkDefAssign->get_full_name());
     printer.endList();
     end_dump_genvar_quantifiers(printer, genvars);
     printer.endList();

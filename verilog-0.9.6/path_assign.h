@@ -24,7 +24,7 @@ PathAnalysis get_paths(Module &m, TypeEnv &env);
  * @param paths a path analyis returned from get_paths
  * @param var the name of the variable from paths to check
  */
-void dump_is_def_assign(SexpPrinter &p, PathAnalysis &paths, PEIdent *var);
+void dump_is_def_assign(SexpPrinter &p, PathAnalysis &paths, perm_string var);
 /**
  * Dump constraints to the solver to check that every variable
  * is assigned on AT MOST one path.

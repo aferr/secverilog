@@ -47,8 +47,8 @@ PathAnalysis get_paths(Module &m, TypeEnv &env) {
 }
 
 void dump_is_def_assign(SexpPrinter &p, PathAnalysis &path_analysis,
-                        PEIdent *var) {
-  perm_string varname = var->get_full_name();
+                        perm_string varname) {
+
   if (!path_analysis.contains(varname)) {
     cerr << varname << " is is not in path analysis" << endl;
     throw "Not assigned in PathAnalysis";
