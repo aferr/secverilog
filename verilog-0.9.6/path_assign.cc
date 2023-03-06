@@ -53,11 +53,12 @@ void dump_is_def_assign(SexpPrinter &p, PathAnalysis &path_analysis,
     cerr << varname << " is is not in path analysis" << endl;
     throw "Not assigned in PathAnalysis";
   }
-  std::vector<Predicate> branches = path_analysis[varname];
+  dump_on_paths(p, path_analysis[varname]);
+}
+
+void dump_on_paths(SexpPrinter &p, const std::vector<Predicate> &paths) {
   p.inList("or", [&]() {
-    for (auto &path : branches) {
-      p << path;
-    }
+    std::for_each(paths.begin(), paths.end(), [&p](auto &path) { p << path; });
   });
 }
 

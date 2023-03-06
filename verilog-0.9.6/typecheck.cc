@@ -979,13 +979,21 @@ void Module::typecheck(SexpPrinter &printer, TypeEnv &env,
 
   for (auto v : env.seqVars) {
     auto sectype = env.varsToType[v];
+    if (debug_typecheck) {
+      cerr << "checking unassigned paths of " << v << endl;
+      cerr << "sectype is: " << *sectype << endl;
+    }
+
     if (sectype->isDepType()) {
+      if (debug_typecheck)
+        cerr << "type of " << v << " is dependent\n";
       auto wire = wires[v];
 
-      std::string note = "\"checking unassigned paths of ";
+      std::string note("checking unassigned paths of ");
       note += v.str();
-      note += "\"";
       if (wire->get_isarray()) {
+        if (debug_typecheck)
+          cerr << v << " is an array\n";
         // do array stuff;
         auto all_relevant_view =
             std::ranges::filter_view(env.analysis,
@@ -998,59 +1006,88 @@ void Module::typecheck(SexpPrinter &printer, TypeEnv &env,
                                            str.substr(0, brack_idx).c_str());
                                        return lit == v;
                                      }) |
-            std::views::transform([](auto &v) {
+            std::views::transform([](auto &var) {
               std::regex regex("\\[([^\\[]*)\\]");
-              auto str = std::string(v.first);
+              auto str = std::string(var.first);
               std::smatch match;
               if (std::regex_search(str, match, regex)) {
 
                 // auto lit = perm_string::literal(match[1].str().c_str());
-                return std::make_pair(match[1].str(), v.second);
+                return std::make_pair(match[1].str(), var.second);
               }
               throw std::runtime_error("failed to match");
             });
         std::vector all_relevant_vec(all_relevant_view.begin(),
                                      all_relevant_view.end());
         auto all_relevant =
-            std::ranges::filter_view(all_relevant_vec, [&env](auto &v) {
-              auto lit = perm_string::literal(v.first.c_str());
+            std::ranges::filter_view(all_relevant_vec, [&env](auto &pr) {
+              auto lit = perm_string::literal(pr.first.c_str());
               return !env.genVarVals.contains(lit);
             });
         int range = wire->getArrayRange(); // 1 << (def->getRange() + 1);
-        if (!all_relevant.empty()) {
+
+        std::vector filtered_relevant(all_relevant.begin(), all_relevant.end());
+        if (debug_typecheck) {
+          std::cerr << "range is 0-" << range << endl;
+          std::cerr << "all relevant size: " << filtered_relevant.size()
+                    << endl;
+        }
+
+        if (!filtered_relevant.empty()) {
           for (int i = 0; i < range; ++i) {
             printer.singleton("push");
-            printer.inList("echo", [&]() { printer << note; });
+            printer.inList("echo", [&]() {
+              printer.printString((note + "[") + std::to_string(i) + "]");
+            });
             printer.inList("assert", [&]() {
               printer.inList("not", [&]() {
                 printer.inList("or", [&]() {
-                  for (const auto &a : all_relevant) {
-                    printer.inList("=", [&]() {
-                      printer << std::to_string(i) << a.first;
+                  if (debug_typecheck)
+                    cerr << "back here..." << endl;
+                  for (const auto &a : filtered_relevant) {
+                    if (debug_typecheck)
+                      cerr << "index: " << i << ", index var: " << a.first
+                           << endl;
+                    printer.inList("and", [&]() {
+                      printer.inList("=", [&]() {
+                        printer << std::to_string(i) << a.first;
+                      });
+                      dump_on_paths(printer, a.second);
                     });
                   }
                 });
               });
             });
+            if (debug_typecheck)
+              cerr << "got here..." << endl;
+
             std::stringstream ss;
             SexpPrinter tmp(ss, 99999);
             sectype->dump(tmp);
             auto quantified = dynamic_cast<QuantType *>(sectype);
 
-            verinum veridx(i);
-            PENumber idx(new verinum(i));
-            auto applied = quantified->apply_index(&idx);
+            if (debug_typecheck)
+              cerr << "and here..." << endl;
 
-            auto next_sectype = quantified->next_cycle(&env);
+            auto idx = new PENumber(new verinum(i));
+            auto applied =
+                dynamic_cast<QuantType *>(quantified->apply_index(idx));
+            if (debug_typecheck)
+              cerr << "here?" << endl;
+
+            idx               = new PENumber(new verinum(i));
+            auto next_sectype = dynamic_cast<QuantType *>(
+                quantified->next_cycle(&env)->apply_index(idx));
+
+            if (debug_typecheck) {
+              cerr << "this_inner: " << *applied->getInnerType() << endl
+                   << "next inner: " << *next_sectype->getInnerType() << endl;
+            }
 
             Predicate empty;
             Constraint c(next_sectype, applied, env.invariants, &empty);
             set<perm_string> empty_genvars;
             dump_constraint(printer, c, empty_genvars, env);
-
-            std::cout << "TYPE OF " << v << " IS " << ss.str() << std::endl;
-            std::cout << "quant?: " << (quantified ? "true" : "false")
-                      << std::endl;
 
             printer.singleton("check-sat");
             printer.singleton("pop");
@@ -1058,15 +1095,17 @@ void Module::typecheck(SexpPrinter &printer, TypeEnv &env,
         }
 
       } else {
+        if (debug_typecheck)
+          cerr << v << " is not an array\n";
         printer.singleton("push");
-        printer.inList("echo", [&]() { printer << note; });
+        printer.inList("echo", [&]() { printer.printString(note); });
 
         printer.inList("assert", [&]() {
           printer.inList(
               "not", [&]() { dump_is_def_assign(printer, env.analysis, v); });
         });
 
-        auto next_sectype = env.varsToType[nextify_perm_string(v)];
+        auto next_sectype = sectype->next_cycle(&env);
         Predicate empty;
         Constraint c(next_sectype, sectype, env.invariants, &empty);
         set<perm_string> empty_genvars;
@@ -1330,17 +1369,6 @@ void typecheck_assignment(SexpPrinter &printer, PExpr *lhs, PExpr *rhs,
         typecheck_assignment_constraint(printer, ltype_orig, env->pc, emptyPred,
                                         newNote, origName, env);
       }
-    }
-    // need unasigned-path-check when:
-    //   - lident has a dependant type
-    //   - lident is not assigned
-    //   - lident is a NEXT type
-    if (ltype_orig->isDepType() && lbase->isNextType()) {
-      auto newNote = note + "--Unasigned-path-check;";
-      Predicate emptyPred;
-      auto origName = lident->get_this_cycle_name();
-      typecheck_assignment_constraint(printer, ltype, ltype_orig, emptyPred,
-                                      newNote, origName, env);
     }
   } else {
     ternary->translate(lhs)->typecheck(printer, *env, precond);

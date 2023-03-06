@@ -546,7 +546,7 @@ SecType *PolicyType::next_cycle(TypeEnv *env) {
   for (list<perm_string>::iterator it = _dynamic.begin(); it != _dynamic.end();
        ++it) {
     BaseType *fv_base = env->varsToBase[*it];
-    if (fv_base->isSeqType()) {
+    if (fv_base && fv_base->isSeqType()) {
       nextlist->push_back(nextify_perm_string(*it));
     } else {
       nextlist->push_back(*it);

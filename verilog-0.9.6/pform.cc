@@ -491,12 +491,11 @@ static void pform_add_genvar(const struct vlltype &li, const perm_string &name,
 }
 
 void pform_genvars(const struct vlltype &li, list<perm_string> *names) {
-  list<perm_string>::const_iterator cur;
-  for (cur = names->begin(); cur != names->end(); *cur++) {
+  for (auto &cur : *names) {
     if (pform_cur_generate)
-      pform_add_genvar(li, *cur, pform_cur_generate->genvars);
+      pform_add_genvar(li, cur, pform_cur_generate->genvars);
     else
-      pform_add_genvar(li, *cur, pform_cur_module->genvars);
+      pform_add_genvar(li, cur, pform_cur_module->genvars);
   }
 
   delete names;

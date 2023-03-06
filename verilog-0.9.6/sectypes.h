@@ -292,6 +292,10 @@ public:
   bool isDepType() { return _sectype->isDepType(); }
   bool hasExpr(perm_string str) { return _sectype->hasExpr(str); }
 
+  virtual void emitFlowsTo(SexpPrinter &printer, SecType *rhs) {
+    _sectype->emitFlowsTo(printer, rhs);
+  }
+
 private:
   perm_string _index_var;
   SecType *_sectype;

@@ -239,6 +239,7 @@ long PWire::getArrayRange() const {
       msb = num->value().as_long();
     } else {
       cerr << "Range expressions must be constant." << endl;
+      cerr << "range expression is: " << *lidx_ << endl;
       return -1;
     }
 
@@ -247,6 +248,7 @@ long PWire::getArrayRange() const {
       lsb = num->value().as_long();
     } else {
       cerr << "Range expressions must be constant." << endl;
+      cerr << "range expression is: " << *ridx_ << endl;
       return -1;
     }
   } else {

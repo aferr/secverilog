@@ -18,8 +18,6 @@ module quant_array();
 
    reg 	seq {|k| LH_ARRAY recData, k} recData[15:0];
 
-   reg  seq {|l| LH_ARRAY otherRecData, l} otherRecData[15:0];
-
 
    genvar    datai;
    generate
@@ -46,15 +44,6 @@ module quant_array();
    always @(posedge clk)
      begin
 	data2[idx2] <= high_data;
-     end
-
-   always @(posedge clk)
-     begin
-        if (cond1) begin
-           otherRecData[idx2] <= 1;
-        end else if (cond2) begin
-           otherRecData[idx] <= otherRecData[idx2];
-        end
      end
 
 endmodule

@@ -55,4 +55,8 @@ bool isDefinitelyAssigned(PEIdent *varname, PathAnalysis &paths);
 std::set<perm_string> getArrayIndices(perm_string array_name,
                                       PathAnalysis &paths);
 
+/**
+ * Dump the conditions that we are on one of the paths in {@param paths}
+ */
+void dump_on_paths(SexpPrinter &p, const std::vector<Predicate> &paths);
 #endif

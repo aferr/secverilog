@@ -23,6 +23,11 @@ public:
               bool allow_naked_atom = false);
   void startList();
   void printAtom(const std::string &atom);
+  void printString(const std::string &str) {
+    std::string tmp("\"");
+    tmp += str + "\"";
+    printAtom(tmp);
+  }
   void endList();
   void addComment(const std::string &comment);
   void lineBreak();
