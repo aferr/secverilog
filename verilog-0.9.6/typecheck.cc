@@ -723,20 +723,30 @@ bool Module::CollectDepInvariants(SexpPrinter &printer, TypeEnv &env) const {
     }
   }
   for (auto cur : generate_schemes) {
+    if (debug_typecheck)
+      cerr << "collecting dep invariants on generate scheme" << endl;
     cur->collect_dep_invariants(tmp_printer, env);
   }
+
+  if (debug_typecheck)
+    cerr << "done collecting dep invariants on generate schemes" << endl;
 
   set<perm_string> newDeps;
   std::set_difference(env.dep_exprs.begin(), env.dep_exprs.end(),
                       oldDeps.begin(), oldDeps.end(),
                       std::inserter(newDeps, newDeps.end()));
+  if (debug_typecheck)
+    cerr << "calculated newDeps" << endl;
 
   auto tmp = newDeps;
   for (auto v : tmp) {
-    if (env.varsToBase[v]->isSeqType()) {
+    if (env.varsToBase.contains(v) && env.varsToBase.at(v)->isSeqType()) {
       newDeps.insert(nextify_perm_string(v));
     }
   }
+
+  if (debug_typecheck)
+    cerr << "starting unassigned path assertions" << endl;
 
   set<perm_string>
       pathVariables; // inputs that show up on a path need to be declared
@@ -2035,6 +2045,9 @@ void PGenerate::collect_dep_invariants(SexpPrinter &printer, TypeEnv &env) {
     }
     Predicate emptyPred;
     (*idx)->collect_dep_invariants(printer, env, emptyPred);
+    if (debug_typecheck) {
+      cerr << "done collect_dep_invariants for behavior: " << (*idx) << endl;
+    }
   }
 }
 
