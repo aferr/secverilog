@@ -416,7 +416,7 @@ struct Predicate {
   set<Hypothesis *> hypotheses;
 
   Predicate &operator=(const Predicate &);
-  Predicate *subst(map<perm_string, perm_string> m);
+  Predicate *subst(map<perm_string, perm_string> m) const;
 };
 
 struct Equality {

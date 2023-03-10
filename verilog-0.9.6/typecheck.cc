@@ -788,8 +788,7 @@ bool Module::CollectDepInvariants(SexpPrinter &printer, TypeEnv &env) const {
     auto nextified = nextify_perm_string(depVar);
 
     if (def->get_isarray()) {
-
-      auto all_relevant_view =
+      auto all_relevant =
           std::ranges::filter_view(env.analysis,
                                    [depVar](auto &v) {
                                      auto str       = std::string(v.first);
@@ -805,52 +804,74 @@ bool Module::CollectDepInvariants(SexpPrinter &printer, TypeEnv &env) const {
             auto str = std::string(v.first);
             std::smatch match;
             if (std::regex_search(str, match, regex)) {
-
-              // auto lit = perm_string::literal(match[1].str().c_str());
               return std::make_pair(match[1].str(), v.second);
             }
             throw std::runtime_error("failed to match");
           });
-      std::vector all_relevant_vec(all_relevant_view.begin(),
-                                   all_relevant_view.end());
-      auto all_relevant =
-          std::ranges::filter_view(all_relevant_vec, [&env](auto &v) {
-            auto lit = perm_string::literal(v.first.c_str());
-            return !env.genVarVals.contains(lit);
-          });
-      int range = def->getArrayRange(); // 1 << (def->getRange() + 1);
-      if (!all_relevant.empty()) {
-        for (int i = 0; i < range; ++i) {
-          printer.inList("assert", [&]() {
-            printer.inList("=>", [&]() {
+      int range = def->getArrayRange();
+
+      printer.inList("assert", [&]() {
+        printer.inList("forall", [&]() {
+          printer << "((_i Int))";
+          printer.inList("=>", [&]() {
+            printer.inList("and", [&]() {
+              std::string range_str("(<= 0 _i) (< _i ");
+              range_str += std::to_string(range) + ")";
+              printer << range_str;
               printer.inList("not", [&]() {
                 printer.inList("or", [&]() {
-                  for (const auto &a : all_relevant) {
-                    printer.inList("and", [&]() {
-                      printer.inList("=", [&]() {
-                        printer << std::to_string(i) << a.first;
-                      });
-                      printer.inList("not", [&]() {
-                        printer.inList("or", [&]() {
-                          for (const auto &path : a.second)
+                  if (!all_relevant.empty()) {
+                    for (const auto &a : all_relevant) {
+                      auto lit = perm_string::literal(a.first.c_str());
+                      if (env.genVarVals.contains(lit)) {
+                        auto lst = env.genVarVals[lit];
+                        printer.inList("and", [&]() {
+                          printer.inList("or", [&]() {
+                            for (auto value : lst)
+                              printer.inList("=", [&]() {
+                                printer << "_i" << std::to_string(value);
+                              });
+                          });
+                          std::map<perm_string, perm_string> mp{
+                              {lit, perm_string::literal("_i")}};
+                          for (const auto &path : std::ranges::transform_view(
+                                   a.second, [&mp](auto &pred) {
+                                     return *pred.subst(mp);
+                                   })) {
                             printer << path;
+                          }
                         });
-                      });
-                    });
+                      } else {
+                        // non genvars are treated normally
+                        printer.inList("and", [&]() {
+                          printer.inList("=",
+                                         [&]() { printer << "_i" << a.first; });
+                          printer.inList("not", [&]() {
+                            printer.inList("or", [&]() {
+                              for (const auto &path : a.second)
+                                printer << path;
+                            });
+                          });
+                        });
+                      }
+                    }
+                  } else {
+                    printer << "false";
                   }
                 });
               });
-              auto i_str = std::to_string(i);
-              printer.inList("=", [&]() {
-                printer.inList("select",
-                               [&]() { printer << nextified.str() << i_str; });
-                printer.inList("select",
-                               [&]() { printer << depVar.str() << i_str; });
-              });
+            });
+            auto i_str = "_i";
+            printer.inList("=", [&]() {
+              printer.inList("select",
+                             [&]() { printer << nextified.str() << i_str; });
+              printer.inList("select",
+                             [&]() { printer << depVar.str() << i_str; });
             });
           });
-        }
-      }
+        });
+      });
+      // }
     } else {
       auto &branches = env.analysis[depVar];
       if (!branches.empty()) {
@@ -986,6 +1007,59 @@ void Module::typecheck(SexpPrinter &printer, TypeEnv &env,
   bool foundInvs = CollectDepInvariants(printer, env);
 
   dump_no_overlap_anal(printer, analysis, env.seqVars);
+
+  // TODO probably delete this
+  //  remove an invariant if some variable does not show up
+  if (0) {
+    if (debug_typecheck)
+      cerr << "optimizing invariants" << endl;
+    for (set<Equality *>::iterator invite = env.invariants->invariants.begin();
+         invite != env.invariants->invariants.end();) {
+      set<perm_string> vars, diff;
+      (*invite)->left->collect_dep_expr(vars);
+      (*invite)->right->collect_dep_expr(vars);
+
+      set<Equality *>::iterator current = invite++;
+
+      // if the invariant has free variables, then remove it
+      for (set<perm_string>::iterator varite = vars.begin();
+           varite != vars.end(); varite++) {
+        if (env.dep_exprs.find(*varite) == env.dep_exprs.end()) {
+          env.invariants->invariants.erase(current);
+          break;
+        }
+      }
+    }
+  }
+  // end TODO of delete
+
+  printer.lineBreak();
+  if (foundInvs) {
+    // Only check base conditions if we actually _have_ base conditions
+    // Otherwise the solver tends to hang
+    printer.startList("echo");
+    printer << "\"Start base conditions are satisfiable? (should be sat)\"";
+    printer.endList();
+    printer.singleton("check-sat");
+    printer.lineBreak();
+    printer.startList("echo");
+    printer << "\"End base conditions are satisfiable?\"";
+    printer.endList();
+  } else {
+    printer.startList("echo");
+    printer << "\"Skipping base conditions check\"";
+    printer.endList();
+  }
+
+  printer.addComment("assertions to be verified");
+
+  if (debug_typecheck) {
+    cerr << "checking generates" << endl;
+  }
+  for (genscheme_iter_t cur = generate_schemes.begin();
+       cur != generate_schemes.end(); cur++) {
+    (*cur)->typecheck(printer, env, modules);
+  }
 
   for (auto v : env.seqVars) {
     auto sectype = env.varsToType[v];
@@ -1124,59 +1198,6 @@ void Module::typecheck(SexpPrinter &printer, TypeEnv &env,
         printer.singleton("pop");
       }
     }
-  }
-
-  // TODO probably delete this
-  //  remove an invariant if some variable does not show up
-  if (0) {
-    if (debug_typecheck)
-      cerr << "optimizing invariants" << endl;
-    for (set<Equality *>::iterator invite = env.invariants->invariants.begin();
-         invite != env.invariants->invariants.end();) {
-      set<perm_string> vars, diff;
-      (*invite)->left->collect_dep_expr(vars);
-      (*invite)->right->collect_dep_expr(vars);
-
-      set<Equality *>::iterator current = invite++;
-
-      // if the invariant has free variables, then remove it
-      for (set<perm_string>::iterator varite = vars.begin();
-           varite != vars.end(); varite++) {
-        if (env.dep_exprs.find(*varite) == env.dep_exprs.end()) {
-          env.invariants->invariants.erase(current);
-          break;
-        }
-      }
-    }
-  }
-  // end TODO of delete
-
-  printer.lineBreak();
-  if (foundInvs) {
-    // Only check base conditions if we actually _have_ base conditions
-    // Otherwise the solver tends to hang
-    printer.startList("echo");
-    printer << "\"Start base conditions are satisfiable? (should be sat)\"";
-    printer.endList();
-    printer.singleton("check-sat");
-    printer.lineBreak();
-    printer.startList("echo");
-    printer << "\"End base conditions are satisfiable?\"";
-    printer.endList();
-  } else {
-    printer.startList("echo");
-    printer << "\"Skipping base conditions check\"";
-    printer.endList();
-  }
-
-  printer.addComment("assertions to be verified");
-
-  if (debug_typecheck) {
-    cerr << "checking generates" << endl;
-  }
-  for (genscheme_iter_t cur = generate_schemes.begin();
-       cur != generate_schemes.end(); cur++) {
-    (*cur)->typecheck(printer, env, modules);
   }
 
   // Dump the task definitions.

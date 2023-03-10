@@ -40,7 +40,7 @@ void start_dump_genvar_quantifiers(SexpPrinter &printer,
     if (!env.genVarVals.count(g) || env.genVarVals[g].empty()) {
       throw "Missing genVarVals for genvar";
     }
-    std::list<int> vals = env.genVarVals[g];
+    auto vals = env.genVarVals[g];
     printer.startList("or");
     for (auto v : vals) {
       printer.startList("=");

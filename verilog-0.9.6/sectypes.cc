@@ -716,7 +716,7 @@ Predicate &Predicate::operator=(const Predicate &p) {
   return *ret;
 }
 
-Predicate *Predicate::subst(map<perm_string, perm_string> m) {
+Predicate *Predicate::subst(map<perm_string, perm_string> m) const {
   Predicate *ret = new Predicate();
   for (set<Hypothesis *>::iterator ite = hypotheses.begin();
        ite != hypotheses.end(); ite++) {
