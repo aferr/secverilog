@@ -18,7 +18,7 @@ z3files: $(BENCH_SMT)
 
 %.z3: %.v %.lattice %.fun ../verilog-0.9.6/ivl
 	@echo "Generating $@"
-	@../bin/iverilog -F $*.fun -l $*.lattice -z $*.v
+	@../bin/iverilog -Woverlap_check -F $*.fun -l $*.lattice -z $*.v
 
 %.out: %.z3
 	@echo "Generating $@"
