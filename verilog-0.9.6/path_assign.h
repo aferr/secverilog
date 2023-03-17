@@ -32,7 +32,7 @@ void dump_is_def_assign(SexpPrinter &p, PathAnalysis &paths, perm_string var);
  * @param paths a path analyis returned from get_paths
  * @param vars the set of variable names from paths to dump
  */
-void dump_no_overlap_anal(SexpPrinter &p, PathAnalysis &paths,
+void dump_no_overlap_anal(SexpPrinter &p, Module &m, TypeEnv &env,
                           set<perm_string> &vars);
 
 /**

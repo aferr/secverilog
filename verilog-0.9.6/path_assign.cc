@@ -5,6 +5,7 @@
 #include "Statement.h"
 #include "StringHeap.h"
 #include "compiler.h"
+#include "genvars.h"
 #include "ivl_target.h"
 #include "sectypes.h"
 #include "sexp_printer.h"
@@ -62,7 +63,7 @@ void dump_on_paths(SexpPrinter &p, const std::vector<Predicate> &paths) {
   });
 }
 
-void dump_no_overlap_anal(SexpPrinter &p, PathAnalysis &path_analysis,
+void dump_no_overlap_anal(SexpPrinter &p, Module &m, TypeEnv &env,
                           set<perm_string> &vars) {
   p.inList("echo", [&]() { p.printAtom("\"Starting assigned-once checks\""); });
   auto isDepVar =
@@ -74,13 +75,28 @@ void dump_no_overlap_anal(SexpPrinter &p, PathAnalysis &path_analysis,
         auto lit = perm_string::literal(str.substr(0, brack_idx).c_str());
         return vars.contains(lit);
       };
-  for (auto &[var, paths] : std::ranges::filter_view(path_analysis, isDepVar)) {
-
+  for (auto &[var, paths] : std::ranges::filter_view(env.analysis, isDepVar)) {
+    auto str           = std::string(var);
+    auto brack_idx     = str.find_first_of('[');
+    auto brack_end_idx = str.find_first_of(']');
+    std::set<perm_string> genvar_idx_used;
+    if (brack_idx != brack_end_idx) {
+      // evil perm_string heap hack (leaks memory)
+      auto idxpr = perm_string::literal(
+          (new std::string(
+               str.substr(brack_idx + 1, brack_end_idx - brack_idx - 1)))
+              ->c_str());
+      if (m.genvars.contains(idxpr)) {
+        genvar_idx_used.insert(idxpr);
+      }
+    }
     // for (auto &[var, paths] : path_analysis) {
 
     p.singleton("push");
 
     p.inList("assert", [&]() {
+      start_dump_genvar_quantifiers(p, genvar_idx_used, env);
+
       p.inList("or", [&]() {
         if (paths.size() <= 1)
           p.printAtom("false");
@@ -90,6 +106,7 @@ void dump_no_overlap_anal(SexpPrinter &p, PathAnalysis &path_analysis,
           }
         }
       });
+      end_dump_genvar_quantifiers(p, genvar_idx_used);
     });
     std::string msg = std::string("\"checking paths of ") + var.str() + "\"";
     p.inList("echo", [&]() { p.printAtom(msg); });

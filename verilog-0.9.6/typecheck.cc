@@ -748,10 +748,11 @@ bool Module::CollectDepInvariants(SexpPrinter &printer, TypeEnv &env) const {
   if (debug_typecheck)
     cerr << "starting unassigned path assertions" << endl;
 
-  set<perm_string>
-      pathVariables; // inputs that show up on a path need to be declared
-  auto portVars =
-      std::ranges::transform_view(ports, [](auto &port) { return port->name; });
+  // variables that show up on a path need to be declared
+  set<perm_string> pathVariables;
+  // auto portVars =
+  //     std::ranges::transform_view(ports, [](auto &port) { return port->name;
+  //     });
 
   for (auto &p : env.analysis) {
     for (auto &pred : p.second) {
@@ -760,20 +761,19 @@ bool Module::CollectDepInvariants(SexpPrinter &printer, TypeEnv &env) const {
       }
     }
   }
-  set<perm_string> inputPathVariables;
-  std::set_intersection(
-      pathVariables.begin(), pathVariables.end(), portVars.begin(),
-      portVars.end(),
-      std::inserter(inputPathVariables, inputPathVariables.end()));
+  // set<perm_string> pathVariables = pathVariables;
+  //  std::set_intersection(
+  //      pathVariables.begin(), pathVariables.end(), portVars.begin(),
+  //      portVars.end(),
+  //      std::inserter(pathVariables, pathVariables.end()));
 
   for (auto &de : env.dep_exprs) {
-    inputPathVariables.erase(de);
+    pathVariables.erase(de);
   }
 
   set<perm_string> newVars;
-  std::set_union(newDeps.begin(), newDeps.end(), inputPathVariables.begin(),
-                 inputPathVariables.end(),
-                 std::inserter(newVars, newVars.end()));
+  std::set_union(newDeps.begin(), newDeps.end(), pathVariables.begin(),
+                 pathVariables.end(), std::inserter(newVars, newVars.end()));
   dumpExprDefs(printer, newVars);
 
   auto outStr = invs.str();
@@ -1006,7 +1006,7 @@ void Module::typecheck(SexpPrinter &printer, TypeEnv &env,
     cerr << "collecting dependent invariants" << endl;
   bool foundInvs = CollectDepInvariants(printer, env);
 
-  dump_no_overlap_anal(printer, analysis, env.seqVars);
+  dump_no_overlap_anal(printer, *this, env, env.seqVars);
 
   // TODO probably delete this
   //  remove an invariant if some variable does not show up

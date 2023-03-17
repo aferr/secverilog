@@ -38,6 +38,7 @@ void start_dump_genvar_quantifiers(SexpPrinter &printer,
   for (auto g : vars) {
     // assume this exists and is non-empty, crashing otherwise is fine
     if (!env.genVarVals.count(g) || env.genVarVals[g].empty()) {
+      std::cerr << "no genVarVals for " << g.str() << endl;
       throw "Missing genVarVals for genvar";
     }
     auto vals = env.genVarVals[g];
