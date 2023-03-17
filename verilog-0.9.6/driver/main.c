@@ -513,6 +513,9 @@ static void process_warning_switch(const char *name) {
   } else if (strcmp(name, "sensitivity-entire-array") == 0) {
     if (!strchr(warning_flags, 'a'))
       strcat(warning_flags, "a");
+  } else if (strcmp(name, "overlap_check") == 0) {
+    if (!strchr(warning_flags, 'o'))
+      strcat(warning_flags, "o");
   } else if (strcmp(name, "no-implicit") == 0) {
     char *cp = strchr(warning_flags, 'i');
     if (cp)

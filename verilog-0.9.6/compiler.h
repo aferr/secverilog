@@ -102,6 +102,8 @@ extern bool debug_elab_pexpr;
 extern bool debug_synth2;
 extern bool debug_optimizer;
 
+extern bool overlap_check;
+
 /* Possibly temporary flag to control virtualization of pin arrays */
 extern bool disable_virtual_pins;
 

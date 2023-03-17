@@ -1006,7 +1006,8 @@ void Module::typecheck(SexpPrinter &printer, TypeEnv &env,
     cerr << "collecting dependent invariants" << endl;
   bool foundInvs = CollectDepInvariants(printer, env);
 
-  dump_no_overlap_anal(printer, *this, env, env.seqVars);
+  if (overlap_check)
+    dump_no_overlap_anal(printer, *this, env, env.seqVars);
 
   // TODO probably delete this
   //  remove an invariant if some variable does not show up

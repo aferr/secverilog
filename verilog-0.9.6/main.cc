@@ -141,6 +141,7 @@ bool debug_optimizer  = false;
 bool disable_virtual_pins      = false;
 unsigned long array_size_limit = 16777216; // Minimum required by IEEE-1364?
 unsigned recursive_mod_limit   = 10;
+bool overlap_check             = false;
 
 /*
  * Verbose messages enabled.
@@ -570,7 +571,6 @@ static void read_iconfig_file(const char *ipath) {
 
     } else if (strcmp(buf, "depfile") == 0) {
       depfile_name = strdup(cp);
-
     } else if (strcmp(buf, "latticefile") == 0) {
       lattice_file_name = strdup(cp);
     } else if (strcmp(buf, "depfunfile") == 0) {
@@ -651,6 +651,9 @@ static void read_iconfig_file(const char *ipath) {
           break;
         case 'a':
           warn_sens_entire_arr = true;
+          break;
+        case 'o':
+          overlap_check = true;
           break;
         default:
           break;
