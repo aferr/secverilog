@@ -155,7 +155,8 @@ public:
 
   PExpr *getAssumptions() const;
   void typecheck(SexpPrinter &printer, TypeEnv &env,
-                 map<perm_string, Module *> modules, char *depfun);
+                 map<perm_string, Module *> modules, char *depfun,
+                 char *latfile);
   void next_cycle_transform(SexpPrinter &printer, TypeEnv &env);
   void dumpExprDefs(SexpPrinter &, set<perm_string> exprs) const;
   void CollectDepExprs(SexpPrinter &, TypeEnv &env,

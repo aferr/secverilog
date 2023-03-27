@@ -55,7 +55,7 @@
 #define ASSUME_NAME "assume"
 
 void output_type_families(SexpPrinter &printer, char *depfun);
-
+void output_lattice(SexpPrinter &out, char *lattice);
 /**
  * Type-check parameters, which are constants.
  */
@@ -921,7 +921,8 @@ void makeAssumptions(Module *mod, SexpPrinter &printer, TypeEnv &env) {
  * Type-check a module.
  */
 void Module::typecheck(SexpPrinter &printer, TypeEnv &env,
-                       map<perm_string, Module *> modules, char *depfun) {
+                       map<perm_string, Module *> modules, char *depfun,
+                       char *latfile) {
   if (debug_typecheck) {
     cerr << "Module::check " << mod_name() << endl;
     for (unsigned idx = 0; idx < ports.size(); idx += 1) {
@@ -979,9 +980,6 @@ void Module::typecheck(SexpPrinter &printer, TypeEnv &env,
   if (debug_typecheck)
     cerr << "collecting dependands" << endl;
   CollectDepExprs(printer, env, modules);
-  if (debug_typecheck)
-    cerr << "outputting type families" << endl;
-  output_type_families(printer, depfun);
   if (debug_typecheck)
     cerr << "generating input invariant assumptions" << endl;
   makeAssumptions(this, printer, env);
@@ -1054,6 +1052,13 @@ void Module::typecheck(SexpPrinter &printer, TypeEnv &env,
     printer << "\"Skipping base conditions check\"";
     printer.endList();
   }
+
+  if (debug_typecheck)
+    cerr << "outputting lattice" << endl;
+  output_lattice(printer, latfile);
+  if (debug_typecheck)
+    cerr << "outputting type families" << endl;
+  output_type_families(printer, depfun);
 
   printer.addComment("assertions to be verified");
 
@@ -2155,6 +2160,11 @@ struct root_elem {
   NetScope *scope;
 };
 
+// TODO C++26 should introduce std::embed
+const char *default_lattice =
+#include "default_lattice.lat"
+    ;
+
 /**
  * SecVerilog by default declares a minimal lattice with only bottom and top:
  *                   HIGH
@@ -2166,73 +2176,17 @@ struct root_elem {
  * overwrite the existing bottom and top, and can only specify other, new
  * elements.
  */
-void output_lattice(ostream &out, char *lattice) {
-  out << "; this part encodes a partial order on labels" << endl;
-  out << "(declare-sort Label)" << endl;
-  out << "(declare-fun leq (Label Label) Bool)" << endl;
-  out << "(declare-fun join (Label Label) Label)" << endl;
-  out << "(declare-fun meet (Label Label) Label)" << endl;
-
-  out << "(assert (forall ((x Label)) (leq x x)))" << endl;
-  out << "(assert (forall ((x Label) (y Label) (z Label)) (implies (and "
-         "(leq x "
-         "y) (leq y z)) (leq x z))))"
-      << endl;
-  out << "(assert (forall ((x Label) (y Label)) (implies (and (leq x y) "
-         "(leq y "
-         "x)) (= x y))))"
-      << endl;
-
-  out << endl << "; axioms for join" << endl;
-  out << "(assert (forall ((x Label) (y Label) (z Label)) (implies (leq "
-         "(join "
-         "x y) z) (and (leq x z) (leq y z)))))"
-      << endl;
-  out << "(assert (forall ((x Label) (y Label) (z Label)) (implies (and "
-         "(leq x "
-         "z) (leq y z)) (leq (join x y) z))))"
-      << endl;
-  out << "(assert (forall ((x Label) (y Label)) (and (leq x (join x y)) "
-         "(leq y "
-         "(join x y)))))"
-      << endl;
-  out << "(assert (forall ((x Label) (y Label)) (= (join x y) (join y "
-         "x))))"
-      << endl;
-
-  out << endl << "; axioms for meet" << endl;
-  out << "(assert (forall ((x Label) (y Label) (z Label)) (implies (leq "
-         "x "
-         "(meet y z)) (and (leq x y) (leq x z)))))"
-      << endl;
-  out << "(assert (forall ((x Label) (y Label) (z Label)) (implies (and "
-         "(leq x "
-         "y) (leq x z)) (leq x (meet y z)))))"
-      << endl;
-  out << "(assert (forall ((x Label) (y Label)) (and (leq (meet x y) x) "
-         "(leq "
-         "(meet x y) y))))"
-      << endl;
-  out << "(assert (forall ((x Label) (y Label)) (= (meet x y) (meet y "
-         "x))))"
-      << endl;
-
-  out << endl << "; lattice elements" << endl;
-  out << "(declare-fun LOW () Label)" << endl;
-  out << "(declare-fun HIGH () Label)" << endl;
-
-  out << endl << "; lattice structure" << endl;
-  out << "(assert (forall ((x Label)) (leq LOW x)))" << endl;
-  out << "(assert (forall ((x Label)) (leq x HIGH)))" << endl;
-  out << "(assert (not (= HIGH LOW))) ; the lattice cannot clapse" << endl;
+void output_lattice(SexpPrinter &out, char *lattice) {
+  out.lineBreak();
+  out.writeRawLine(default_lattice);
 
   // append the user-defined lattice
   if (lattice) {
-    out << endl;
+    out.lineBreak();
     string line;
     ifstream infile(lattice);
     while (getline(infile, line)) {
-      out << line << endl;
+      out.writeRawLine(line);
     }
   }
 }
@@ -2291,10 +2245,10 @@ void typecheck(map<perm_string, Module *> modules, char *lattice_file_name,
       z3filename = z3filename.substr(0, pos);
     }
     z3file.open((z3filename + ".z3").c_str());
-    output_lattice(z3file, lattice_file_name);
     SexpPrinter printer(z3file, 80);
     try {
-      rmod->typecheck(printer, *env, modules, depfun_file_name);
+      rmod->typecheck(printer, *env, modules, depfun_file_name,
+                      lattice_file_name);
     } catch (char const *str) {
       cerr << "Unimplemented " << str << endl;
     } catch (Sexception &exn) {

@@ -1,0 +1,48 @@
+R"==(;; this part encodes a partial order on labels
+(declare-sort Label)
+(declare-fun leq (Label Label) Bool)
+(declare-fun join (Label Label) Label)
+(declare-fun meet (Label Label) Label)
+
+(assert (forall ((x Label)) (leq x x)))
+(assert (forall ((x Label) (y Label) (z Label))
+                (implies (and (leq x y) (leq y z)) (leq x z))))
+
+(assert (forall ((x Label) (y Label))
+                (implies (and (leq x y) (leq y  x)) (= x y))))
+
+
+;;  axioms for join
+(assert (forall ((x Label) (y Label) (z Label))
+                (implies (leq (join x y) z) (and (leq x z) (leq y z)))))
+
+(assert (forall ((x Label) (y Label) (z Label))
+                (implies (and (leq x z) (leq y z)) (leq (join x y) z))))
+
+(assert (forall ((x Label) (y Label))
+                (and (leq x (join x y)) (leq y (join x y)))))
+
+(assert (forall ((x Label) (y Label)) (= (join x y) (join y x))))
+
+
+;; axioms for meet
+(assert (forall ((x Label) (y Label) (z Label))
+                (implies (leq x (meet y z)) (and (leq x y) (leq x z)))))
+
+(assert (forall ((x Label) (y Label) (z Label))
+                (implies (and (leq x y) (leq x z)) (leq x (meet y z)))))
+
+(assert (forall ((x Label) (y Label))
+                (and (leq (meet x y) x) (leq (meet x y) y))))
+
+(assert (forall ((x Label) (y Label)) (= (meet x y) (meet y x))))
+
+
+;; lattice elements
+(declare-fun LOW () Label)
+(declare-fun HIGH () Label)
+
+;; lattice structure
+(assert (forall ((x Label)) (leq LOW x)))
+(assert (forall ((x Label)) (leq x HIGH)))
+(assert (not (= HIGH LOW))) ; the lattice cannot collapse)=="
