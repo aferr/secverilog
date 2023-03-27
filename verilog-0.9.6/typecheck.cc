@@ -48,6 +48,7 @@
 #include <ranges>
 #include <regex>
 #include <sstream>
+#include <stdexcept>
 #include <type_traits>
 #include <typeinfo>
 
@@ -222,7 +223,7 @@ bool PEventStatement::collect_dep_invariants(SexpPrinter &printer, TypeEnv &env,
 Statement *PBlock::next_cycle_transform(SexpPrinter &printer, TypeEnv &env) {
   for (uint i = 0; i < list_.count(); i++) {
     if (debug_typecheck)
-      cerr << "NextCycleTransform:: " << typeid(list_[i]).name() << endl;
+      cerr << "NextCycleTransform:: " << typeid(*list_[i]).name() << endl;
     list_[i] = list_[i]->next_cycle_transform(printer, env);
   }
   return this;
@@ -310,6 +311,8 @@ bool PCAssign::collect_dep_invariants(SexpPrinter &, TypeEnv &env,
 // This is the only rule where something actually happens. Only the left
 // hand-side of the assignment is transformed.
 Statement *PAssignNB::next_cycle_transform(SexpPrinter &printer, TypeEnv &env) {
+  if (debug_typecheck)
+    cerr << "Nextify " << *lval_ << endl;
   assert(lval_);
   lval_ = lval_->next_cycle_transform(printer, env);
   return this;
@@ -422,7 +425,7 @@ void PGenerate::next_cycle_transform(SexpPrinter &printer, TypeEnv env) {
   for (list<PProcess *>::const_iterator behav = behaviors.begin();
        behav != behaviors.end(); behav++) {
     if (debug_typecheck)
-      cerr << "NextCycleTransform:: " << typeid(*behav).name() << endl;
+      cerr << "NextCycleTransform:: " << typeid(**behav).name() << endl;
     (*behav)->next_cycle_transform(printer, env);
   }
 }
@@ -1674,6 +1677,14 @@ void PAssign::typecheck(SexpPrinter &printer, TypeEnv &env,
     cerr << *rval() << ";" << endl;
   }
 
+  auto ident = dynamic_cast<PEIdent *>(lval_);
+  if (ident && env.varsToBase.contains(ident->get_name()) &&
+      env.varsToBase[ident->get_name()]->isSeqType()) {
+    auto msg = new std::string("tried to use blocking assign on seq var: ");
+    *msg += ident->get_name().str();
+    throw std::runtime_error(*msg);
+  }
+
   stringstream ss;
   ss << *lval() << " = " << *rval() << " @" << get_fileline();
 
@@ -1697,6 +1708,16 @@ void PAssignNB::typecheck(SexpPrinter &printer, TypeEnv &env,
     if (event_)
       cerr << *event_ << " ";
     cerr << *rval() << ";" << endl;
+  }
+
+  auto ident = dynamic_cast<PEIdent *>(lval_);
+  if (ident && env.varsToBase.contains(ident->get_name()) &&
+      !env.varsToBase[ident->get_name()]->isNextType() &&
+      !env.varsToBase[ident->get_name()]->isSeqType()) {
+    auto msg =
+        new std::string("tried to use nonblocking assign on nonseq var: ");
+    *msg += ident->get_name().str();
+    throw std::runtime_error(*msg);
   }
 
   stringstream ss;
