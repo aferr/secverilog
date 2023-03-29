@@ -1,5 +1,5 @@
 SHELL := /bin/bash
-
+#This is a comment
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 mkfile_dir := $(dir $(mkfile_path))
 
