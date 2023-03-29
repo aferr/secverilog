@@ -827,7 +827,7 @@ public:
                                   bool sys_task_arg) const;
   virtual NetETernary *elaborate_pexpr(Design *des, NetScope *sc) const;
   virtual verinum *eval_const(Design *des, NetScope *sc) const;
-  PCondit *translate(PExpr *lhs);
+  PCondit *translate(PExpr *lhs, bool is_blocking);
 
 private:
   NetExpr *elab_and_eval_alternative_(Design *des, NetScope *scope, PExpr *expr,

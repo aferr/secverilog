@@ -377,22 +377,26 @@ bool PETernary::has_aa_term(Design *des, NetScope *scope) const {
 }
 
 // this method translates a PETernary to a if-then-else statement
-PCondit *PETernary::translate(PExpr *lhs) {
+PCondit *PETernary::translate(PExpr *lhs, bool is_blocking) {
   Statement *s1, *s2;
   PETernary *test = dynamic_cast<PETernary *>(tru_);
+  auto assign =
+      is_blocking
+          ? [](PExpr *l, PExpr *r) { return (PAssign_ *)new PAssign(l, r); }
+          : [](PExpr *l, PExpr *r) { return (PAssign_ *)new PAssignNB(l, r); };
   if (test == NULL) {
-    s1 = new PAssign(lhs, tru_);
+    s1 = assign(lhs, tru_);
     s1->set_file(get_file());
     s1->set_lineno(get_lineno());
   } else
-    s1 = test->translate(lhs);
+    s1 = test->translate(lhs, is_blocking);
   test = dynamic_cast<PETernary *>(fal_);
   if (test == NULL) {
-    s2 = new PAssign(lhs, fal_);
+    s2 = assign(lhs, fal_);
     s2->set_file(get_file());
     s2->set_lineno(get_lineno());
   } else
-    s2 = test->translate(lhs);
+    s2 = test->translate(lhs, is_blocking);
   PCondit *ret = new PCondit(expr_, s1, s2);
   ret->set_file(get_file());
   ret->set_lineno(get_lineno());

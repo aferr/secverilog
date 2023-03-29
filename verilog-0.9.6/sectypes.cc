@@ -194,13 +194,14 @@ SecType *IndexType::subst(map<perm_string, perm_string> m) {
 
 SecType *IndexType::next_cycle(TypeEnv *env) {
   list<perm_string> *nextlist = new list<perm_string>;
-  for (list<perm_string>::iterator it = exprs_.begin(); it != exprs_.end();
-       ++it) {
-    BaseType *fv_base = env->varsToBase[*it];
+  // for (list<perm_string>::iterator it = exprs_.begin(); it != exprs_.end();
+  //      ++it)
+  for (auto var : exprs_) {
+    BaseType *fv_base = env->varsToBase[var];
     if (fv_base) {
-      nextlist->push_back(nextify_perm_string(*it));
+      nextlist->push_back(nextify_perm_string(var));
     } else {
-      nextlist->push_back(*it);
+      nextlist->push_back(var);
     }
   }
   return new IndexType(name_, *nextlist);
