@@ -37,10 +37,9 @@ void PExpr::collect_used_genvars(set<perm_string> &res, TypeEnv &env) {
   }
 }
 
-SecType *PEBinary::typecheck(SexpPrinter &printer,
-                             map<perm_string, SecType *> &varsToType) const {
-  SecType *ty1 = left_->typecheck(printer, varsToType);
-  SecType *ty2 = right_->typecheck(printer, varsToType);
+SecType *PEBinary::typecheck(SexpPrinter &printer, TypeEnv &env) const {
+  SecType *ty1 = left_->typecheck(printer, env);
+  SecType *ty2 = right_->typecheck(printer, env);
   return new JoinType(ty1, ty2);
 }
 void PEBinary::collect_idens(set<perm_string> &s) const {
@@ -48,22 +47,19 @@ void PEBinary::collect_idens(set<perm_string> &s) const {
   right_->collect_idens(s);
 }
 
-SecType *
-PECallFunction::typecheck(SexpPrinter &,
-                          map<perm_string, SecType *> &varsToType) const {
+SecType *PECallFunction::typecheck(SexpPrinter &, TypeEnv &) const {
   //	throw "PECallFunction";
   cout << "PECallFunction is ignored" << endl;
   return ConstType::BOT;
 }
 void PECallFunction::collect_idens(set<perm_string> &s) const { return; }
-SecType *PEConcat::typecheck(SexpPrinter &printer,
-                             map<perm_string, SecType *> &varsToType) const {
+SecType *PEConcat::typecheck(SexpPrinter &printer, TypeEnv &env) const {
   SecType *last = ConstType::BOT;
   if (repeat_ != NULL) {
-    last = repeat_->typecheck(printer, varsToType);
+    last = repeat_->typecheck(printer, env);
   }
   for (unsigned idx = 0; idx < parms_.count(); idx += 1) {
-    last = new JoinType(last, parms_[idx]->typecheck(printer, varsToType));
+    last = new JoinType(last, parms_[idx]->typecheck(printer, env));
   }
   return last;
 }
@@ -76,24 +72,20 @@ void PEConcat::collect_idens(set<perm_string> &s) const {
   }
 }
 
-SecType *PEEvent::typecheck(SexpPrinter &,
-                            map<perm_string, SecType *> &varsToType) const {
-  throw "PEEvent";
-}
+SecType *PEEvent::typecheck(SexpPrinter &, TypeEnv &) const { throw "PEEvent"; }
 void PEEvent::collect_idens(set<perm_string> &s) const { throw "PEEvent"; }
 // float constants have label Low
-SecType *PEFNumber::typecheck(SexpPrinter &,
-                              map<perm_string, SecType *> &varsToType) const {
+SecType *PEFNumber::typecheck(SexpPrinter &, TypeEnv &) const {
   return ConstType::BOT;
 }
 void PEFNumber::collect_idens(set<perm_string> &s) const { return; }
-SecType *PEIdent::typecheckName(SexpPrinter &printer, TypeEnv *env,
+SecType *PEIdent::typecheckName(SexpPrinter &printer, TypeEnv &env,
                                 bool isNext) const {
-  auto varsToType                                  = env.varsToType;
-  perm_string name                                 = peek_tail_name(path_);
-  map<perm_string, SecType *>::const_iterator find = varsToType.find(name);
-  if (find != varsToType.end()) {
-    SecType *tau = (*find).second;
+  perm_string name = peek_tail_name(path_);
+
+  auto tau = env.varsToType[name];
+
+  if (tau) {
     if (isNext) {
       tau = tau->next_cycle(env);
     }
@@ -114,20 +106,19 @@ SecType *PEIdent::typecheckName(SexpPrinter &printer, TypeEnv *env,
   }
 }
 
-SecType *PEIdent::typecheckIdx(SexpPrinter &printer,
-                               map<perm_string, SecType *> &varsToType) const {
+SecType *PEIdent::typecheckIdx(SexpPrinter &printer, TypeEnv &env) const {
   SecType *result = ConstType::BOT;
   for (std::list<index_component_t>::const_iterator idxit =
            path_.back().index.begin();
        idxit != path_.back().index.end(); idxit++) {
     if (idxit->msb != NULL) {
-      SecType *tmsb = idxit->msb->typecheck(printer, varsToType);
+      SecType *tmsb = idxit->msb->typecheck(printer, env);
       if (tmsb != ConstType::BOT) {
         result = new JoinType(result, tmsb);
       }
     }
     if (idxit->lsb != NULL) {
-      SecType *tlsb = idxit->msb->typecheck(printer, varsToType);
+      SecType *tlsb = idxit->msb->typecheck(printer, env);
       if (tlsb != ConstType::BOT) {
         result = new JoinType(result, tlsb);
       }
@@ -136,20 +127,18 @@ SecType *PEIdent::typecheckIdx(SexpPrinter &printer,
   return result;
 }
 
-SecType *PEIdent::typecheck(SexpPrinter &printer,
-                            map<perm_string, SecType *> &varsToType) const {
+SecType *PEIdent::typecheck(SexpPrinter &printer, TypeEnv &env) const {
   // idents are like: varname[bit select]
   // need to join index label with name label
-  SecType *namelbl = typecheckName(printer, varsToType);
-  SecType *idxlbl  = typecheckIdx(printer, env->varsToType);
+  SecType *namelbl = typecheckName(printer, env, false);
+  SecType *idxlbl  = typecheckIdx(printer, env);
   return new JoinType(namelbl, idxlbl);
 }
 
-void PEIdent::collect_index_exprs(set<perm_string> &s,
-                                  map<perm_string, SecType *> &varsToType) {
+void PEIdent::collect_index_exprs(set<perm_string> &s, TypeEnv &env) {
   stringstream ss;
   SexpPrinter tmp(ss, 9999);
-  SecType *appliedType = typecheckName(tmp, varsToType);
+  SecType *appliedType = typecheckName(tmp, env, false);
   appliedType->collect_dep_expr(s);
 }
 
@@ -167,26 +156,22 @@ void PEIdent::collect_idens(set<perm_string> &s) const {
   }
 }
 // integer constants have label Low
-SecType *PENumber::typecheck(SexpPrinter &printer,
-                             map<perm_string, SecType *> &varsToType) const {
+SecType *PENumber::typecheck(SexpPrinter &, TypeEnv &) const {
   return ConstType::BOT;
 }
 void PENumber::collect_idens(set<perm_string> &s) const { return; }
 
-SecType *PEBoolean::typecheck(SexpPrinter &printer,
-                              map<perm_string, SecType *> &varsToType) const {
+SecType *PEBoolean::typecheck(SexpPrinter &, TypeEnv &) const {
   return ConstType::BOT;
 }
 void PEBoolean::collect_idens(set<perm_string> &s) const { return; }
 
 // string constants have label Low
-SecType *PEString::typecheck(SexpPrinter &,
-                             map<perm_string, SecType *> &varsToType) const {
+SecType *PEString::typecheck(SexpPrinter &, TypeEnv &) const {
   return ConstType::BOT;
 }
 void PEString::collect_idens(set<perm_string> &s) const { return; }
-SecType *PETernary::typecheck(SexpPrinter &,
-                              map<perm_string, SecType *> &varsToType) const {
+SecType *PETernary::typecheck(SexpPrinter &, TypeEnv &) const {
   //	SecType* lexp = expr_->typecheck(out, varsToType);
   //	SecType* texp = tru_->typecheck(out, varsToType);
   //	SecType* fexp = fal_->typecheck(out, varsToType);
@@ -201,16 +186,13 @@ void PETernary::collect_idens(set<perm_string> &s) const {
   fal_->collect_idens(s);
 }
 
-SecType *PEUnary::typecheck(SexpPrinter &printer,
-                            map<perm_string, SecType *> &varsToType) const {
-  return expr_->typecheck(printer, varsToType);
+SecType *PEUnary::typecheck(SexpPrinter &printer, TypeEnv &env) const {
+  return expr_->typecheck(printer, env);
 }
 void PEUnary::collect_idens(set<perm_string> &s) const {
   expr_->collect_idens(s);
 }
-SecType *
-PEDeclassified::typecheck(SexpPrinter &,
-                          map<perm_string, SecType *> &varsToType) const {
+SecType *PEDeclassified::typecheck(SexpPrinter &, TypeEnv &) const {
   return this->type;
 }
 void PEDeclassified::collect_idens(set<perm_string> &s) const {

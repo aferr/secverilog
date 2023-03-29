@@ -177,8 +177,7 @@ bool PProcess::collect_dep_invariants(SexpPrinter &printer, TypeEnv &env,
   return statement_->collect_dep_invariants(printer, env, pred);
 }
 
-void PProcess::collect_index_exprs(set<perm_string> &exprs,
-                                   map<perm_string, SecType *> &env) {
+void PProcess::collect_index_exprs(set<perm_string> &exprs, TypeEnv &env) {
   if (statement_ == NULL)
     return;
   if (debug_typecheck)
@@ -195,8 +194,7 @@ bool Statement::collect_dep_invariants(SexpPrinter &, TypeEnv &env,
   return false;
 }
 
-void Statement::collect_index_exprs(set<perm_string> &exprs,
-                                    map<perm_string, SecType *> &env) {
+void Statement::collect_index_exprs(set<perm_string> &exprs, TypeEnv &env) {
   return;
 }
 
@@ -207,7 +205,7 @@ Statement *PEventStatement::next_cycle_transform(SexpPrinter &printer,
 }
 
 void PEventStatement::collect_index_exprs(set<perm_string> &exprs,
-                                          map<perm_string, SecType *> &env) {
+                                          TypeEnv &env) {
   if (debug_typecheck)
     cerr << "collect_index_exprs:: " << typeid(*statement_).name() << endl;
   statement_->collect_index_exprs(exprs, env);
@@ -229,8 +227,7 @@ Statement *PBlock::next_cycle_transform(SexpPrinter &printer, TypeEnv &env) {
   return this;
 }
 
-void PBlock::collect_index_exprs(set<perm_string> &exprs,
-                                 map<perm_string, SecType *> &env) {
+void PBlock::collect_index_exprs(set<perm_string> &exprs, TypeEnv &env) {
   for (uint i = 0; i < list_.count(); i++) {
     if (debug_typecheck)
       cerr << "collect_index_exprs:: " << typeid(list_[i]).name() << endl;
@@ -257,8 +254,7 @@ Statement *PCondit::next_cycle_transform(SexpPrinter &printer, TypeEnv &env) {
   return this;
 }
 
-void PCondit::collect_index_exprs(set<perm_string> &exprs,
-                                  map<perm_string, SecType *> &env) {
+void PCondit::collect_index_exprs(set<perm_string> &exprs, TypeEnv &env) {
   if (debug_typecheck) {
     cerr << "collect_index_exprs on if" << endl;
   }
@@ -295,8 +291,7 @@ bool PCondit::collect_dep_invariants(SexpPrinter &printer, TypeEnv &env,
   return result;
 }
 
-void PCAssign::collect_index_exprs(set<perm_string> &exprs,
-                                   map<perm_string, SecType *> &env) {
+void PCAssign::collect_index_exprs(set<perm_string> &exprs, TypeEnv &) {
   if (debug_typecheck)
     cerr << "skipping collect_index_exprs on pcassign" << endl;
 }
@@ -318,8 +313,7 @@ Statement *PAssignNB::next_cycle_transform(SexpPrinter &printer, TypeEnv &env) {
   return this;
 }
 
-void PAssign_::collect_index_exprs(set<perm_string> &exprs,
-                                   map<perm_string, SecType *> &env) {
+void PAssign_::collect_index_exprs(set<perm_string> &exprs, TypeEnv &env) {
   if (debug_typecheck) {
     cerr << "collect_index_exprs on passign" << endl;
     cerr << "on " << *rval() << " gets " << *lval() << endl;
@@ -672,11 +666,11 @@ void Module::CollectDepExprs(SexpPrinter &printer, TypeEnv &env,
 
   for (list<PProcess *>::const_iterator behav = behaviors.begin();
        behav != behaviors.end(); behav++) {
-    (*behav)->collect_index_exprs(exprs, env.varsToType);
+    (*behav)->collect_index_exprs(exprs, env);
   }
   for (list<PGenerate *>::const_iterator cur = generate_schemes.begin();
        cur != generate_schemes.end(); cur++) {
-    (*cur)->collect_index_exprs(exprs, env.varsToType);
+    (*cur)->collect_index_exprs(exprs, env);
   }
 
   for (list<PGate *>::const_iterator gate = gates_.begin();
@@ -684,7 +678,7 @@ void Module::CollectDepExprs(SexpPrinter &printer, TypeEnv &env,
     PGAssign *pgassign = dynamic_cast<PGAssign *>(*gate);
     PGModule *pgmodule = dynamic_cast<PGModule *>(*gate);
     if (pgassign != NULL) {
-      pgassign->collect_index_exprs(exprs, env.varsToType);
+      pgassign->collect_index_exprs(exprs, env);
     }
     if (pgmodule) {
       PExpr *modAssume = getInstantiatedAssumption(pgmodule, modules);
@@ -1018,7 +1012,7 @@ void checkUnassignedPaths(SexpPrinter &printer, TypeEnv &env, Module &m) {
 
             idx               = new PENumber(new verinum(i));
             auto next_sectype = dynamic_cast<QuantType *>(
-                quantified->next_cycle(&env)->apply_index(idx));
+                quantified->next_cycle(env)->apply_index(idx));
 
             if (debug_typecheck) {
               cerr << "this_inner: " << *applied->getInnerType() << endl
@@ -1046,7 +1040,7 @@ void checkUnassignedPaths(SexpPrinter &printer, TypeEnv &env, Module &m) {
               "not", [&]() { dump_is_def_assign(printer, env.analysis, v); });
         });
 
-        auto next_sectype = sectype->next_cycle(&env);
+        auto next_sectype = sectype->next_cycle(env);
         Predicate empty;
         Constraint c(next_sectype, sectype, env.invariants, &empty);
         set<perm_string> empty_genvars;
@@ -1315,26 +1309,26 @@ void AContrib::typecheck(SexpPrinter &printer, TypeEnv &env,
  */
 void typecheck_assignment_constraint(SexpPrinter &printer, SecType *lhs,
                                      SecType *rhs, Predicate pred, string note,
-                                     PEIdent *checkDefAssign, TypeEnv *env) {
+                                     PEIdent *checkDefAssign, TypeEnv &env) {
   std::set<perm_string> genvars;
-  collect_used_genvars(genvars, pred, *env);
-  collect_used_genvars(genvars, lhs, *env);
-  collect_used_genvars(genvars, rhs, *env);
+  collect_used_genvars(genvars, pred, env);
+  collect_used_genvars(genvars, lhs, env);
+  collect_used_genvars(genvars, rhs, env);
   printer.lineBreak();
   printer.singleton("push");
   if (checkDefAssign) {
     printer.startList("assert");
     // TODO make the genvars get selected based on defAssign analysis
     // for only this assertion
-    start_dump_genvar_quantifiers(printer, genvars, *env);
+    start_dump_genvar_quantifiers(printer, genvars, env);
     printer.startList("not");
-    dump_is_def_assign(printer, env->analysis, checkDefAssign->get_full_name());
+    dump_is_def_assign(printer, env.analysis, checkDefAssign->get_full_name());
     printer.endList();
     end_dump_genvar_quantifiers(printer, genvars);
     printer.endList();
   }
-  Constraint c = Constraint(lhs, rhs, env->invariants, &pred);
-  dump_constraint(printer, c, genvars, *env);
+  Constraint c = Constraint(lhs, rhs, env.invariants, &pred);
+  dump_constraint(printer, c, genvars, env);
 
   printer.addComment(note);
   printer.startList("echo");
@@ -1348,7 +1342,7 @@ void typecheck_assignment_constraint(SexpPrinter &printer, SecType *lhs,
  * Type-check an assignment (either noblocking or blocking).
  */
 void typecheck_assignment(SexpPrinter &printer, PExpr *lhs, PExpr *rhs,
-                          TypeEnv *env, Predicate precond, Predicate postcond,
+                          TypeEnv &env, Predicate precond, Predicate postcond,
                           unsigned int lineno, string note, bool is_blocking) {
   // when the RHS is a PETernary expression, i.e. e1?e2:e3, we first
   // translate to the equivalent statements
@@ -1357,31 +1351,22 @@ void typecheck_assignment(SexpPrinter &printer, PExpr *lhs, PExpr *rhs,
     SecType *ltype, *rtype, *ltype_orig;
     BaseType *lbase;
     PEIdent *lident = dynamic_cast<PEIdent *>(lhs);
-    lbase           = lhs->check_base_type(printer, env->varsToBase);
+    lbase           = lhs->check_base_type(printer, env.varsToBase);
     if (lident != NULL) {
       // if lhs is v[x], only want to put type(v) in the type
-      ltype_orig = lident->typecheckName(printer, env->varsToType, false);
+      ltype_orig = lident->typecheckName(printer, env, false);
       // want next cycle version if is NextType
-      ltype =
-          lident->typecheckName(printer, env->varsToType, lbase->isNextType());
+      ltype = lident->typecheckName(printer, env, lbase->isNextType());
     } else {
       auto msg = new std::string("Assigned to non identifier on LHS: ");
       *msg += lhs->get_name().str();
       throw std::runtime_error(*msg);
     }
 
-    // If ltype is sequential, substitute its free variables with the
-    // next-cycle version of that variable.
-    if (lbase->isNextType()) {
-      ltype = ltype_orig->next_cycle(env);
-    } else {
-      ltype = ltype_orig;
-    }
-    rtype = new JoinType(rhs->typecheck(printer, env->varsToType), env->pc);
+    rtype = new JoinType(rhs->typecheck(printer, env), env.pc);
     if (lident != NULL) {
       // if lhs is v[x], want to include type(x) in the rhs type
-      rtype =
-          new JoinType(rtype, lident->typecheckIdx(printer, env->varsToType));
+      rtype = new JoinType(rtype, lident->typecheckIdx(printer, env));
     }
     if (lbase->isSeqType()) {
       // Sequential logic is actually checked by the next cycle logic
@@ -1391,7 +1376,7 @@ void typecheck_assignment(SexpPrinter &printer, PExpr *lhs, PExpr *rhs,
     }
     if (debug_typecheck) {
       cerr << "line no" << lineno << endl;
-      cerr << "pctype: " << *env->pc << endl;
+      cerr << "pctype: " << *env.pc << endl;
       cerr << "ltype: " << *ltype << endl;
       cerr << "rtype: " << *rtype << endl;
       cerr << "lbase: " << lbase->name() << endl;
@@ -1416,17 +1401,16 @@ void typecheck_assignment(SexpPrinter &printer, PExpr *lhs, PExpr *rhs,
         //  rtype also flows to cur cycle label of lident in any context
         string newNote = note + "--No-sensitive-upgrade-check;";
         Predicate emptyPred;
-        typecheck_assignment_constraint(printer, ltype_orig, env->pc, emptyPred,
+        typecheck_assignment_constraint(printer, ltype_orig, env.pc, emptyPred,
                                         newNote, origName, env);
       }
     }
   } else {
-    ternary->translate(lhs, is_blocking)->typecheck(printer, *env, precond);
+    ternary->translate(lhs, is_blocking)->typecheck(printer, env, precond);
   }
 }
 
-void PGAssign::collect_index_exprs(set<perm_string> &exprs,
-                                   map<perm_string, SecType *> &env) {
+void PGAssign::collect_index_exprs(set<perm_string> &exprs, TypeEnv &env) {
   pin(0)->collect_index_exprs(exprs, env);
   pin(1)->collect_index_exprs(exprs, env);
 }
@@ -1478,7 +1462,7 @@ void PGAssign::typecheck(SexpPrinter &printer, TypeEnv &env,
   stringstream ss;
   ss << "assign " << *pin(0) << " = " << *pin(1) << " @" << get_fileline();
   Predicate post;
-  typecheck_assignment(printer, pin(0), pin(1), &env, pred, post, get_lineno(),
+  typecheck_assignment(printer, pin(0), pin(1), env, pred, post, get_lineno(),
                        ss.str(), true);
 }
 
@@ -1576,7 +1560,7 @@ void PGModule::typecheck(SexpPrinter &printer, TypeEnv &env,
           PWire *port               = (*ite).second;
           NetNet::PortType porttype = port->get_port_type();
 
-          SecType *paramType = param->typecheck(printer, env.varsToType);
+          SecType *paramType = param->typecheck(printer, env);
           SecType *pinType   = port->get_sec_type();
           for (std::map<perm_string, perm_string>::iterator substiter =
                    pinSubst.begin();
@@ -1695,13 +1679,8 @@ void PAssign::typecheck(SexpPrinter &printer, TypeEnv &env,
   auto ident = dynamic_cast<PEIdent *>(lval_);
   if (ident && env.varsToBase.contains(ident->get_name()) &&
       env.varsToBase[ident->get_name()]->isSeqType()) {
-    cout << *lval_ << " = " << *rval_ << endl;
     auto msg = new std::string("tried to use blocking assign on seq var: ");
     *msg += ident->get_name().str();
-
-    void *array[10];
-    size_t size = backtrace(array, 10);
-    backtrace_symbols_fd(array, size, 2);
     throw std::runtime_error(*msg);
   }
 
@@ -1710,7 +1689,7 @@ void PAssign::typecheck(SexpPrinter &printer, TypeEnv &env,
 
   Predicate precond = pred;
   absintp(pred, env);
-  typecheck_assignment(printer, lval_, rval_, &env, precond, pred, get_lineno(),
+  typecheck_assignment(printer, lval_, rval_, env, precond, pred, get_lineno(),
                        ss.str(), true);
 }
 
@@ -1745,7 +1724,7 @@ void PAssignNB::typecheck(SexpPrinter &printer, TypeEnv &env,
 
   Predicate precond = pred;
   absintp(pred, env);
-  typecheck_assignment(printer, lval_, rval_, &env, precond, pred, get_lineno(),
+  typecheck_assignment(printer, lval_, rval_, env, precond, pred, get_lineno(),
                        ss.str(), false);
 }
 
@@ -1834,7 +1813,7 @@ void PCase::typecheck(SexpPrinter &printer, TypeEnv &env,
     SecType *oldpc   = env.pc;
     bool need_hypo =
         env.dep_exprs.find(expr_->get_name()) != env.dep_exprs.end();
-    env.pc = new JoinType(expr_->typecheck(printer, env.varsToType), oldpc);
+    env.pc = new JoinType(expr_->typecheck(printer, env), oldpc);
     env.pc = env.pc->simplify();
 
     Predicate oldh = pred;
@@ -1875,8 +1854,8 @@ void PCondit::typecheck(SexpPrinter &printer, TypeEnv &env,
   set<Hypothesis *> beforeif = pred.hypotheses;
 
   // generate fresh variables for that used in the current pc
-  SecType *etype = expr_->typecheck(
-      printer, env.varsToType); //->freshVars(get_lineno(), subst);
+  SecType *etype =
+      expr_->typecheck(printer, env); //->freshVars(get_lineno(), subst);
   env.pc = new JoinType(etype, oldpc);
   env.pc = env.pc->simplify();
 
@@ -1980,11 +1959,10 @@ void PEventStatement::typecheck(SexpPrinter &printer, TypeEnv &env,
   SecType *oldpc = env.pc;
   // taint pc by the label of trigger event
   if (expr_.count() != 0) {
-    env.pc = new JoinType(env.pc,
-                          expr_[0]->expr()->typecheck(printer, env.varsToType));
+    env.pc = new JoinType(env.pc, expr_[0]->expr()->typecheck(printer, env));
     for (unsigned idx = 1; idx < expr_.count(); idx += 1)
-      env.pc = new JoinType(
-          env.pc, expr_[idx]->expr()->typecheck(printer, env.varsToType));
+      env.pc =
+          new JoinType(env.pc, expr_[idx]->expr()->typecheck(printer, env));
   }
   if (debug_typecheck) {
     cerr << "New PC is: " << *env.pc << endl;
@@ -2089,8 +2067,7 @@ void PGenerate::typecheck(SexpPrinter &printer, TypeEnv env,
   }
 }
 
-void PGenerate::collect_index_exprs(set<perm_string> &exprs,
-                                    map<perm_string, SecType *> &env) {
+void PGenerate::collect_index_exprs(set<perm_string> &exprs, TypeEnv &env) {
   for (list<PProcess *>::const_iterator idx = behaviors.begin();
        idx != behaviors.end(); idx++) {
     if (debug_typecheck) {

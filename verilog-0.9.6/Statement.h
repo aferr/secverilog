@@ -66,8 +66,7 @@ public:
   virtual void next_cycle_transform(SexpPrinter &printer, TypeEnv &env) const;
   virtual bool collect_dep_invariants(SexpPrinter &printer, TypeEnv &env,
                                       Predicate &pred);
-  virtual void collect_index_exprs(set<perm_string> &exprs,
-                                   map<perm_string, SecType *> &env);
+  virtual void collect_index_exprs(set<perm_string> &exprs, TypeEnv &);
 
 private:
   ivl_process_type_t type_;
@@ -96,8 +95,7 @@ public:
   virtual Statement *next_cycle_transform(SexpPrinter &printer, TypeEnv &env);
   virtual bool collect_dep_invariants(SexpPrinter &printer, TypeEnv &env,
                                       Predicate &pred);
-  virtual void collect_index_exprs(set<perm_string> &exprs,
-                                   map<perm_string, SecType *> &env);
+  virtual void collect_index_exprs(set<perm_string> &exprs, TypeEnv &);
   virtual void collect_assign_paths(PathAnalysis &paths, TypeEnv &env,
                                     Predicate &pred);
   map<perm_string, PExpr *> attributes;
@@ -117,8 +115,7 @@ public:
 
   virtual bool collect_dep_invariants(SexpPrinter &printer, TypeEnv &env,
                                       Predicate &pred);
-  virtual void collect_index_exprs(set<perm_string> &exprs,
-                                   map<perm_string, SecType *> &env);
+  virtual void collect_index_exprs(set<perm_string> &exprs, TypeEnv &);
   virtual void collect_assign_paths(PathAnalysis &paths, TypeEnv &env,
                                     Predicate &pred);
 
@@ -215,8 +212,7 @@ public:
   virtual Statement *next_cycle_transform(SexpPrinter &printer, TypeEnv &env);
   virtual bool collect_dep_invariants(SexpPrinter &out, TypeEnv &env,
                                       Predicate &pred);
-  virtual void collect_index_exprs(set<perm_string> &exprs,
-                                   map<perm_string, SecType *> &env);
+  virtual void collect_index_exprs(set<perm_string> &exprs, TypeEnv &);
   virtual void collect_assign_paths(PathAnalysis &paths, TypeEnv &env,
                                     Predicate &pred);
 
@@ -303,8 +299,7 @@ public:
   virtual Statement *next_cycle_transform(SexpPrinter &printer, TypeEnv &env);
   virtual bool collect_dep_invariants(SexpPrinter &out, TypeEnv &env,
                                       Predicate &pred);
-  virtual void collect_index_exprs(set<perm_string> &exprs,
-                                   map<perm_string, SecType *> &env);
+  virtual void collect_index_exprs(set<perm_string> &exprs, TypeEnv &);
   virtual void collect_assign_paths(PathAnalysis &paths, TypeEnv &env,
                                     Predicate &pred);
   void absintp(Predicate &, TypeEnv &) const;
@@ -331,8 +326,7 @@ public:
   virtual Statement *next_cycle_transform(SexpPrinter &printer, TypeEnv &env);
   virtual bool collect_dep_invariants(SexpPrinter &out, TypeEnv &env,
                                       Predicate &pred);
-  virtual void collect_index_exprs(set<perm_string> &exprs,
-                                   map<perm_string, SecType *> &env);
+  virtual void collect_index_exprs(set<perm_string> &exprs, TypeEnv &);
   virtual void collect_assign_paths(PathAnalysis &paths, TypeEnv &env,
                                     Predicate &pred);
 
@@ -436,8 +430,7 @@ public:
   virtual Statement *next_cycle_transform(SexpPrinter &printer, TypeEnv &env);
   virtual bool collect_dep_invariants(SexpPrinter &out, TypeEnv &env,
                                       Predicate &pred);
-  virtual void collect_index_exprs(set<perm_string> &exprs,
-                                   map<perm_string, SecType *> &env);
+  virtual void collect_index_exprs(set<perm_string> &exprs, TypeEnv &);
   virtual void collect_assign_paths(PathAnalysis &paths, TypeEnv &env,
                                     Predicate &pred);
 

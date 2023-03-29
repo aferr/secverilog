@@ -51,14 +51,10 @@ public:
 
   virtual void dump(ostream &) const;
   virtual void dumpz3(SexpPrinter &) const;
-  virtual SecType *typecheck(SexpPrinter &,
-                             map<perm_string, SecType *> &varsToType) const = 0;
+  virtual SecType *typecheck(SexpPrinter &, TypeEnv &) const = 0;
   virtual PExpr *next_cycle_transform(SexpPrinter &, TypeEnv &env);
   virtual void collect_idens(set<perm_string> &s) const { return; };
-  virtual void collect_index_exprs(set<perm_string> &s,
-                                   map<perm_string, SecType *> &varsToType) {
-    return;
-  };
+  virtual void collect_index_exprs(set<perm_string> &s, TypeEnv &) { return; };
   virtual void collect_used_genvars(set<perm_string> &res, TypeEnv &env);
   // This method tests whether the expression contains any
   // references to automatically allocated variables.
@@ -197,8 +193,7 @@ public:
   virtual void dumpz3(SexpPrinter &printer) const {
     return ex->dumpz3(printer);
   }
-  virtual SecType *typecheck(SexpPrinter &,
-                             map<perm_string, SecType *> &varsToType) const;
+  virtual SecType *typecheck(SexpPrinter &, TypeEnv &) const;
   virtual void collect_idens(set<perm_string> &s) const;
   virtual bool has_aa_term(Design *des, NetScope *scope) const {
     return ex->has_aa_term(des, scope);
@@ -286,8 +281,7 @@ public:
   virtual verinum *eval_const(Design *des, NetScope *sc) const;
   virtual void dump(ostream &) const;
   virtual void dumpz3(SexpPrinter &) const;
-  virtual SecType *typecheck(SexpPrinter &,
-                             map<perm_string, SecType *> &varsToType) const;
+  virtual SecType *typecheck(SexpPrinter &, TypeEnv &) const;
   virtual void collect_idens(set<perm_string> &s) const;
 
   virtual BaseType *check_base_type(SexpPrinter &,
@@ -342,8 +336,7 @@ public:
 
   virtual void dump(ostream &) const;
   virtual void dumpz3(SexpPrinter &) const;
-  virtual SecType *typecheck(SexpPrinter &,
-                             map<perm_string, SecType *> &varsToType) const;
+  virtual SecType *typecheck(SexpPrinter &, TypeEnv &) const;
   virtual void collect_idens(set<perm_string> &s) const;
 
   virtual bool has_aa_term(Design *des, NetScope *scope) const;
@@ -378,8 +371,7 @@ public:
 
   virtual void dump(ostream &) const;
   virtual void dumpz3(SexpPrinter &) const;
-  virtual SecType *typecheck(SexpPrinter &,
-                             map<perm_string, SecType *> &varsToType) const;
+  virtual SecType *typecheck(SexpPrinter &, TypeEnv &) const;
   virtual void collect_idens(set<perm_string> &s) const;
 
 private:
@@ -402,15 +394,12 @@ public:
   virtual void dump(ostream &) const;
   virtual void dumpz3(SexpPrinter &) const;
   virtual void dumpEq(SexpPrinter &out, int val) const;
-  virtual SecType *typecheckName(SexpPrinter &printer,
-                                 map<perm_string, SecType *> &varsToType) const;
-  virtual SecType *typecheckIdx(SexpPrinter &,
-                                map<perm_string, SecType *> &varsToType) const;
-  virtual SecType *typecheck(SexpPrinter &,
-                             map<perm_string, SecType *> &varsToType) const;
+  virtual SecType *typecheckName(SexpPrinter &printer, TypeEnv &,
+                                 bool isNext) const;
+  virtual SecType *typecheckIdx(SexpPrinter &, TypeEnv &) const;
+  virtual SecType *typecheck(SexpPrinter &, TypeEnv &) const;
   virtual void collect_idens(set<perm_string> &s) const;
-  virtual void collect_index_exprs(set<perm_string> &s,
-                                   map<perm_string, SecType *> &varsToType);
+  virtual void collect_index_exprs(set<perm_string> &s, TypeEnv &);
   virtual BaseType *check_base_type(SexpPrinter &,
                                     map<perm_string, BaseType *> &varsToBase);
 
@@ -533,8 +522,7 @@ public:
 
   virtual void dump(ostream &) const;
   virtual void dumpz3(SexpPrinter &) const;
-  virtual SecType *typecheck(SexpPrinter &,
-                             map<perm_string, SecType *> &varsToType) const;
+  virtual SecType *typecheck(SexpPrinter &, TypeEnv &) const;
   virtual void collect_idens(set<perm_string> &s) const;
   virtual unsigned test_width(Design *des, NetScope *scope, unsigned min,
                               unsigned lval, ivl_variable_type_t &expr_type,
@@ -565,8 +553,7 @@ public:
 
   virtual void dump(ostream &) const;
   virtual void dumpz3(SexpPrinter &) const;
-  virtual SecType *typecheck(SexpPrinter &,
-                             map<perm_string, SecType *> &varsToType) const;
+  virtual SecType *typecheck(SexpPrinter &, TypeEnv &) const;
   virtual void collect_idens(set<perm_string> &s) const;
   virtual unsigned test_width(Design *des, NetScope *scope, unsigned min,
                               unsigned lval, ivl_variable_type_t &expr_type,
@@ -604,8 +591,7 @@ public:
   string value() const;
   virtual void dump(ostream &) const;
   virtual void dumpz3(SexpPrinter &) const;
-  virtual SecType *typecheck(SexpPrinter &,
-                             map<perm_string, SecType *> &varsToType) const;
+  virtual SecType *typecheck(SexpPrinter &, TypeEnv &) const;
   virtual void collect_idens(set<perm_string> &s) const;
 
   virtual unsigned test_width(Design *des, NetScope *scope, unsigned min,
@@ -629,8 +615,7 @@ public:
 
   virtual void dump(ostream &out) const;
   virtual void dumpz3(SexpPrinter &out) const;
-  virtual SecType *typecheck(SexpPrinter &,
-                             map<perm_string, SecType *> &varsToType) const;
+  virtual SecType *typecheck(SexpPrinter &, TypeEnv &) const;
   virtual void collect_idens(set<perm_string> &s) const;
 
   virtual bool has_aa_term(Design *des, NetScope *scope) const;
@@ -666,8 +651,7 @@ public:
 
   virtual void dump(ostream &out) const;
   virtual void dumpz3(SexpPrinter &out) const;
-  virtual SecType *typecheck(SexpPrinter &,
-                             map<perm_string, SecType *> &varsToType) const;
+  virtual SecType *typecheck(SexpPrinter &, TypeEnv &) const;
   virtual void collect_idens(set<perm_string> &s) const;
 
   virtual bool has_aa_term(Design *des, NetScope *scope) const;
@@ -811,8 +795,7 @@ public:
 
   virtual void dump(ostream &out) const;
   virtual void dumpz3(SexpPrinter &out) const;
-  virtual SecType *typecheck(SexpPrinter &,
-                             map<perm_string, SecType *> &varsToType) const;
+  virtual SecType *typecheck(SexpPrinter &, TypeEnv &) const;
   virtual void collect_idens(set<perm_string> &s) const;
 
   virtual bool has_aa_term(Design *des, NetScope *scope) const;
@@ -859,8 +842,7 @@ public:
 
   virtual void dump(ostream &) const;
   virtual void dumpz3(SexpPrinter &) const;
-  virtual SecType *typecheck(SexpPrinter &,
-                             map<perm_string, SecType *> &varsToType) const;
+  virtual SecType *typecheck(SexpPrinter &, TypeEnv &) const;
   virtual void collect_idens(set<perm_string> &s) const;
 
   virtual bool has_aa_term(Design *des, NetScope *scope) const;

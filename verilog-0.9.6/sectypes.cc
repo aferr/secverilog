@@ -192,12 +192,12 @@ SecType *IndexType::subst(map<perm_string, perm_string> m) {
   return new IndexType(name_, *substlist);
 }
 
-SecType *IndexType::next_cycle(TypeEnv *env) {
+SecType *IndexType::next_cycle(TypeEnv &env) {
   list<perm_string> *nextlist = new list<perm_string>;
   // for (list<perm_string>::iterator it = exprs_.begin(); it != exprs_.end();
   //      ++it)
   for (auto var : exprs_) {
-    BaseType *fv_base = env->varsToBase[var];
+    BaseType *fv_base = env.varsToBase[var];
     if (fv_base) {
       nextlist->push_back(nextify_perm_string(var));
     } else {
@@ -337,7 +337,7 @@ SecType *JoinType::subst(map<perm_string, perm_string> m) {
     return this;
 }
 
-SecType *JoinType::next_cycle(TypeEnv *env) {
+SecType *JoinType::next_cycle(TypeEnv &env) {
   SecType *comp1new = comp1_->next_cycle(env);
   SecType *comp2new = comp2_->next_cycle(env);
   if (comp1_ != comp1new || comp2_ != comp2new) {
@@ -426,7 +426,7 @@ SecType *MeetType::subst(map<perm_string, perm_string> m) {
     return this;
 }
 
-SecType *MeetType::next_cycle(TypeEnv *env) {
+SecType *MeetType::next_cycle(TypeEnv &env) {
   SecType *comp1new = comp1_->next_cycle(env);
   SecType *comp2new = comp2_->next_cycle(env);
   if (comp1_ != comp1new || comp2_ != comp2new)
@@ -513,7 +513,7 @@ void QuantType::collect_dep_expr(set<perm_string> &m) {
   }
 }
 
-SecType *QuantType::next_cycle(TypeEnv *env) {
+SecType *QuantType::next_cycle(TypeEnv &env) {
   return new QuantType(_index_var, _sectype->next_cycle(env));
 }
 //----------------------------------------------
@@ -542,11 +542,11 @@ bool PolicyType::equals(SecType *st) {
   }
 }
 
-SecType *PolicyType::next_cycle(TypeEnv *env) {
+SecType *PolicyType::next_cycle(TypeEnv &env) {
   list<perm_string> *nextlist = new list<perm_string>;
   for (list<perm_string>::iterator it = _dynamic.begin(); it != _dynamic.end();
        ++it) {
-    BaseType *fv_base = env->varsToBase[*it];
+    BaseType *fv_base = env.varsToBase[*it];
     if (fv_base && fv_base->isSeqType()) {
       nextlist->push_back(nextify_perm_string(*it));
     } else {

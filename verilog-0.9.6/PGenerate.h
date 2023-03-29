@@ -122,8 +122,7 @@ public:
   void next_cycle_transform(SexpPrinter &, TypeEnv env);
   void typecheck(SexpPrinter &, TypeEnv env,
                  map<perm_string, Module *> modules);
-  void collect_index_exprs(set<perm_string> &exprs,
-                           map<perm_string, SecType *> &env);
+  void collect_index_exprs(set<perm_string> &exprs, TypeEnv &env);
   void collect_dep_invariants(SexpPrinter &printer, TypeEnv &env);
   void fill_genvar_vals(perm_string root,
                         std::map<perm_string, std::list<int>> &gendefs);

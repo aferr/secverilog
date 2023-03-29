@@ -120,8 +120,7 @@ public:
   virtual void elaborate(Design *des, NetScope *scope) const;
   virtual bool elaborate_sig(Design *des, NetScope *scope) const;
   void typecheck(SexpPrinter &, TypeEnv &env, Predicate pred) const;
-  void collect_index_exprs(set<perm_string> &exprs,
-                           map<perm_string, SecType *> &env);
+  void collect_index_exprs(set<perm_string> &exprs, TypeEnv &);
   bool collect_dep_invariants(SexpPrinter &printer, TypeEnv &env);
 
 private:
