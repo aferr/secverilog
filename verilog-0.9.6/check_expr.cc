@@ -87,12 +87,16 @@ SecType *PEFNumber::typecheck(SexpPrinter &,
   return ConstType::BOT;
 }
 void PEFNumber::collect_idens(set<perm_string> &s) const { return; }
-SecType *PEIdent::typecheckName(SexpPrinter &printer,
-                                map<perm_string, SecType *> &varsToType) const {
+SecType *PEIdent::typecheckName(SexpPrinter &printer, TypeEnv *env,
+                                bool isNext) const {
+  auto varsToType                                  = env.varsToType;
   perm_string name                                 = peek_tail_name(path_);
   map<perm_string, SecType *>::const_iterator find = varsToType.find(name);
   if (find != varsToType.end()) {
     SecType *tau = (*find).second;
+    if (isNext) {
+      tau = tau->next_cycle(env);
+    }
     // If this is indexed (e.g., v[x]), they type may also be quantified by
     // index (e.g., {|i| F i} ) If this selects more than one component (i.e.,
     // is not SEL_BIT) then ignore (likely will lead to an error during z3
@@ -137,7 +141,7 @@ SecType *PEIdent::typecheck(SexpPrinter &printer,
   // idents are like: varname[bit select]
   // need to join index label with name label
   SecType *namelbl = typecheckName(printer, varsToType);
-  SecType *idxlbl  = typecheckIdx(printer, varsToType);
+  SecType *idxlbl  = typecheckIdx(printer, env->varsToType);
   return new JoinType(namelbl, idxlbl);
 }
 

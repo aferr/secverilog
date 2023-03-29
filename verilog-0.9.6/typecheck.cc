@@ -1357,13 +1357,19 @@ void typecheck_assignment(SexpPrinter &printer, PExpr *lhs, PExpr *rhs,
     SecType *ltype, *rtype, *ltype_orig;
     BaseType *lbase;
     PEIdent *lident = dynamic_cast<PEIdent *>(lhs);
+    lbase           = lhs->check_base_type(printer, env->varsToBase);
     if (lident != NULL) {
       // if lhs is v[x], only want to put type(v) in the type
-      ltype_orig = lident->typecheckName(printer, env->varsToType);
+      ltype_orig = lident->typecheckName(printer, env->varsToType, false);
+      // want next cycle version if is NextType
+      ltype =
+          lident->typecheckName(printer, env->varsToType, lbase->isNextType());
     } else {
-      ltype_orig = lhs->typecheck(printer, env->varsToType);
+      auto msg = new std::string("Assigned to non identifier on LHS: ");
+      *msg += lhs->get_name().str();
+      throw std::runtime_error(*msg);
     }
-    lbase = lhs->check_base_type(printer, env->varsToBase);
+
     // If ltype is sequential, substitute its free variables with the
     // next-cycle version of that variable.
     if (lbase->isNextType()) {
