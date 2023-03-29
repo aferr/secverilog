@@ -2,12 +2,12 @@
 
 module testmodule(
   input {L} clk,
-  output reg [15:0] {L} out		 
+  output reg [15:0] seq {L} out		 
   );   
 
    wire [15:0] 	    {H} data1 = 0;     
    wire [15:0] 	    {H} data2 = 100;
-   reg [15:0] 	    {L} timer;
+   reg [15:0] 	    seq {L} timer;
  
    wire [15:0] 	    {L} out1;
    wire [15:0] 	    {L} out2;

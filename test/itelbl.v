@@ -7,15 +7,16 @@ module labelprop(
 
    reg                 seq {L} final_data;
    reg                 seq {L} old_lbl;
-   wire 	       seq {L} isMisspec;
+   wire 	       com {L} isMisspec;
    reg                 seq {L} tmp_data_tag;
    reg 		       seq {SPEC isMisspec, old_lbl} tmp_data;
    reg                 seq {LH old_lbl} down;
    
    //begin all should succeed
    always@(*) begin     
-      isMisspec = (l_valid && (l_status == tmp_data_tag)) ? 1 : 0;      
+      isMisspec = (l_valid && (l_status == tmp_data_tag)) ? 1 : 0;
    end
+  
    always@(posedge clk) begin
       old_lbl <= old_lbl;      
    end

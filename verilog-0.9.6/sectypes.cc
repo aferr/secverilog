@@ -197,7 +197,7 @@ SecType *IndexType::next_cycle(TypeEnv *env) {
   for (list<perm_string>::iterator it = exprs_.begin(); it != exprs_.end();
        ++it) {
     BaseType *fv_base = env->varsToBase[*it];
-    if (fv_base && fv_base->isSeqType()) {
+    if (fv_base) {
       nextlist->push_back(nextify_perm_string(*it));
     } else {
       nextlist->push_back(*it);

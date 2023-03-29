@@ -32,15 +32,15 @@ module array(clk, reset, sel);
 
    always@(*) begin
       if (sel) begin
-	 data_array_com[pub_index_val] <= pub_data_val; //success
-         data_array_com[sec_index_val] <= pub_data_val; //fail
-	 data_array_com[0][3:0] <= pub_index_val; //success
-	 data_array_com[0][sec_index_val] <= pub_index_val; //fail	 
+	 data_array_com[pub_index_val] = pub_data_val; //success
+         data_array_com[sec_index_val] = pub_data_val; //fail
+	 data_array_com[0][3:0] = pub_index_val; //success
+	 data_array_com[0][sec_index_val] = pub_index_val; //fail	 
       end else begin
-	 data_array_com[pub_index_val] <= sec_data_val; //fail
-	 data_array_com[sec_index_val] <= sec_data_val; //fail
-	 data_array_com[0][3:0] <= sec_index_val; //fail
-	 data_array_com[0][sec_index_val] <= sec_index_val; //fail	 	 
+	 data_array_com[pub_index_val] = sec_data_val; //fail
+	 data_array_com[sec_index_val] = sec_data_val; //fail
+	 data_array_com[0][3:0] = sec_index_val; //fail
+	 data_array_com[0][sec_index_val] = sec_index_val; //fail	 	 
       end
    end
    
