@@ -1681,6 +1681,8 @@ void PAssign::typecheck(SexpPrinter &printer, TypeEnv &env,
       env.varsToBase[ident->get_name()]->isSeqType()) {
     auto msg = new std::string("tried to use blocking assign on seq var: ");
     *msg += ident->get_name().str();
+    *msg += " on line ";
+    *msg += get_fileline();
     throw std::runtime_error(*msg);
   }
 
@@ -1716,6 +1718,8 @@ void PAssignNB::typecheck(SexpPrinter &printer, TypeEnv &env,
     auto msg =
         new std::string("tried to use nonblocking assign on nonseq var: ");
     *msg += ident->get_name().str();
+    *msg += " on line ";
+    *msg += get_fileline();
     throw std::runtime_error(*msg);
   }
 
