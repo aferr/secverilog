@@ -25,17 +25,20 @@
  */
 #include "sectypes.h"
 #include "PExpr.h"
+#include "StringHeap.h"
 #include "genvars.h"
+#include <algorithm>
+#include <iterator>
 #include <sstream>
 #include <string>
+#include <variant>
 
 extern perm_string nextify_perm_string(perm_string s);
 
-void dumpZ3Func(SexpPrinter &printer, perm_string name,
-                list<perm_string> args) {
+void dumpZ3Func(SexpPrinter &printer, perm_string name, list<str_or_num> args) {
   printer.startList(name.str());
   for (auto pstr : args)
-    printer << pstr.str();
+    printer << std::visit(str_or_num_to_string(), pstr);
   printer.endList();
 }
 
@@ -139,12 +142,12 @@ SecType *VarType::freshVars(unsigned int lineno,
 
 bool VarType::hasExpr(perm_string str) { return varname_ == str; }
 
-list<perm_string> rllist(1, perm_string::literal("ReadLabel"));
-list<perm_string> wllist(1, perm_string::literal("WriteLabel"));
+list<str_or_num> rllist(1, perm_string::literal("ReadLabel"));
+list<str_or_num> wllist(1, perm_string::literal("WriteLabel"));
 IndexType *IndexType::RL = new IndexType(perm_string::literal("Par"), rllist);
 IndexType *IndexType::WL = new IndexType(perm_string::literal("Par"), wllist);
 
-IndexType::IndexType(perm_string name, const list<perm_string> &exprs) {
+IndexType::IndexType(perm_string name, const list<str_or_num> &exprs) {
   name_  = name;
   exprs_ = exprs;
 }
@@ -156,55 +159,50 @@ IndexType &IndexType::operator=(const IndexType &t) {
   return *ret;
 }
 
-void IndexType::set_type(const perm_string name, list<perm_string> &exprs) {
+void IndexType::set_type(const perm_string name, list<str_or_num> &exprs) {
   name_  = name;
   exprs_ = exprs;
 }
 
 perm_string IndexType::get_name() const { return name_; }
 
-list<perm_string> IndexType::get_exprs() const { return exprs_; }
+list<str_or_num> IndexType::get_exprs() const { return exprs_; }
 
-SecType *IndexType::subst(perm_string e1, perm_string e2) {
-  list<perm_string> *substlist = new list<perm_string>;
-  for (list<perm_string>::iterator it = exprs_.begin(); it != exprs_.end();
-       ++it) {
-    if (*it == e1) {
-      substlist->push_back(e2);
-    } else {
-      substlist->push_back(*it);
-    }
-  }
-  return new IndexType(name_, *substlist);
+SecType *IndexType::subst(perm_string e1, str_or_num &e2) {
+  list<str_or_num> substlist;
+  std::transform(TRANSFORM_IT(exprs_, substlist), [&](const str_or_num &n) {
+    if (str_or_num(e1) == n)
+      return e2;
+    else
+      return n;
+  });
+  return new IndexType(name_, substlist);
 }
 
-SecType *IndexType::subst(map<perm_string, perm_string> m) {
-  list<perm_string> *substlist = new list<perm_string>;
-  for (list<perm_string>::iterator it = exprs_.begin(); it != exprs_.end();
-       ++it) {
-    map<perm_string, perm_string>::iterator ite = m.find(*it);
-    if (ite != m.end()) {
-      substlist->push_back(ite->second);
-    } else {
-      substlist->push_back(*it);
-    }
-  }
-  return new IndexType(name_, *substlist);
+SecType *IndexType::subst(const map<perm_string, str_or_num> &m) {
+  list<str_or_num> substlist;
+  std::transform(TRANSFORM_IT(exprs_, substlist), [&](const auto &n) {
+    auto str = std::get_if<perm_string>(&n);
+    if (str && m.contains(*str))
+      return m.at(*str);
+    else
+      return n;
+  });
+
+  return new IndexType(name_, substlist);
 }
 
 SecType *IndexType::next_cycle(TypeEnv &env) {
-  list<perm_string> *nextlist = new list<perm_string>;
-  // for (list<perm_string>::iterator it = exprs_.begin(); it != exprs_.end();
-  //      ++it)
-  for (auto var : exprs_) {
-    BaseType *fv_base = env.varsToBase[var];
-    if (fv_base) {
-      nextlist->push_back(nextify_perm_string(var));
-    } else {
-      nextlist->push_back(var);
-    }
-  }
-  return new IndexType(name_, *nextlist);
+  list<str_or_num> nextlist{};
+  std::transform(TRANSFORM_IT(exprs_, nextlist), [&](const auto &n) {
+    auto str = std::get_if<perm_string>(&n);
+    if (str && env.varsToBase[*str]) {
+      auto tmp = str_or_num(nextify_perm_string(*str));
+      return tmp;
+    } else
+      return n;
+  });
+  return new IndexType(name_, nextlist);
 }
 
 bool IndexType::equals(SecType *st) {
@@ -228,35 +226,37 @@ bool isConstStr(perm_string s) {
 }
 
 void IndexType::collect_dep_expr(set<perm_string> &m) {
-  for (list<perm_string>::iterator it = exprs_.begin(); it != exprs_.end();
-       ++it) {
-    perm_string ex = *it;
-    if (!isConstStr(ex)) {
-      m.insert(ex);
+  for (auto &arg : exprs_) {
+    auto str = std::get_if<perm_string>(&arg);
+    if (str) {
+      m.insert(*str);
+      m.insert(nextify_perm_string(*str));
       // If this is a seqtype and so is its free variable, the next-cycle
-      // value of the label is the dependand
-      m.insert(nextify_perm_string(ex));
+      // value of the label is the dependant
     }
   }
 }
 
 SecType *IndexType::freshVars(unsigned int lineno,
                               map<perm_string, perm_string> &m) {
-  list<perm_string> *substlist = new list<perm_string>;
-  for (list<perm_string>::iterator it = exprs_.begin(); it != exprs_.end();
-       ++it) {
-    stringstream ss;
-    ss << *it << lineno;
-    const std::string *tmp = new string(ss.str());
-    perm_string newexpr    = perm_string::literal(tmp->c_str());
-    m[*it]                 = newexpr;
-    substlist->push_back(newexpr);
+  list<str_or_num> substlist;
+  for (auto &exp : exprs_) {
+    auto str = std::get_if<perm_string>(&exp);
+    if (str) {
+      stringstream ss;
+      ss << *str << lineno;
+      auto tmp      = new string(ss.str());
+      auto new_expr = perm_string::literal(tmp->c_str());
+      m[*str]       = new_expr;
+      substlist.emplace_back(new_expr);
+    }
   }
-  return new IndexType(name_, *substlist);
+  return new IndexType(name_, substlist);
 }
 
 bool IndexType::hasExpr(perm_string str) {
-  return (std::find(exprs_.begin(), exprs_.end(), str) != exprs_.end());
+  return (std::find(exprs_.begin(), exprs_.end(), str_or_num(str)) !=
+          exprs_.end());
 }
 
 JoinType::JoinType(SecType *ty1, SecType *ty2) {
@@ -521,8 +521,8 @@ SecType *QuantType::next_cycle(TypeEnv &env) {
 //----------------------------------------------
 
 PolicyType::PolicyType(SecType *lower, perm_string cond_name,
-                       const list<perm_string> &static_exprs,
-                       const list<perm_string> &dynamic_exprs, SecType *upper) {
+                       const list<str_or_num> &static_exprs,
+                       const list<str_or_num> &dynamic_exprs, SecType *upper) {
   _isNext    = false;
   _lower     = lower;
   _cond_name = cond_name;
@@ -543,14 +543,14 @@ bool PolicyType::equals(SecType *st) {
 }
 
 SecType *PolicyType::next_cycle(TypeEnv &env) {
-  list<perm_string> *nextlist = new list<perm_string>;
-  for (list<perm_string>::iterator it = _dynamic.begin(); it != _dynamic.end();
-       ++it) {
-    BaseType *fv_base = env.varsToBase[*it];
-    if (fv_base && fv_base->isSeqType()) {
-      nextlist->push_back(nextify_perm_string(*it));
+  list<str_or_num> *nextlist = new list<str_or_num>;
+  for (auto &dyn : _dynamic) {
+    perm_string *str = std::get_if<perm_string>(&dyn);
+    if (str && env.varsToBase.contains(*str) &&
+        env.varsToBase.at(*str)->isSeqType()) {
+      nextlist->push_back(nextify_perm_string(*str));
     } else {
-      nextlist->push_back(*it);
+      nextlist->push_back(dyn);
     }
   }
   PolicyType *res = new PolicyType(_lower->next_cycle(env), _cond_name, _static,
@@ -560,84 +560,63 @@ SecType *PolicyType::next_cycle(TypeEnv &env) {
 }
 
 bool PolicyType::hasExpr(perm_string str) {
-  return (std::find(_static.begin(), _static.end(), str) != _static.end()) ||
-         (std::find(_dynamic.begin(), _dynamic.end(), str) != _dynamic.end()) ||
+  return (std::find(_static.begin(), _static.end(), str_or_num(str)) !=
+          _static.end()) ||
+         (std::find(_dynamic.begin(), _dynamic.end(), str_or_num(str)) !=
+          _dynamic.end()) ||
          _lower->hasExpr(str) || _upper->hasExpr(str);
 }
 
 SecType *PolicyType::subst(perm_string e1, perm_string e2) {
-  SecType *nlower               = _lower->subst(e1, e2);
-  SecType *nupper               = _upper->subst(e1, e2);
-  list<perm_string> *staticlist = new list<perm_string>;
-  for (list<perm_string>::iterator it = _static.begin(); it != _static.end();
-       ++it) {
-    if (*it == e1) {
-      staticlist->push_back(e2);
-    } else {
-      staticlist->push_back(*it);
-    }
-  }
-  list<perm_string> *dynamiclist = new list<perm_string>;
-  for (list<perm_string>::iterator it = _dynamic.begin(); it != _dynamic.end();
-       ++it) {
-    if (*it == e1) {
-      dynamiclist->push_back(e2);
-    } else {
-      dynamiclist->push_back(*it);
-    }
-  }
-  return new PolicyType(nlower, _cond_name, *staticlist, *dynamiclist, nupper);
+  SecType *nlower = _lower->subst(e1, e2);
+  SecType *nupper = _upper->subst(e1, e2);
+  auto do_subst   = [&](const str_or_num &n) {
+    if (n == str_or_num(e1))
+      return str_or_num(e2);
+    else
+      return n;
+  };
+  list<str_or_num> staticlist;
+  std::transform(TRANSFORM_IT(_static, staticlist), do_subst);
+  list<str_or_num> dynamiclist;
+  std::transform(TRANSFORM_IT(_dynamic, dynamiclist), do_subst);
+  return new PolicyType(nlower, _cond_name, staticlist, dynamiclist, nupper);
 }
 
 SecType *PolicyType::subst(map<perm_string, perm_string> m) {
-  SecType *nlower               = _lower->subst(m);
-  SecType *nupper               = _upper->subst(m);
-  list<perm_string> *staticlist = new list<perm_string>;
-  for (list<perm_string>::iterator it = _static.begin(); it != _static.end();
-       ++it) {
-    map<perm_string, perm_string>::iterator ite = m.find(*it);
-    if (ite != m.end()) {
-      staticlist->push_back(ite->second);
-    } else {
-      staticlist->push_back(*it);
-    }
-  }
-  list<perm_string> *dynamiclist = new list<perm_string>;
-  for (list<perm_string>::iterator it = _dynamic.begin(); it != _dynamic.end();
-       ++it) {
-    map<perm_string, perm_string>::iterator ite = m.find(*it);
-    if (ite != m.end()) {
-      dynamiclist->push_back(ite->second);
-    } else {
-      dynamiclist->push_back(*it);
-    }
-  }
-  return new PolicyType(nlower, _cond_name, *staticlist, *dynamiclist, nupper);
+  SecType *nlower = _lower->subst(m);
+  SecType *nupper = _upper->subst(m);
+  auto do_subst   = [&m](const str_or_num &n) {
+    auto *str = std::get_if<perm_string>(&n);
+    if (str && m.contains(*str))
+      return str_or_num(m.at(*str));
+    else
+      return n;
+  };
+
+  list<str_or_num> staticlist;
+  std::transform(TRANSFORM_IT(_static, staticlist), do_subst);
+  list<str_or_num> dynamiclist;
+  std::transform(TRANSFORM_IT(_dynamic, dynamiclist), do_subst);
+  return new PolicyType(nlower, _cond_name, staticlist, dynamiclist, nupper);
 }
 void PolicyType::collect_dep_expr(set<perm_string> &m) {
   _lower->collect_dep_expr(m);
   _upper->collect_dep_expr(m);
-  for (list<perm_string>::iterator it = _static.begin(); it != _static.end();
-       ++it) {
-    perm_string ex = *it;
-    if (!isConstStr(ex)) {
-      m.insert(ex);
+  auto collect = [&m](const str_or_num &n) {
+    auto str = std::get_if<perm_string>(&n);
+    if (str) {
+      m.insert(*str);
       // If this is a seqtype and so is its free variable, the next-cycle
       // value of the label is the dependand
-      m.insert(nextify_perm_string(ex));
+      // ^^ who tf knows what this means but it's been here before I
+      m.insert(nextify_perm_string(*str));
     }
-  }
-  for (list<perm_string>::iterator it = _dynamic.begin(); it != _dynamic.end();
-       ++it) {
-    perm_string ex = *it;
-    if (!isConstStr(ex)) {
-      m.insert(ex);
-      // If this is a seqtype and so is its free variable, the next-cycle
-      // value of the label is the dependand
-      m.insert(nextify_perm_string(ex));
-    }
-  }
+  };
+  std::for_each(CONST_IT(_static), collect);
+  std::for_each(CONST_IT(_dynamic), collect);
 }
+
 void PolicyType::emitFlowsTo(SexpPrinter &printer, SecType *rhs) {
   PolicyType *right_policy = dynamic_cast<PolicyType *>(rhs);
   ConstType *right_const   = dynamic_cast<ConstType *>(rhs);
@@ -658,33 +637,20 @@ void PolicyType::emitFlowsTo(SexpPrinter &printer, SecType *rhs) {
     // only emit erasure check if target is next cycle
     if (right_policy->isNextType()) {
       printer.startList("not");
-      list<perm_string> arglist = get_all_args();
+      auto arglist = get_all_args();
       dumpZ3Func(printer, _cond_name, arglist);
       printer.endList();
     }
     // erasure condition must be at least as strong
     // quantify over all possible static variables
-    list<perm_string> leftlist  = list<perm_string>();
-    list<perm_string> rightlist = list<perm_string>();
-    for (list<perm_string>::iterator it = _static.begin(); it != _static.end();
-         ++it) {
-      leftlist.push_back(*it);
-    }
-    list<perm_string> rightstatic = right_policy->get_static();
-    for (list<perm_string>::iterator it = rightstatic.begin();
-         it != rightstatic.end(); ++it) {
-      rightlist.push_back(*it);
-    }
+    auto leftlist  = _static;
+    auto rightlist = right_policy->get_static();
+
     // append all (non quantified) dynamic variables
-    for (list<perm_string>::iterator it = _dynamic.begin();
-         it != _dynamic.end(); ++it) {
-      leftlist.push_back(*it);
-    }
-    list<perm_string> rightdynamic = right_policy->get_dynamic();
-    for (list<perm_string>::iterator it = rightdynamic.begin();
-         it != rightdynamic.end(); ++it) {
-      rightlist.push_back(*it);
-    }
+    leftlist.insert(leftlist.end(), CONST_IT(_dynamic));
+
+    const auto &rdynamic = right_policy->get_dynamic();
+    rightlist.insert(rightlist.end(), CONST_IT(rdynamic));
     printer.startList("implies");
     dumpZ3Func(printer, _cond_name, leftlist);
     dumpZ3Func(printer, right_policy->get_cond(), rightlist);

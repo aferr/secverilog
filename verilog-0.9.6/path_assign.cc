@@ -51,8 +51,8 @@ void dump_is_def_assign(SexpPrinter &p, PathAnalysis &path_analysis,
                         perm_string varname) {
 
   if (!path_analysis.contains(varname)) {
-    cerr << varname << " is is not in path analysis" << endl;
-    throw "Not assigned in PathAnalysis";
+    p << "false";
+    return;
   }
   dump_on_paths(p, path_analysis[varname]);
 }

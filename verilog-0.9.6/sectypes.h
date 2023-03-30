@@ -36,6 +36,7 @@
 #include "StringHeap.h"
 #include "basetypes.h"
 #include "sexp_printer.h"
+#include "verinum.h"
 #include <cstdlib>
 #include <fstream>
 #include <list>
@@ -43,6 +44,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <variant>
 
 class SecType;
 class ConstType;
@@ -54,7 +56,19 @@ class QuantType;
 class PolicyType;
 struct TypeEnv;
 
-void dumpZ3Func(SexpPrinter &printer, perm_string name, list<perm_string> args);
+using str_or_num = variant<perm_string, verinum>;
+
+struct str_or_num_to_string {
+  std::string operator()(const perm_string &s) { return s.str(); }
+  std::string operator()(const verinum &n) {
+    return std::to_string(n.as_long());
+  }
+};
+
+void dumpZ3Func(SexpPrinter &printer, perm_string name, list<str_or_num> args);
+
+#define CONST_IT(container) container.cbegin(), container.cend()
+#define TRANSFORM_IT(src, dest) CONST_IT(src), std::back_inserter(dest)
 
 class SecType {
 
@@ -82,7 +96,8 @@ public:
     return this;
   };
   virtual SecType *apply_index(PExpr *index_val) { return this; }
-  virtual SecType *apply_index(perm_string index_var, perm_string index_val) {
+  virtual SecType *apply_index(perm_string index_var,
+                               const str_or_num &index_val) {
     return this;
   }
   //  BasicType& operator= (const BasicType&);
@@ -135,33 +150,29 @@ private:
 class IndexType : public SecType {
 
 public:
-  IndexType(perm_string name, const list<perm_string> &exprs);
+  IndexType(perm_string name, const list<str_or_num> &exprs);
   ~IndexType();
   IndexType &operator=(const IndexType &);
   void dump(SexpPrinter &printer) { dumpZ3Func(printer, name_, exprs_); }
   bool equals(SecType *st);
 
-  SecType *apply_index(perm_string index_var, perm_string index_val) {
-    list<perm_string> *nexprs = new list<perm_string>();
-    for (list<perm_string>::iterator it = exprs_.begin(); it != exprs_.end();
-         it++) {
-      if (index_var == *it) {
-        nexprs->push_back(index_val);
-      } else {
-        nexprs->push_back(*it);
-      }
-    }
-    const list<perm_string> *cexprs = nexprs;
-    return new IndexType(name_, *cexprs);
+  SecType *apply_index(perm_string index_var, const str_or_num &index_val) {
+    list<str_or_num> nexprs;
+    std::transform(TRANSFORM_IT(exprs_, nexprs), [&](const str_or_num &n) {
+      if (str_or_num(index_var) == n)
+        return index_val;
+      return n;
+    });
+    return new IndexType(name_, nexprs);
   }
 
 public:
   // Manipulate the types.
-  void set_type(const perm_string name, list<perm_string> &exprs);
+  void set_type(const perm_string name, list<str_or_num> &exprs);
   perm_string get_name() const;
-  list<perm_string> get_exprs() const;
-  SecType *subst(perm_string e1, perm_string e2);
-  SecType *subst(map<perm_string, perm_string> m);
+  list<str_or_num> get_exprs() const;
+  SecType *subst(perm_string e1, str_or_num &e2);
+  SecType *subst(const map<perm_string, str_or_num> &m);
   virtual SecType *next_cycle(TypeEnv &env);
   void collect_dep_expr(set<perm_string> &m);
   SecType *freshVars(unsigned int lineno, map<perm_string, perm_string> &m);
@@ -174,7 +185,7 @@ public:
 
 private:
   perm_string name_;
-  list<perm_string> exprs_;
+  list<str_or_num> exprs_;
 };
 
 /* a CompType can be a join/meet of CompTypes */
@@ -266,16 +277,13 @@ public:
     // for now only support identifiers and numbers as index_values, if it's
     // anything else, throw an error
     PEIdent *index_id = dynamic_cast<PEIdent *>(index_val);
-    perm_string index_str;
+    str_or_num idx_val;
     if (!index_id) {
       PENumber *index_num = dynamic_cast<PENumber *>(index_val);
       if (!index_num) {
         throw "Quantified types cannot be used with complex index expressions";
       } else {
-        stringstream ss;
-        ss << *index_num;
-        const std::string *tmp = new string(ss.str());
-        index_str              = perm_string::literal(tmp->c_str());
+        idx_val = index_num->value();
       }
     } else {
       // TODO throw error if this itself is indexed
@@ -283,9 +291,9 @@ public:
       if (index_idx.sel != index_component_t::SEL_NONE) {
         throw "Index expression must not contain an index";
       }
-      index_str = peek_tail_name(index_id->path());
+      idx_val = peek_tail_name(index_id->path());
     }
-    SecType *replacedType = _sectype->apply_index(_index_var, index_str);
+    SecType *replacedType = _sectype->apply_index(_index_var, idx_val);
     SecType *result       = new QuantType(_index_var, replacedType);
     return result;
   }
@@ -322,8 +330,8 @@ class PolicyType : public SecType {
 
 public:
   PolicyType(SecType *lower, perm_string cond_name,
-             const list<perm_string> &static_exprs,
-             const list<perm_string> &dynamic_exprs, SecType *upper);
+             const list<str_or_num> &static_exprs,
+             const list<str_or_num> &dynamic_exprs, SecType *upper);
   ~PolicyType();
   virtual SecType *next_cycle(TypeEnv &env);
   virtual bool hasExpr(perm_string str);
@@ -337,33 +345,31 @@ public:
     _lower->dump(printer);
     printer.startList();
     printer << _cond_name.str();
-    for (list<perm_string>::iterator it = _static.begin(); it != _static.end();
-         ++it) {
-      printer << it->str();
+    for (auto &v : _static) {
+      printer << std::visit(str_or_num_to_string(), v);
     }
-    for (list<perm_string>::iterator it = _dynamic.begin();
-         it != _dynamic.end(); ++it) {
-      printer << it->str();
+    for (auto &v : _dynamic) {
+      printer << std::visit(str_or_num_to_string(), v);
     }
     printer.endList();
     _upper->dump(printer);
     printer.endList();
   }
 
-  SecType *apply_index(perm_string index_var, perm_string index_val) {
+  SecType *apply_index(perm_string index_var, const str_or_num &index_val) {
     SecType *nlower = _lower->apply_index(index_var, index_val);
     SecType *nupper = _upper->apply_index(index_var, index_val);
-    list<perm_string> nstatic;
-    list<perm_string> ndynamic;
+    list<str_or_num> nstatic;
+    list<str_or_num> ndynamic;
     for (auto &s : _static) {
-      if (s == index_var) {
+      if (s == str_or_num(index_var)) {
         nstatic.push_back(index_val);
       } else {
         nstatic.push_back(s);
       }
     }
     for (auto &s : _dynamic) {
-      if (s == index_var) {
+      if (s == str_or_num(index_var)) {
         ndynamic.push_back(index_val);
       } else {
         ndynamic.push_back(s);
@@ -382,12 +388,12 @@ public:
 
   perm_string get_cond() { return _cond_name; }
 
-  list<perm_string> get_static() { return _static; }
+  list<str_or_num> get_static() { return _static; }
 
-  list<perm_string> get_dynamic() { return _dynamic; }
+  list<str_or_num> get_dynamic() { return _dynamic; }
 
-  list<perm_string> get_all_args() {
-    list<perm_string> arglist = list<perm_string>(_static);
+  list<str_or_num> get_all_args() {
+    list<str_or_num> arglist = list<str_or_num>(_static);
     arglist.insert(arglist.end(), _dynamic.begin(), _dynamic.end());
     return arglist;
   }
@@ -400,8 +406,8 @@ private:
   bool _isNext;
   SecType *_lower;
   perm_string _cond_name;
-  list<perm_string> _static;
-  list<perm_string> _dynamic;
+  list<str_or_num> _static;
+  list<str_or_num> _dynamic;
   SecType *_upper;
 };
 

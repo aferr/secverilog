@@ -32,6 +32,7 @@
 # include  <cstring>
 # include  <sstream>
 # include <typeinfo>
+#include <variant>
 
 #pragma GCC diagnostic ignored "-Wsign-compare"
 
@@ -55,7 +56,6 @@ static struct {
       svector<PExpr*>* range;
 } port_declaration_context = {NetNet::NONE, NetNet::NOT_A_PORT,
                               IVL_VT_NO_TYPE, new ConstType(),
-			      
                               new BaseType(), false, 0};
 
 /* The task and function rules need to briefly hold the pointer to the
@@ -178,6 +178,9 @@ static PECallFunction*make_call_function(perm_string tn, PExpr*arg1, PExpr*arg2)
 	   strdup. They can be put into lists with the texts type. */
       char*text;
       list<perm_string>*perm_strings;
+
+  variant<perm_string, verinum> *sec_arg;
+  list<variant<perm_string, verinum>> *sec_args;
 
       list<pair<perm_string,PExpr*> >*port_list;
 
@@ -388,8 +391,8 @@ static PECallFunction*make_call_function(perm_string tn, PExpr*arg1, PExpr*arg2)
 
 %type <sectype> sec_label
 %type <sectype> sec_label_comp
-%type <perm_strings> iden_list
-%type <text> sec_iden
+%type <sec_arg> sectype_arg
+%type <sec_args> sec_arg_list
 %type <basetype> base_type
 
 %token K_TAND
@@ -514,7 +517,7 @@ sec_label
     ;
     
 sec_label_comp
-  : K_erase '(' sec_label_comp ';' IDENTIFIER iden_list ';' iden_list ';' sec_label_comp ')'
+  : K_erase '(' sec_label_comp ';' IDENTIFIER sec_arg_list ';' sec_arg_list ';' sec_label_comp ')'
     {
       SecType* l = $3;
       SecType* r = $10;
@@ -528,7 +531,7 @@ sec_label_comp
       SecType* type = new ConstType(name);
       $$ = type;
     }
-  | IDENTIFIER iden_list 
+  | IDENTIFIER sec_arg_list
     { 
       perm_string name = lex_strings.make($1);
       SecType* type = new IndexType(name, *$2);
@@ -539,7 +542,7 @@ sec_label_comp
       perm_string name = lex_strings.make($1);
       perm_string expr = lex_strings.make($4);
       expr = nextify_perm_string(expr);
-      list<perm_string> *tmp = new list<perm_string>;
+      auto *tmp = new list<variant<perm_string, verinum>>;
       tmp->push_back(expr);
       SecType* type = new IndexType(name, *tmp);
       $$ = type;
@@ -569,26 +572,23 @@ sec_label_comp
     } 
   ;
 
-iden_list
-  : '(' ')'
-  {
-    $$ = new list<perm_string>;
-  }
-  | sec_iden
-  {
-    $$ = list_from_identifier($1);
-  }
-  | iden_list ',' sec_iden
-  {
-    $$ = list_from_identifier($1, $3);
-  };
+sec_arg_list:
+'(' ')' { $$ = new list<variant<perm_string, verinum>>; }
+| sectype_arg { auto tmp = new list<variant<perm_string, verinum>>;
+    tmp->push_back(std::move(*$1));
+    delete $1;
+    $$ = tmp; }
+| sec_arg_list ',' sectype_arg { $1->push_back(std::move(*$3));
+  delete $3;
+  $$ = $1; }
 ;
 
-sec_iden:
-  IDENTIFIER
-  {
-    $$ = $1;
-  };
+sectype_arg:
+IDENTIFIER { auto tmp = lex_strings.make($1); delete[] $1;
+  $$ = new variant<perm_string, verinum>(tmp);}
+| DEC_NUMBER { $$ = new variant<perm_string, verinum>(*$1); }
+;
+
 
 base_type
   : K_seq

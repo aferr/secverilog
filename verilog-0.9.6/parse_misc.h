@@ -23,6 +23,7 @@
 #include "pform.h"
 #include <list>
 #include <ostream>
+#include <variant>
 
 /*
  * The vlltype supports the passing of detailed source file location
