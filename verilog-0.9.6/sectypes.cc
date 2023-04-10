@@ -546,7 +546,7 @@ SecType *PolicyType::next_cycle(TypeEnv &env) {
   list<str_or_num> *nextlist = new list<str_or_num>;
   for (auto &dyn : _dynamic) {
     perm_string *str = std::get_if<perm_string>(&dyn);
-    if (str && env.varsToBase.contains(*str) &&
+    if (str && env.varsToBase.contains(*str) && env.varsToBase.at(*str) &&
         env.varsToBase.at(*str)->isSeqType()) {
       nextlist->push_back(nextify_perm_string(*str));
     } else {

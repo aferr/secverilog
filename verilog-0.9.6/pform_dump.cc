@@ -279,14 +279,11 @@ void PEIdent::dumpz3(SexpPrinter &printer) const {
       std::stringstream str;
       dump(str);
       printer << str.str();
-      ;
     } else {
       perm_string base_name = peek_tail_name(path_);
       printer.startList("select");
       printer << base_name.str();
-      std::stringstream tmp;
-      msb->dump(tmp);
-      printer << tmp.str();
+      msb->dumpz3(printer);
       printer.endList();
     }
   } else {

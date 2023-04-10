@@ -111,13 +111,14 @@ bool PEBinary::is_wellformed(set<perm_string> s) {
   // 'L' : leq
   // 'n' : !=
   if (op_ == 'e' || op_ == 'o' || op_ == 'L' || op_ == 'n' || op_ == 'G' ||
-      op_ == '<' || op_ == '>' || op_ == '%' || op_ == '+') {
+      op_ == '<' || op_ == '>' || op_ == '%' || op_ == '+' || op_ == '-') {
     return left_->is_wellformed(s) && right_->is_wellformed(s);
   }
   if (op_ == 'a')
     return left_->is_wellformed(s) || right_->is_wellformed(s);
   else {
-    cout << "Operator: " << op_ << " is not wellformed";
+    cout << "Operator: " << op_ << " is not wellformed: " << get_fileline()
+         << endl;
     return false;
   }
 }
