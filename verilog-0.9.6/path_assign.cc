@@ -50,7 +50,7 @@ PathAnalysis get_paths(Module &m, TypeEnv &env) {
 void dump_is_def_assign(SexpPrinter &p, PathAnalysis &path_analysis,
                         perm_string varname) {
 
-  if (!path_analysis.contains(varname)) {
+  if (!path_analysis.contains(varname) || path_analysis[varname].empty()) {
     p << "false";
     return;
   }
