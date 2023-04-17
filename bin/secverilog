@@ -85,19 +85,19 @@ foreach my $file (@files) {
     for(@lines) {
 	if (/^Starting assigned-once/) {
 	    $lookingForAssignedOnce = 1;
-	    last;
+	    next;
 	}
 	if (/^Ending assigned-once/) {
 	    $lookingForAssignedOnce = 0;
-	    last;
+	    next;
 	}
 	if (/^Start base conditions/) {
 	    $lookingForBaseSat = 1;
-	    last;
+	    next;
 	}
 	if (/^End base conditions/) {
 	    $lookingForBaseSat = 0;
-	    last;
+	    next;
 	}
 	if ($lookingForBaseSat) {
 	    if (/^unsat|unknown|error/) {
