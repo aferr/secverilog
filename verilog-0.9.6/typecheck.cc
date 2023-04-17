@@ -782,8 +782,10 @@ bool Module::CollectDepInvariants(SexpPrinter &printer, TypeEnv &env) const {
   auto outStr = invs.str();
   printer.writeRawLine(outStr);
 
+varloop:
   for (auto &depVar : std::ranges::filter_view(env.dep_exprs, [&](auto &v) {
-         return env.varsToBase.contains(v) && env.varsToBase.at(v)->isSeqType();
+         return env.varsToBase.contains(v) && env.varsToBase.at(v) &&
+                env.varsToBase.at(v)->isSeqType();
        })) {
 
     auto wire      = wires.find(depVar);
@@ -808,9 +810,13 @@ bool Module::CollectDepInvariants(SexpPrinter &printer, TypeEnv &env) const {
             std::smatch match;
             if (std::regex_search(str, match, regex)) {
               return std::make_pair(match[1].str(), v.second);
+            } else {
+              auto msg = new std::string("Attempted to assign whole array: ");
+              *msg += str;
+              throw std::runtime_error(*msg);
             }
-            throw std::runtime_error("failed to match");
           });
+
       int range = def->getArrayRange();
 
       printer.inList("assert", [&]() {
