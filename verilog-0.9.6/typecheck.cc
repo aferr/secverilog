@@ -328,10 +328,13 @@ bool PAssign_::collect_dep_invariants(SexpPrinter &printer, TypeEnv &env,
     cerr << "collect_dep_invariants on passign" << endl;
     cerr << "lval is: " << *lval() << endl;
   }
-  // make sure basetype is appropriate
-  lval()->check_base_type(printer, env.varsToBase);
-  // if lhs appears in dependent type
-  if ((env.dep_exprs.find(lval()->get_name()) != env.dep_exprs.end())) {
+  // make sure basetype implies lhs has only 1 value per cycle (i.e. not a com
+  // reg)
+  BaseType *bt  = lval()->check_base_type(printer, env.varsToBase);
+  bool isOkType = bt->isNextType() || true; // TODO check if declared as Wire
+  // if lhs appears in dependent type and is correct basetype
+  if (isOkType &&
+      (env.dep_exprs.find(lval()->get_name()) != env.dep_exprs.end())) {
     bool hasPreds = !pred.hypotheses.empty();
     std::set<perm_string> genvars;
     collect_used_genvars(genvars, pred, env);
@@ -356,6 +359,9 @@ bool PAssign_::collect_dep_invariants(SexpPrinter &printer, TypeEnv &env,
     rval()->collect_idens(env.dep_exprs);
     return true;
   } else {
+    if (debug_typecheck) {
+      cerr << "skipping collect_dep_invariants on " << *lval() << endl;
+    }
     return false;
   }
 }
