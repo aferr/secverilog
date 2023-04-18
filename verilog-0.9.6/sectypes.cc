@@ -168,7 +168,7 @@ perm_string IndexType::get_name() const { return name_; }
 
 list<str_or_num> IndexType::get_exprs() const { return exprs_; }
 
-SecType *IndexType::subst(perm_string e1, str_or_num &e2) {
+SecType *IndexType::subst(perm_string e1, const str_or_num &e2) {
   list<str_or_num> substlist;
   std::transform(TRANSFORM_IT(exprs_, substlist), [&](const str_or_num &n) {
     if (str_or_num(e1) == n)
@@ -319,7 +319,7 @@ SecType *JoinType::getFirst() { return comp1_; }
 
 SecType *JoinType::getSecond() { return comp2_; }
 
-SecType *JoinType::subst(perm_string e1, perm_string e2) {
+SecType *JoinType::subst(perm_string e1, const str_or_num &e2) {
   SecType *comp1new = comp1_->subst(e1, e2);
   SecType *comp2new = comp2_->subst(e1, e2);
   if (comp1_ != comp1new || comp2_ != comp2new) {
@@ -328,7 +328,7 @@ SecType *JoinType::subst(perm_string e1, perm_string e2) {
     return this;
 }
 
-SecType *JoinType::subst(map<perm_string, perm_string> m) {
+SecType *JoinType::subst(const map<perm_string, str_or_num> &m) {
   SecType *comp1new = comp1_->subst(m);
   SecType *comp2new = comp2_->subst(m);
   if (comp1_ != comp1new || comp2_ != comp2new) {
@@ -408,7 +408,7 @@ SecType *MeetType::getFirst() { return comp1_; }
 
 SecType *MeetType::getSecond() { return comp2_; }
 
-SecType *MeetType::subst(perm_string e1, perm_string e2) {
+SecType *MeetType::subst(perm_string e1, const str_or_num &e2) {
   SecType *comp1new = comp1_->subst(e1, e2);
   SecType *comp2new = comp2_->subst(e1, e2);
   if (comp1_ != comp1new || comp2_ != comp2new)
@@ -417,7 +417,7 @@ SecType *MeetType::subst(perm_string e1, perm_string e2) {
     return this;
 }
 
-SecType *MeetType::subst(map<perm_string, perm_string> m) {
+SecType *MeetType::subst(const map<perm_string, str_or_num> &m) {
   SecType *comp1new = comp1_->subst(m);
   SecType *comp2new = comp2_->subst(m);
   if (comp1_ != comp1new || comp2_ != comp2new)
@@ -567,7 +567,7 @@ bool PolicyType::hasExpr(perm_string str) {
          _lower->hasExpr(str) || _upper->hasExpr(str);
 }
 
-SecType *PolicyType::subst(perm_string e1, perm_string e2) {
+SecType *PolicyType::subst(perm_string e1, const str_or_num &e2) {
   SecType *nlower = _lower->subst(e1, e2);
   SecType *nupper = _upper->subst(e1, e2);
   auto do_subst   = [&](const str_or_num &n) {
@@ -583,7 +583,7 @@ SecType *PolicyType::subst(perm_string e1, perm_string e2) {
   return new PolicyType(nlower, _cond_name, staticlist, dynamiclist, nupper);
 }
 
-SecType *PolicyType::subst(map<perm_string, perm_string> m) {
+SecType *PolicyType::subst(const map<perm_string, str_or_num> &m) {
   SecType *nlower = _lower->subst(m);
   SecType *nupper = _upper->subst(m);
   auto do_subst   = [&m](const str_or_num &n) {
@@ -692,7 +692,7 @@ Predicate *Predicate::subst(map<perm_string, perm_string> m) const {
   return ret;
 }
 
-Equality *Equality::subst(map<perm_string, perm_string> m) {
+Equality *Equality::subst(const map<perm_string, str_or_num> &m) {
   Equality *ret = new Equality(left->subst(m), right->subst(m), isleq);
   return ret;
 }
