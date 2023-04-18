@@ -331,7 +331,7 @@ bool PAssign_::collect_dep_invariants(SexpPrinter &printer, TypeEnv &env,
   // make sure basetype implies lhs has only 1 value per cycle (i.e. not a com
   // reg)
   BaseType *bt  = lval()->check_base_type(printer, env.varsToBase);
-  bool isOkType = bt->isNextType() || true; // TODO check if declared as Wire
+  bool isOkType = bt->isNextType(); // TODO check if declared as Wire
   // if lhs appears in dependent type and is correct basetype
   if (isOkType &&
       (env.dep_exprs.find(lval()->get_name()) != env.dep_exprs.end())) {
