@@ -1426,11 +1426,13 @@ void typecheck_assignment(SexpPrinter &printer, PExpr *lhs, PExpr *rhs,
       typecheck_assignment_constraint(printer,
                                       ltype->subst(lhs->get_name(), newname),
                                       rtype, newcond, note, NULL, env);
-      // NSU check
-      string newNote = note + "--No-sensitive-upgrade-check;";
-      Predicate emptyPred;
-      typecheck_assignment_constraint(printer, ltype_orig, env.pc, emptyPred,
-                                      newNote, NULL, env);
+      // NSU check if not definitely assigned:
+      if (!env.defAssigned.contains(lhs->get_name())) {
+        string newNote = note + "--No-sensitive-upgrade-check;";
+        Predicate emptyPred;
+        typecheck_assignment_constraint(printer, ltype_orig, env.pc, emptyPred,
+                                        newNote, NULL, env);
+      }
       printer.singleton("pop");
       printer.lineBreak();
     } else {

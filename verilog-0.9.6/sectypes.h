@@ -454,6 +454,7 @@ struct TypeEnv {
       dep_exprs; // a list of expressions where a dependent type may depend on
   map<perm_string, list<int>> genVarVals;
   PathAnalysis analysis;
+  set<perm_string> defAssigned;
   set<perm_string> seqVars;
   Invariant *invariants;
   Module *module;
