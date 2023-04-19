@@ -9,11 +9,12 @@ module behave(clk, reset, secret);
    reg [3:0] com {Par x} x = 0;
    reg [3:0] com {Par y} y = 0;
    reg [3:0] com {Par z} z = 0;
-   reg [3:0] com {Par a} a = 0;      
+   reg [3:0] com {Par a} a = 0;
+   reg [3:0] com {Par b} b = 0;   
    reg [3:0] seq {L} data;
    reg [3:0] seq {Par d2} d2;   
-   genvar    i;   
 
+   genvar    i;
    generate
       for (i = 0; i <= 3; i = i +1) begin
 	 always@(*) begin
@@ -25,6 +26,16 @@ module behave(clk, reset, secret);
       end
    endgenerate   
 
+   reg [4:0] com {L} j;
+   
+   always@(*) begin
+      for(j = 0; j < 3; j = j + 1) begin
+	 if (!reset) begin
+	    b = j;
+	 end
+      end
+   end
+   
    always@(posedge clk) begin
       if (reset) begin
 	 data <= x; //fail

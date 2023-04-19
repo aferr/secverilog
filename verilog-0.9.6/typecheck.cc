@@ -400,6 +400,13 @@ bool PAssign_::collect_dep_invariants(SexpPrinter &printer, TypeEnv &env,
     rval()->collect_idens(env.dep_exprs);
     return true;
   } else {
+    SecType *ltyp = lval()->typecheck(printer, env);
+    bool isRecDep = ltyp->isDepType() && ltyp->hasExpr(lval()->get_name());
+    // cerr << lval()->get_name() << " is recdep " << isRecDep << endl;
+    if (isRecDep) {
+      // also add idens on rhs to depexprs so we know to print them
+      rval()->collect_idens(env.dep_exprs);
+    }
     if (debug_typecheck) {
       cerr << "skipping collect_dep_invariants on " << *lval() << endl;
     }
@@ -2082,9 +2089,45 @@ void PForever::typecheck(SexpPrinter &printer, TypeEnv &env, Predicate &pred,
   throw "PForever";
 }
 
-/**
- * Do nothing.
- */
+Statement *PForStatement::next_cycle_transform(SexpPrinter &printer,
+                                               TypeEnv &env) {
+  // only transform body
+  if (debug_typecheck) {
+    cerr << "PForStatement::next_cycle_transform" << endl;
+  }
+  if (statement_) {
+    statement_ = statement_->next_cycle_transform(printer, env);
+  }
+  return this;
+}
+
+void PForStatement::collect_index_exprs(set<perm_string> &exprs, TypeEnv &env) {
+  if (debug_typecheck) {
+    cerr << "collect_index_exprs on for" << endl;
+  }
+  expr1_->collect_index_exprs(exprs, env);
+  expr2_->collect_index_exprs(exprs, env);
+  cond_->collect_index_exprs(exprs, env);
+  statement_->collect_index_exprs(exprs, env);
+}
+
+bool PForStatement::collect_dep_invariants(SexpPrinter &printer, TypeEnv &env,
+                                           Predicate &pred) {
+  if (debug_typecheck)
+    cerr << "collect_dep_invariants on for" << endl;
+  Predicate oldPred = pred;
+  bool result       = false;
+  absintp(pred, env);
+  if (statement_) {
+    result = statement_->collect_dep_invariants(printer, env, pred);
+  }
+  pred.hypotheses = oldPred.hypotheses;
+  if (result) {
+    cond_->collect_idens(env.dep_exprs);
+  }
+  return result;
+}
+
 void PForStatement::typecheck(SexpPrinter &printer, TypeEnv &env,
                               Predicate &pred,
                               set<perm_string> &defAssgn) const {
@@ -2093,8 +2136,25 @@ void PForStatement::typecheck(SexpPrinter &printer, TypeEnv &env,
          << "for (" << *name1_ << " = " << *expr1_ << "; " << *cond_ << "; "
          << *name2_ << " = " << *expr2_ << ")" << endl;
   }
+  Predicate precond = pred;
+  stringstream note;
+  note << *name1_ << " = " << *expr1_ << " @" << get_fileline();
+  typecheck_assignment(printer, name1_, expr1_, env, precond, pred,
+                       get_lineno(), note.str(), true, defAssgn);
+  note.clear();
 
-  throw "PForStatement";
+  note << *name2_ << " = " << *expr2_ << " @" << get_fileline();
+  typecheck_assignment(printer, name2_, expr2_, env, precond, pred,
+                       get_lineno(), note.str(), true, defAssgn);
+
+  SecType *oldpc    = env.pc;
+  SecType *condType = cond_->typecheck(printer, env);
+  env.pc            = new JoinType(condType, oldpc);
+  env.pc            = env.pc->simplify();
+
+  statement_->typecheck(printer, env, pred, defAssgn);
+
+  env.pc = oldpc;
 }
 
 /**

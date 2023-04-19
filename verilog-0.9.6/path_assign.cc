@@ -153,6 +153,16 @@ void PCondit::collect_assign_paths(PathAnalysis &paths, TypeEnv &env,
   }
 }
 
+void PForStatement::collect_assign_paths(PathAnalysis &paths, TypeEnv &env,
+                                         Predicate &pred) {
+  auto oldPred = pred;
+  if (statement_) {
+    absintp(pred, env);
+    statement_->collect_assign_paths(paths, env, pred);
+    pred.hypotheses = oldPred.hypotheses;
+  }
+}
+
 void PEventStatement::collect_assign_paths(PathAnalysis &paths, TypeEnv &env,
                                            Predicate &pred) {
   statement_->collect_assign_paths(paths, env, pred);

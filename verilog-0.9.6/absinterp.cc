@@ -134,7 +134,14 @@ void PForever::absintp(Predicate &pred, TypeEnv &env) const {
 }
 
 void PForStatement::absintp(Predicate &pred, TypeEnv &env) const {
-  throw "PForStatement";
+  PEIdent *condvar = dynamic_cast<PEIdent *>(cond_);
+  if (condvar != NULL) {
+    pred.hypotheses.insert(
+        new Hypothesis(cond_->to_wellformed(env.dep_exprs),
+                       new PENumber(new verinum((uint64_t)1, 32))));
+  } else {
+    pred.hypotheses.insert(new Hypothesis(cond_->to_wellformed(env.dep_exprs)));
+  }
 }
 
 void PNoop::absintp(Predicate &pred, TypeEnv &env) const { throw "PNoop"; }
