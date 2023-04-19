@@ -119,7 +119,8 @@ public:
   void dump(ostream &out, unsigned ind = 4) const;
   virtual void elaborate(Design *des, NetScope *scope) const;
   virtual bool elaborate_sig(Design *des, NetScope *scope) const;
-  void typecheck(SexpPrinter &, TypeEnv &env, Predicate pred) const;
+  void typecheck(SexpPrinter &, TypeEnv &env, Predicate pred,
+                 set<perm_string> &s) const;
   void collect_index_exprs(set<perm_string> &exprs, TypeEnv &);
   bool collect_dep_invariants(SexpPrinter &printer, TypeEnv &env);
 

@@ -24,6 +24,8 @@
 
 Statement::~Statement() {}
 
+void Statement::collectAssigned(set<perm_string> &s) const { return; }
+
 PAssign_::PAssign_(PExpr *lval__, PExpr *ex, bool is_constant)
     : event_(0), count_(0), lval_(lval__), rval_(ex),
       is_constant_(is_constant) {
@@ -58,10 +60,8 @@ PAssign::PAssign(PExpr *lval__, PExpr *ex, bool is_constant)
 
 PAssign::~PAssign() {}
 
-void PAssign::mustmodify(set<PExpr *, ExprComparator> &vars,
-                         set<perm_string> depexprs) const {
-  if (depexprs.find(lval_->get_name()) != depexprs.end())
-    vars.insert(lval_);
+void PAssign_::collectAssigned(set<perm_string> &s) const {
+  s.insert(lval_->get_name());
 }
 
 PAssignNB::PAssignNB(PExpr *lval__, PExpr *ex) : PAssign_(lval__, ex, false) {}
@@ -73,12 +73,6 @@ PAssignNB::PAssignNB(PExpr *lval__, PExpr *cnt, PEventStatement *d, PExpr *ex)
     : PAssign_(lval__, cnt, d, ex) {}
 
 PAssignNB::~PAssignNB() {}
-
-void PAssignNB::mustmodify(set<PExpr *, ExprComparator> &vars,
-                           set<perm_string> depexprs) const {
-  if (depexprs.find(lval_->get_name()) != depexprs.end())
-    vars.insert(lval_);
-}
 
 PBlock::PBlock(perm_string n, PScope *parent, BL_TYPE t)
     : PScope(n, parent), bl_type_(t) {}
@@ -92,11 +86,11 @@ PBlock::~PBlock() {
 
 void PBlock::set_statement(const svector<Statement *> &st) { list_ = st; }
 
-void PBlock::mustmodify(set<PExpr *, ExprComparator> &vars,
-                        set<perm_string> depexprs) const {
+void PBlock::collectAssigned(set<perm_string> &s) const {
   for (unsigned idx = 0; idx < list_.count(); idx += 1) {
-    if (list_[idx])
-      list_[idx]->mustmodify(vars, depexprs);
+    if (list_[idx]) {
+      list_[idx]->collectAssigned(s);
+    }
   }
 }
 
@@ -123,14 +117,33 @@ PCase::~PCase() {
   delete[] items_;
 }
 
-/*
-void PCase::modifiedVars(set<PExpr*>& vars)
-{
-        for (unsigned idx = 0 ;  idx < items_->count() ;  idx += 1)
-                if ((*items_)[idx]->stat)
-                        (*items_)[idx]->stat->modifiedVars(vars);
+void PCase::collectAssigned(set<perm_string> &s) const {
+  if (items_->count() == 0)
+    return;
+  set<perm_string> allcase;
+  (*items_)[0]->stat->collectAssigned(allcase);
+  for (unsigned idx = 1; idx < items_->count(); idx += 1) {
+    PCase::Item *cur = (*items_)[idx];
+    set<perm_string> tmp, intersect;
+    cur->stat->collectAssigned(tmp);
+    // remove all assigned in this case from original set
+    for (auto m : tmp) {
+      s.erase(m);
+    }
+    std::set_intersection(tmp.begin(), tmp.end(), allcase.begin(),
+                          allcase.end(),
+                          std::inserter(intersect, intersect.end()));
+    allcase = intersect;
+  }
+  // only add values if there is no default case
+  // since without a default there's no way to be sure any branch executes
+  if (hasDefault()) {
+    // only add values assigned in all cases
+    for (auto all : allcase) {
+      s.insert(all);
+    }
+  }
 }
-*/
 
 PCAssign::PCAssign(PExpr *l, PExpr *r) : lval_(l), expr_(r) {}
 
@@ -148,17 +161,26 @@ PCondit::~PCondit() {
   delete else_;
 }
 
-void PCondit::mustmodify(set<PExpr *, ExprComparator> &vars,
-                         set<perm_string> depexprs) const {
-  set<PExpr *, ExprComparator> if_modified, else_modified;
-  if (if_)
-    if_->mustmodify(if_modified, depexprs);
-  if (else_)
-    else_->mustmodify(else_modified, depexprs);
+void PCondit::collectAssigned(set<perm_string> &s) const {
 
+  set<perm_string> if_modified, else_modified;
+  if (if_) {
+    if_->collectAssigned(if_modified);
+  }
+  if (else_) {
+    else_->collectAssigned(else_modified);
+  }
+  // first remove ifmodified and else modified
+  for (auto m : if_modified) {
+    s.erase(m);
+  }
+  for (auto m : else_modified) {
+    s.erase(m);
+  }
+  // then add back in everything assigned in both branches
   std::set_intersection(if_modified.begin(), if_modified.end(),
                         else_modified.begin(), else_modified.end(),
-                        inserter(vars, vars.begin()), ExprComparator());
+                        std::inserter(s, s.end()));
 }
 
 PDeassign::PDeassign(PExpr *l) : lval_(l) {}
@@ -199,6 +221,12 @@ bool PEventStatement::has_aa_term(Design *des, NetScope *scope) {
   return flag;
 }
 
+void PEventStatement::collectAssigned(set<perm_string> &s) const {
+  if (statement_) {
+    statement_->collectAssigned(s);
+  }
+}
+
 PForce::PForce(PExpr *l, PExpr *r) : lval_(l), expr_(r) {}
 
 PForce::~PForce() {
@@ -216,6 +244,13 @@ PForStatement::PForStatement(PExpr *n1, PExpr *e1, PExpr *cond, PExpr *n2,
       statement_(st) {}
 
 PForStatement::~PForStatement() {}
+
+void PForStatement::collectAssigned(set<perm_string> &s) const {
+  PEIdent *itervar = dynamic_cast<PEIdent *>(name2_);
+  if (itervar)
+    s.insert(itervar->get_name());
+  statement_->collectAssigned(s);
+}
 
 PProcess::~PProcess() { delete statement_; }
 

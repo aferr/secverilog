@@ -7,7 +7,9 @@ module behave(clk, reset, secret);
    reg seq {L} in[3:0];   
 
    reg [3:0] com {Par x} x = 0;
-   reg [3:0] com {Par y} y = 0;      
+   reg [3:0] com {Par y} y = 0;
+   reg [3:0] com {Par z} z = 0;
+   reg [3:0] com {Par a} a = 0;      
    reg [3:0] seq {L} data;
    reg [3:0] seq {Par d2} d2;   
    genvar    i;   
@@ -39,5 +41,24 @@ module behave(clk, reset, secret);
 	 y = 1; //should fail nsu check	 
       end
    end
-      
+
+   always@(*) begin
+      z = 0; //succeed
+      if (secret) begin
+	 z = 2; //should fail nsu check
+      end
+   end
+
+   always@(*) begin
+      a = 0;      
+      case (secret)
+	0: begin
+	   a = 1;//should fail nsu check	   
+	end
+	1: begin
+	   a = 1;//should fail nsu check
+	end
+      endcase
+   end // always@ (*)
+
 endmodule

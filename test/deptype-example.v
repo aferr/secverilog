@@ -49,6 +49,7 @@ always @(*) begin
         case (cur_state)
         0: begin // pc = Par[cur_state] = L 
             out = 15;
+	    next_state = cur_state;	   
         end
         1: begin // pc = Par[cur_state] = H
             // jump to state 2 only when secret "data" is not zero

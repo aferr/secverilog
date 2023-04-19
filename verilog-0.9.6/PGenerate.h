@@ -122,6 +122,7 @@ public:
   void next_cycle_transform(SexpPrinter &, TypeEnv env);
   void typecheck(SexpPrinter &, TypeEnv env,
                  map<perm_string, Module *> modules);
+  void collectAssigned(TypeEnv &env) const;
   void collect_index_exprs(set<perm_string> &exprs, TypeEnv &env);
   void collect_dep_invariants(SexpPrinter &printer, TypeEnv &env);
   void fill_genvar_vals(perm_string root,

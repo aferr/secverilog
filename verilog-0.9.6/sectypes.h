@@ -56,6 +56,8 @@ class QuantType;
 class PolicyType;
 struct TypeEnv;
 
+class PProcess;
+
 using str_or_num = variant<perm_string, verinum>;
 
 struct str_or_num_to_string {
@@ -454,7 +456,7 @@ struct TypeEnv {
       dep_exprs; // a list of expressions where a dependent type may depend on
   map<perm_string, list<int>> genVarVals;
   PathAnalysis analysis;
-  set<perm_string> defAssigned;
+  map<PProcess *, set<perm_string>> defAssigned;
   set<perm_string> seqVars;
   Invariant *invariants;
   Module *module;

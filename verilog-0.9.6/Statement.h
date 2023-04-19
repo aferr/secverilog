@@ -62,10 +62,12 @@ public:
   map<perm_string, PExpr *> attributes;
 
   virtual void dump(ostream &out, unsigned ind) const;
-  virtual void typecheck(SexpPrinter &printer, TypeEnv &env) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
+                         set<perm_string> &defAssgn) const;
   virtual void next_cycle_transform(SexpPrinter &printer, TypeEnv &env) const;
   virtual bool collect_dep_invariants(SexpPrinter &printer, TypeEnv &env,
                                       Predicate &pred);
+  virtual void collectAssigned(set<perm_string> &s) const;
   virtual void collect_index_exprs(set<perm_string> &exprs, TypeEnv &);
 
 private:
@@ -85,10 +87,9 @@ public:
   virtual ~Statement() = 0;
 
   virtual void dump(ostream &out, unsigned ind) const;
-  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
-                         Predicate &pred) const = 0;
-  virtual void mustmodify(set<PExpr *, ExprComparator> &vars,
-                          set<perm_string>) const {}
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env, Predicate &pred,
+                         set<perm_string> &defAssgn) const = 0;
+  virtual void collectAssigned(set<perm_string> &s) const;
   virtual NetProc *elaborate(Design *des, NetScope *scope) const;
   virtual void elaborate_scope(Design *des, NetScope *scope) const;
   virtual void elaborate_sig(Design *des, NetScope *scope) const;
@@ -115,6 +116,7 @@ public:
 
   virtual bool collect_dep_invariants(SexpPrinter &printer, TypeEnv &env,
                                       Predicate &pred);
+  virtual void collectAssigned(set<perm_string> &s) const;
   virtual void collect_index_exprs(set<perm_string> &exprs, TypeEnv &);
   virtual void collect_assign_paths(PathAnalysis &paths, TypeEnv &env,
                                     Predicate &pred);
@@ -147,10 +149,8 @@ public:
   ~PAssign();
 
   virtual void dump(ostream &out, unsigned ind) const;
-  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
-                         Predicate &pred) const;
-  virtual void mustmodify(set<PExpr *, ExprComparator> &vars,
-                          set<perm_string>) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env, Predicate &pred,
+                         set<perm_string> &defAssgn) const;
   virtual NetProc *elaborate(Design *des, NetScope *scope) const;
   void absintp(Predicate &, TypeEnv &) const;
 
@@ -167,10 +167,8 @@ public:
   ~PAssignNB();
 
   virtual void dump(ostream &out, unsigned ind) const;
-  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
-                         Predicate &pred) const;
-  virtual void mustmodify(set<PExpr *, ExprComparator> &vars,
-                          set<perm_string>) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env, Predicate &pred,
+                         set<perm_string> &defAssgn) const;
   virtual NetProc *elaborate(Design *des, NetScope *scope) const;
   void absintp(Predicate &, TypeEnv &) const;
 
@@ -202,10 +200,9 @@ public:
   void set_statement(const svector<Statement *> &st);
 
   virtual void dump(ostream &out, unsigned ind) const;
-  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
-                         Predicate &pred) const;
-  virtual void mustmodify(set<PExpr *, ExprComparator> &vars,
-                          set<perm_string>) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env, Predicate &pred,
+                         set<perm_string> &defAssgn) const;
+  virtual void collectAssigned(set<perm_string> &s) const;
   virtual NetProc *elaborate(Design *des, NetScope *scope) const;
   virtual void elaborate_scope(Design *des, NetScope *scope) const;
   virtual void elaborate_sig(Design *des, NetScope *scope) const;
@@ -243,8 +240,8 @@ public:
   }
 
   virtual void dump(ostream &out, unsigned ind) const;
-  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
-                         Predicate &pred) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env, Predicate &pred,
+                         set<perm_string> &defAssgn) const;
   virtual NetProc *elaborate(Design *des, NetScope *scope) const;
   void absintp(Predicate &, TypeEnv &) const;
 
@@ -271,9 +268,18 @@ public:
   virtual void elaborate_scope(Design *des, NetScope *scope) const;
   virtual void elaborate_sig(Design *des, NetScope *scope) const;
   virtual void dump(ostream &out, unsigned ind) const;
-  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
-                         Predicate &pred) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env, Predicate &pred,
+                         set<perm_string> &defAssgn) const;
+  virtual void collectAssigned(set<perm_string> &s) const;
   void absintp(Predicate &, TypeEnv &, unsigned idx) const;
+  bool hasDefault() const {
+    for (unsigned int i = 0; i < items_->count(); i++) {
+      Item *cur = (*items_)[i];
+      if (cur->expr.count() == 0)
+        return true;
+    }
+    return false;
+  }
 
 private:
   NetCase::TYPE type_;
@@ -294,11 +300,12 @@ public:
 
   virtual NetCAssign *elaborate(Design *des, NetScope *scope) const;
   virtual void dump(ostream &out, unsigned ind) const;
-  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
-                         Predicate &pred) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env, Predicate &pred,
+                         set<perm_string> &defAssgn) const;
   virtual Statement *next_cycle_transform(SexpPrinter &printer, TypeEnv &env);
   virtual bool collect_dep_invariants(SexpPrinter &out, TypeEnv &env,
                                       Predicate &pred);
+  virtual void collectAssigned(set<perm_string> &s) const;
   virtual void collect_index_exprs(set<perm_string> &exprs, TypeEnv &);
   virtual void collect_assign_paths(PathAnalysis &paths, TypeEnv &env,
                                     Predicate &pred);
@@ -319,10 +326,10 @@ public:
   virtual void elaborate_scope(Design *des, NetScope *scope) const;
   virtual void elaborate_sig(Design *des, NetScope *scope) const;
   virtual void dump(ostream &out, unsigned ind) const;
-  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
-                         Predicate &pred) const;
-  virtual void mustmodify(set<PExpr *, ExprComparator> &vars,
-                          set<perm_string>) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env, Predicate &pred,
+                         set<perm_string> &defAssgn) const;
+  virtual void collectAssigned(set<perm_string> &s) const;
+
   virtual Statement *next_cycle_transform(SexpPrinter &printer, TypeEnv &env);
   virtual bool collect_dep_invariants(SexpPrinter &out, TypeEnv &env,
                                       Predicate &pred);
@@ -352,8 +359,8 @@ public:
 
   virtual NetDeassign *elaborate(Design *des, NetScope *scope) const;
   virtual void dump(ostream &out, unsigned ind) const;
-  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
-                         Predicate &pred) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env, Predicate &pred,
+                         set<perm_string> &defAssgn) const;
   void absintp(Predicate &, TypeEnv &) const;
 
 private:
@@ -367,8 +374,8 @@ public:
   ~PDelayStatement();
 
   virtual void dump(ostream &out, unsigned ind) const;
-  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
-                         Predicate &pred) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env, Predicate &pred,
+                         set<perm_string> &defAssgn) const;
   virtual NetProc *elaborate(Design *des, NetScope *scope) const;
   virtual void elaborate_scope(Design *des, NetScope *scope) const;
   virtual void elaborate_sig(Design *des, NetScope *scope) const;
@@ -389,8 +396,8 @@ public:
   ~PDisable();
 
   virtual void dump(ostream &out, unsigned ind) const;
-  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
-                         Predicate &pred) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env, Predicate &pred,
+                         set<perm_string> &defAssgn) const;
   virtual NetProc *elaborate(Design *des, NetScope *scope) const;
   void absintp(Predicate &, TypeEnv &) const;
 
@@ -419,8 +426,8 @@ public:
   void set_statement(Statement *st);
 
   virtual void dump(ostream &out, unsigned ind) const;
-  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
-                         Predicate &pred) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env, Predicate &pred,
+                         set<perm_string> &defAssgn) const;
   // Call this with a NULL statement only. It is used to print
   // the event expression for inter-assignment event controls.
   virtual void dump_inline(ostream &out) const;
@@ -430,6 +437,7 @@ public:
   virtual Statement *next_cycle_transform(SexpPrinter &printer, TypeEnv &env);
   virtual bool collect_dep_invariants(SexpPrinter &out, TypeEnv &env,
                                       Predicate &pred);
+  virtual void collectAssigned(set<perm_string> &s) const;
   virtual void collect_index_exprs(set<perm_string> &exprs, TypeEnv &);
   virtual void collect_assign_paths(PathAnalysis &paths, TypeEnv &env,
                                     Predicate &pred);
@@ -458,8 +466,8 @@ public:
 
   virtual NetForce *elaborate(Design *des, NetScope *scope) const;
   virtual void dump(ostream &out, unsigned ind) const;
-  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
-                         Predicate &pred) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env, Predicate &pred,
+                         set<perm_string> &defAssgn) const;
   void absintp(Predicate &, TypeEnv &) const;
 
 private:
@@ -476,8 +484,8 @@ public:
   virtual void elaborate_scope(Design *des, NetScope *scope) const;
   virtual void elaborate_sig(Design *des, NetScope *scope) const;
   virtual void dump(ostream &out, unsigned ind) const;
-  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
-                         Predicate &pred) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env, Predicate &pred,
+                         set<perm_string> &defAssgn) const;
   void absintp(Predicate &, TypeEnv &) const;
 
 private:
@@ -495,8 +503,9 @@ public:
   virtual void elaborate_scope(Design *des, NetScope *scope) const;
   virtual void elaborate_sig(Design *des, NetScope *scope) const;
   virtual void dump(ostream &out, unsigned ind) const;
-  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
-                         Predicate &pred) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env, Predicate &pred,
+                         set<perm_string> &defAssgn) const;
+  virtual void collectAssigned(set<perm_string> &s) const;
   void absintp(Predicate &, TypeEnv &) const;
 
 private:
@@ -517,8 +526,8 @@ public:
   PNoop() {}
   ~PNoop() {}
 
-  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
-                         Predicate &pred) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env, Predicate &pred,
+                         set<perm_string> &defAssgn) const;
   void absintp(Predicate &, TypeEnv &) const;
 };
 
@@ -531,8 +540,8 @@ public:
   virtual void elaborate_scope(Design *des, NetScope *scope) const;
   virtual void elaborate_sig(Design *des, NetScope *scope) const;
   virtual void dump(ostream &out, unsigned ind) const;
-  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
-                         Predicate &pred) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env, Predicate &pred,
+                         set<perm_string> &defAssgn) const;
   void absintp(Predicate &, TypeEnv &) const;
 
 private:
@@ -548,8 +557,8 @@ public:
 
   virtual NetProc *elaborate(Design *des, NetScope *scope) const;
   virtual void dump(ostream &out, unsigned ind) const;
-  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
-                         Predicate &pred) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env, Predicate &pred,
+                         set<perm_string> &defAssgn) const;
   void absintp(Predicate &, TypeEnv &) const;
 
 private:
@@ -568,8 +577,8 @@ public:
 
   virtual NetProc *elaborate(Design *des, NetScope *scope) const;
   virtual void dump(ostream &out, unsigned ind) const;
-  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
-                         Predicate &pred) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env, Predicate &pred,
+                         set<perm_string> &defAssgn) const;
   void absintp(Predicate &, TypeEnv &) const;
 
 private:
@@ -586,8 +595,8 @@ public:
   virtual void elaborate_scope(Design *des, NetScope *scope) const;
   virtual void elaborate_sig(Design *des, NetScope *scope) const;
   virtual void dump(ostream &out, unsigned ind) const;
-  virtual void typecheck(SexpPrinter &printer, TypeEnv &env,
-                         Predicate &pred) const;
+  virtual void typecheck(SexpPrinter &printer, TypeEnv &env, Predicate &pred,
+                         set<perm_string> &defAssgn) const;
   void absintp(Predicate &, TypeEnv &) const;
 
 private:
